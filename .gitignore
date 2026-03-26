@@ -1,0 +1,27 @@
+# Environments
+soc_env/
+ml_env/
+venv/
+env/
+
+# Data
+data/
+datasets/
+*.csv
+*.json
+*.log
+
+# Models
+*.pkl
+*.pt
+*.h5
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.pyc
+
+# Env file
+.env

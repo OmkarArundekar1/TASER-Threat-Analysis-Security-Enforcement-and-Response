@@ -1,0 +1,107 @@
+# ============================================================
+# AI-Driven Autonomous Cyber Defense System — Central Config
+# ============================================================
+
+# ----- Paths -----
+paths:
+  datasets_dir: "datasets"
+  data_dir: "data"
+  ml_pipeline_dir: "ml_pipeline"
+  logs_dir: "logs"
+  models_dir: "models"
+  window_features: "ml_pipeline/window_features.npy"
+  window_metadata: "ml_pipeline/window_metadata.npy"
+  scaler: "ml_pipeline/scaler.pkl"
+  autoencoder_weights: "models/autoencoder_best.pth"
+  lgbm_model: "models/lgbm_classifier.pkl"
+  lgbm_label_encoder: "models/lgbm_label_encoder.pkl"
+  ssft_dataset: "models/ssft_dataset.npz"
+
+# ----- Feature Pipeline -----
+feature_pipeline:
+  window_size: 100
+  stride: 25
+  include_percentiles: true        # adds p25/p75 per feature
+  drop_ip_features: true           # NO IP memorization
+  drop_columns:
+    - "Flow ID"
+    - "Source IP"
+    - "Destination IP"
+    - "Timestamp"
+    - "Label"
+    - "src_ip"
+    - "dst_ip"
+
+# ----- Autoencoder / SOC Engine -----
+soc_engine:
+  input_dim: 312                   # window mean/std/max/min × 78 features
+  latent_dim: 32
+  hidden_dims: [128, 64]
+  dropout: 0.1
+  batch_size: 256
+  epochs: 30
+  learning_rate: 0.0005
+  weight_decay: 0.00001
+  patience: 5                      # early stopping
+  device: "auto"                   # auto → cuda if available
+
+# ----- Robust Scoring -----
+severity_engine:
+  clip_percentile: 99.9            # soft compression above this percentile
+  mad_multiplier: 1.4826           # consistency constant for Gaussian
+  severity_thresholds:
+    HIGH: 8.0
+    MEDIUM: 4.0
+    LOW: 2.0
+    # else → NORMAL
+
+# ----- Temporal Smoothing -----
+temporal_engine:
+  smooth_window: 5                 # rolling window over severity labels
+  rules:
+    HIGH_min_count: 1              # ≥1 HIGH in window → HIGH
+    MEDIUM_min_count: 2            # ≥2 MEDIUM in window → MEDIUM
+    LOW_min_count: 3               # ≥3 LOW in window → LOW
+
+# ----- Explainability -----
+explainer:
+  top_k_features: 5
+
+# ----- LightGBM Classifier -----
+classifier:
+  n_estimators: 300
+  learning_rate: 0.05
+  max_depth: 8
+  num_leaves: 63
+  subsample: 0.8
+  colsample_bytree: 0.8
+  n_jobs: -1
+  random_state: 42
+  class_weight: "balanced"
+  labels:
+    - BENIGN
+    - DDoS
+    - PortScan
+    - WebAttack
+    - BruteForce
+    - Infiltration
+    - Bot
+
+# ----- Attack Graph / GNN -----
+graph:
+  max_events_per_ip: 50
+  event_ttl_seconds: 300           # 5-minute TTL
+  gnn_hidden_dim: 64
+  gnn_attention_heads: 2
+  gnn_layers: 2
+
+# ----- Response Engine -----
+response:
+  dry_run: true                    # SAFE DEFAULT — no actual system changes
+  log_actions: true
+
+# ----- Agents / LangChain -----
+agents:
+  use_langchain: false             # set true if OPENAI_API_KEY set
+  model_name: "gpt-4o-mini"
+  temperature: 0.0
