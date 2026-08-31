@@ -1,8 +1,10 @@
 # Environments
 soc_env/
-ml_env/
 venv/
 env/
+
+# Archived/legacy content pending review — see _legacy_archive/README.md
+_legacy_archive/
 
 # Data
 data/
@@ -11,10 +13,22 @@ datasets/
 *.json
 *.log
 
+# ...but not essential frontend build/config manifests
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.*.json
+
 # Models
 *.pkl
 *.pt
+*.pth
 *.h5
+*.npy
+*.npz
+
+# Archives
+*.zip
 
 # Jupyter
 .ipynb_checkpoints/
@@ -25,3 +39,10 @@ __pycache__/
 
 # Env file
 .env
+
+# Node / frontend build output
+node_modules/
+dist/
+
+# Vendored third-party clones (own git history, not part of this project)
+isfcr/CYUKTI/external/

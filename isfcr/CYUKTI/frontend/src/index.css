@@ -1,0 +1,211 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────
+   WatchDog SOC Dashboard — Design System
+   ───────────────────────────────────────────────────────── */
+
+@theme {
+  --color-bg-primary: #060a13;
+  --color-bg-secondary: #0c1220;
+  --color-bg-tertiary: #131c2e;
+  --color-bg-elevated: #1a2540;
+  --color-bg-hover: #1e2d4a;
+  --color-border: #1e2d4a;
+  --color-border-bright: #2a3f66;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+
+  --color-critical: #ef4444;
+  --color-critical-dim: #7f1d1d;
+  --color-high: #f97316;
+  --color-high-dim: #7c2d12;
+  --color-medium: #eab308;
+  --color-medium-dim: #713f12;
+  --color-low: #3b82f6;
+  --color-low-dim: #1e3a5f;
+  --color-healthy: #22c55e;
+  --color-healthy-dim: #14532d;
+
+  --color-accent: #6366f1;
+  --color-accent-bright: #818cf8;
+  --color-accent-dim: #312e81;
+  --color-cyan: #06b6d4;
+  --color-cyan-dim: #164e63;
+
+  --color-node-attacker: #ef4444;
+  --color-node-campaign: #f97316;
+  --color-node-technique: #a855f7;
+  --color-node-host: #3b82f6;
+  --color-node-stage: #22c55e;
+  --color-node-event: #eab308;
+
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+
+
+
+/* ─── Base ─── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+}
+
+/* ─── Custom Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--color-border-bright); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent); }
+
+/* ─── Glassmorphism Card ─── */
+.glass-card {
+  background: linear-gradient(135deg, rgba(12, 18, 32, 0.95), rgba(19, 28, 46, 0.85));
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  backdrop-filter: blur(20px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-card:hover {
+  border-color: var(--color-border-bright);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.05);
+}
+
+/* ─── Glow Effects ─── */
+.glow-critical { box-shadow: 0 0 20px rgba(239, 68, 68, 0.15), inset 0 0 20px rgba(239, 68, 68, 0.03); }
+.glow-high { box-shadow: 0 0 20px rgba(249, 115, 22, 0.15), inset 0 0 20px rgba(249, 115, 22, 0.03); }
+.glow-medium { box-shadow: 0 0 20px rgba(234, 179, 8, 0.12), inset 0 0 20px rgba(234, 179, 8, 0.02); }
+.glow-low { box-shadow: 0 0 20px rgba(59, 130, 246, 0.12), inset 0 0 20px rgba(59, 130, 246, 0.02); }
+.glow-healthy { box-shadow: 0 0 20px rgba(34, 197, 94, 0.12), inset 0 0 20px rgba(34, 197, 94, 0.02); }
+.glow-accent { box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), inset 0 0 20px rgba(99, 102, 241, 0.03); }
+
+/* ─── Pulse Animation ─── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-in { animation: slide-in 0.3s ease-out; }
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.4); }
+}
+.animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes flow-dash {
+  to { stroke-dashoffset: -20; }
+}
+
+/* ─── Severity Badge ─── */
+.severity-critical { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+.severity-high { background: rgba(249, 115, 22, 0.15); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.3); }
+.severity-medium { background: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(234, 179, 8, 0.3); }
+.severity-low { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+
+/* ─── SOC Table ─── */
+.soc-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8rem;
+}
+.soc-table thead th {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.soc-table tbody tr {
+  transition: background 0.15s ease;
+  border-bottom: 1px solid rgba(30, 45, 74, 0.5);
+}
+.soc-table tbody tr:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+.soc-table tbody td {
+  padding: 8px 12px;
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  white-space: normal;
+}
+
+/* ─── Cypher Editor ─── */
+.cypher-editor {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  outline: none;
+  resize: vertical;
+  min-height: 100px;
+  width: 100%;
+  line-height: 1.6;
+  tab-size: 2;
+}
+.cypher-editor:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* ─── Recharts Overrides ─── */
+.recharts-cartesian-axis-tick-value { fill: #94a3b8 !important; font-size: 0.7rem !important; }
+.recharts-legend-item-text { color: #94a3b8 !important; font-size: 0.75rem !important; }
+.recharts-tooltip-wrapper { z-index: 100; }
+
+/* ─── Dashboard Grid ─── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
+}
+@media (max-width: 1400px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+}
+.dashboard-grid .full-width { grid-column: 1 / -1; }
+
+/* ─── Node Type Colors (for legend) ─── */
+.node-attacker { color: var(--color-node-attacker); }
+.node-campaign { color: var(--color-node-campaign); }
+.node-technique { color: var(--color-node-technique); }
+.node-host { color: var(--color-node-host); }
+.node-stage { color: var(--color-node-stage); }
+.node-event { color: var(--color-node-event); }
