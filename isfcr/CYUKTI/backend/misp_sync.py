@@ -83,6 +83,7 @@ class MISPSync:
             campaign_id,
         )
         result = self.publisher.create_event(event)
+        result["action"] = "created"
         if not result["success"]:
             logger.error(
                 "Failed creating MISP Event."
@@ -105,10 +106,12 @@ class MISPSync:
             "Updating existing MISP Event [%s]",
             event_id,
         )
-        return self.publisher.update_event(
+        result = self.publisher.update_event(
             event_id,
             event,
         )
+        result["action"] = "updated"
+        return result
 
     def synchronize(
         self,
@@ -214,16 +217,15 @@ class MISPSync:
             incident
         )
         if result["success"]:
-            action = (
-                "updated"
-                if result.get("event_id") is None
-                else "created"
-            )
+            # _create/_update now set "action" themselves (the only
+            # place that unambiguously knows which one actually ran --
+            # inferring it here from event_id being present previously
+            # mislabeled a create whose event_id failed to parse as an
+            # "update", since update_event never set that key either).
             logger.info(
                 "Campaign [%s] synchronized successfully.",
                 incident.campaign_id,
             )
-            result["action"] = action
         return result
         
     def close_campaign(

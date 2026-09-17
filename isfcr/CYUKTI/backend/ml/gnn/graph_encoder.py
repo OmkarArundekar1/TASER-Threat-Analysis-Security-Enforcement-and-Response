@@ -28,8 +28,20 @@ NODE_TYPE_INDEX = {t: i for i, t in enumerate(NODE_TYPES)}
 # onto these node types (create_attack_event / campaign_manager). Missing
 # or non-numeric values default to 0.0 rather than raising, since not
 # every node type carries every property.
+#
+# risk_score is deliberately EXCLUDED, not merely omitted: it is a
+# Campaign-node property, and the severity label this graph is meant to
+# predict (see campaign_graphs.py) is a deterministic thresholded
+# function of that exact same risk_score (risk_scoring.risk_level_from_score
+# -> label_generator.py). Encoding it as a node feature would let a GNN
+# trivially reconstruct the label instead of learning from graph
+# structure/MITRE/CTI signals, for the identical reason
+# ml/dataset_utils.py already excludes risk_score from XGBoost's
+# FEATURE_COLUMNS via its own LEAKAGE_COLUMNS list — this mirrors that
+# precedent for the GNN's node features rather than reintroducing the
+# same leakage in a different subsystem.
 NUMERIC_PROPS = [
-    "risk_score", "occurrences", "total_tps", "tps", "rule_level",
+    "occurrences", "total_tps", "tps", "rule_level",
     "vt_reputation", "threat_actor_reputation", "malware_confidence",
     "tool_confidence", "misp_confidence", "ioc_confidence",
 ]

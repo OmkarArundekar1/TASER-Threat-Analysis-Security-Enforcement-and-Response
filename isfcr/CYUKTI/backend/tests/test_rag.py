@@ -10,7 +10,9 @@ plain-language query, not just that it runs without crashing.
 
 import pytest
 
+from attribution_models import HistoricalCampaign
 from evidence.schema import EvidenceSource, EvidenceType
+from rag.campaign_retriever import CampaignNarrativeRetriever
 from rag.mitre_retriever import MitreSemanticRetriever
 from rag.retriever import SemanticRetriever
 
@@ -84,3 +86,75 @@ def test_mitre_retriever_returns_evidence_with_correct_provenance(mitre_retrieve
         assert e.confidence == 1.0
         assert 0.0 <= e.relevance <= 1.0
         assert "rag.mitre_retriever" in e.provenance
+
+
+# ---------------------------------------------------------------------------
+# Second Multi-RAG source: real historical campaign records
+# (attribution_context.py's HistoricalCampaign -- the same data
+# threat_attribution_engine.py and campaign_history_collector.py already
+# consume). Neo4j is the only external boundary, mocked here the same
+# way tests/test_threat_attribution.py mocks it for the same function.
+# ---------------------------------------------------------------------------
+
+def _historical(campaign_id, techniques, attacker="203.0.113.9", victim="198.51.100.9", status="ARCHIVED"):
+    return HistoricalCampaign(
+        campaign_id=campaign_id, attacker=attacker, victim=victim,
+        techniques=list(techniques), timestamps=["2026-01-01T00:00:00+00:00"] * len(techniques),
+        status=status,
+    )
+
+
+@pytest.fixture()
+def mock_historical_campaigns(monkeypatch):
+    import attribution_context as attribution_context_module
+
+    state = {"campaigns": []}
+    monkeypatch.setattr(
+        attribution_context_module.context, "load_historical_campaigns",
+        lambda: list(state["campaigns"]),
+    )
+    return state
+
+
+def test_campaign_retriever_raises_a_controlled_error_when_no_history_exists_yet(mock_historical_campaigns):
+    mock_historical_campaigns["campaigns"] = []
+    retriever = CampaignNarrativeRetriever()
+    with pytest.raises(RuntimeError, match="No historical campaigns"):
+        retriever.query("brute force followed by lateral movement")
+
+
+def test_campaign_retriever_excludes_campaigns_with_no_resolved_techniques(mock_historical_campaigns):
+    mock_historical_campaigns["campaigns"] = [_historical("CAMP_EMPTY", [])]
+    retriever = CampaignNarrativeRetriever()
+    with pytest.raises(RuntimeError, match="No historical campaigns"):
+        retriever.query("anything")
+
+
+def test_campaign_retriever_ranks_the_real_matching_campaign_first(mock_historical_campaigns):
+    mock_historical_campaigns["campaigns"] = [
+        _historical("CAMP_BRUTE_FORCE", ["T1110", "T1110.001", "T1078"]),
+        _historical("CAMP_RANSOMWARE", ["T1486", "T1490"]),
+    ]
+    retriever = CampaignNarrativeRetriever()
+
+    results = retriever.query("T1110 T1110.001 T1078", top_k=2)
+
+    assert results[0].source_id == "CAMP_BRUTE_FORCE"
+    assert results[0].relevance > 0
+
+
+def test_campaign_retriever_returns_evidence_with_correct_contract(mock_historical_campaigns):
+    mock_historical_campaigns["campaigns"] = [_historical("CAMP_OLD_1", ["T1110", "T1078"])]
+    retriever = CampaignNarrativeRetriever()
+
+    results = retriever.query("T1110 T1078", top_k=3)
+
+    assert results
+    for e in results:
+        assert e.source == EvidenceSource.CAMPAIGN_HISTORY
+        assert e.type == EvidenceType.HISTORICAL_MATCH
+        assert e.confidence == 1.0
+        assert 0.0 <= e.relevance <= 1.0
+        assert "rag.campaign_retriever" in e.provenance
+        assert e.content["campaign_id"] == "CAMP_OLD_1"
+        assert e.content["techniques"] == ["T1110", "T1078"]

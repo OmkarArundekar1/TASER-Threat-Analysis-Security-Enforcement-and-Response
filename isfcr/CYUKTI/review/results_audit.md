@@ -1,0 +1,35 @@
+# CYUKTI — Results Package Audit
+
+Audits `review/quantitative_results.md`, `review/slide_ready_metrics.md`, and `review/quantitative_results.csv` against actual repository artifacts. Re-verified 2026-09-14: all cited test files, scripts, and the dataset CSV exist and are unchanged (150/150 tests still pass, dataset still 60 rows).
+
+| Metric | Claimed Value | Evidence Artifact | Evidence Strength | Safe to Present? | Required Qualification |
+|---|---|---|---|---|---|
+| Total tests passing | 150/150 | `pytest -q`, backend/ (re-run 2026-09-14, confirmed) | Test-verified | Yes | State "automated tests," not "system reliability" |
+| Compile check | clean | `python -m compileall` (Phase 20H run) | Static verification | Yes | Not re-run this session; syntax hasn't changed since (no source edits) |
+| Neo4j: 65 Campaigns / 124 AttackEvents / 858 Technique | live-measured | Direct Cypher queries, 2026-09-12 (Phase 20H) | Live-system measured | Yes, **with date** | Say "as of 2026-09-12" — not re-queried this session (Neo4j access out of scope for this review-prep task) |
+| 0 orphaned AttackEvents | live-measured | Same query set, 2026-09-12 | Live-system measured | Yes, with date | Same caveat — a snapshot, not a standing guarantee |
+| 3 NEXT_TECHNIQUE edges | live-measured | Same, 2026-09-12 | Live-system measured | Yes, with date | — |
+| 44 orphaned events repaired → 27 campaigns | historical, one-time | `campaign_reconstruction.py` + prior-phase repair log; `check_integrity()` test suite | Experimentally measured (one-time real-data repair) | Yes | This is a **historical** repair event, not a recurring metric — say "was repaired," not "is being repaired" |
+| 391-alert MITRE snapshot (39 native, 352 UNKNOWN) | historical, 2026-08-31 | `scripts/mitre_coverage_report.py` output, dated run | Live-system measured, **stale by ~2 weeks** | Yes, **explicitly dated** | Must say "as measured on 2026-08-31" — this is the single most important date qualifier in the whole package, since it's the headline coverage number |
+| Superseded 239-alert / 98.7% UNKNOWN snapshot | earlier historical | Same script, earlier run | Live-system measured, superseded | Only for contrast | Never present alone — only to show the number is traffic-dependent, not fixed |
+| Current-moment 13-alert snapshot (100% UNKNOWN) | 2026-09-12 | Same script | Live-system measured | **No, exclude from slides** | n=13 is not representative; including it risks a reviewer fixating on a meaningless small-sample number |
+| XGBoost accuracy 0.917 | 2026-08-31 | `evaluate_model.py` run against `xgb_severity.json` on the full 60-row training CSV | Experimentally measured, **in-sample** | Yes, **only with the in-sample caveat attached every single time it's spoken** | Never say "accuracy" alone — always "in-sample accuracy, n=60, no held-out split" |
+| NEXT_TECHNIQUE 4/12 = 33.3% | Phase 18 dataset rebuild | `ml/label_generator.py` pipeline + dataset rebuild logs | Experimentally measured | Yes | Always paired with `INSUFFICIENT_FOR_SUPERVISED_ML` |
+| Dataset: 60 campaigns, 3 attackers, 2 victims, 4 pairs | static file + Phase 17 analysis | `campaign_dataset.csv` (re-confirmed 61 lines = 60 rows + header, 2026-09-14) + `scripts/phase17_dataset_validity_gate.py` output | Static file inspection + offline experiment | Yes | Still current — file unchanged |
+| 858 Technique nodes | live-measured, 2026-09-12 | Cypher query | Live-system measured, dated | Yes | Also true structurally — real vendored STIX import, not fabricated |
+| >500 RAG-indexed documents | test assertion | `test_rag.py::test_mitre_retriever_indexes_hundreds_of_real_techniques`, `assert len(...) > 500` | Test-verified | Yes | The test asserts `>500`, not an exact count — don't quote a more precise number than the test actually establishes |
+| 5 UNKNOWN events, 0 fabricated attack_id | live Neo4j inspection, 2026-08-31 + re-verified 2026-09-12 | Direct Cypher inspection, two separate sessions | Live-system measured, twice | Yes | Strong — same 5 records checked on two different days across an infrastructure outage in between |
+| Attribution accuracy | — | none found | N/A | N/A | Correctly marked `NOT MEASURED` throughout — no correction needed |
+| MISP live publication | — | none found; containers absent | N/A | N/A | Correctly marked `NOT MEASURED` — no correction needed |
+| GNN real-campaign performance | — | none found; only synthetic-graph tests | N/A | N/A | Correctly marked `NOT MEASURED` |
+
+## Flags raised
+
+1. **Stale-by-date risk (the most important flag)**: the 391-alert MITRE coverage snapshot and all live Neo4j counts are dated 2026-08-31 / 2026-09-12 respectively. Today is 2026-09-14. Nothing in this review-prep task queried live state again (explicitly out of scope — no Docker/listener/Neo4j access permitted here), so these numbers are **as of their stated dates, not re-confirmed today**. This is not a defect in the numbers, but every slide/answer using them must carry the date, not present them as "right now."
+2. **Denominator clarity**: `quantitative_results.md` already states denominators for every percentage (e.g., "39/391," "4/12") — no ambiguous percentage found in the existing package.
+3. **No instance found** of a historical number being presented as current, an in-sample metric being presented as held-out, or a test-verified claim being presented as an empirical benchmark — the existing package was already written with these distinctions in mind (see Phase 20H's own evidence-strength legend). This audit did not need to correct any mislabeling, only to add explicit date qualifiers where a live/historical distinction could otherwise be lost when numbers are lifted onto a slide out of context.
+4. **One number to actively avoid on slides**: the 13-alert current-moment snapshot (100% UNKNOWN). It's technically true but statistically meaningless (n=13, dominated by post-restart package-manager noise) and could look like cherry-picking or confusion with the real 90% figure if shown side-by-side without heavy explanation. Recommend excluding it from any slide; keep it only in the written record.
+
+## Verdict
+
+The existing results package (`quantitative_results.md`/`.csv`/`slide_ready_metrics.md`) is **fundamentally sound and defensible** — every checked number traces to a real artifact, and no fabrication or mislabeling was found. The only corrective action this audit recommends is **attaching explicit dates** to every live-measured number when it is spoken or slide-displayed, and **excluding the n=13 snapshot** from presentation materials.

@@ -36,14 +36,70 @@ seen_alerts_lock = Lock()
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_FILE),
-        logging.StreamHandler()
-    ]
-)
+LOG_FORMAT = "%(asctime)s | %(levelname)s | %(message)s"
+
+
+def _configure_logging() -> None:
+    """Attach the audit file handler (and, if genuinely missing, a
+    console handler) directly to the root logger.
+
+    Deliberately NOT logging.basicConfig(): this module is imported
+    after `from realtime_socgraph import process_alert` (line 15 above),
+    and realtime_socgraph.py runs its own logging.basicConfig(level=INFO,
+    format=...) at its own module level. basicConfig() is a documented
+    no-op once the root logger already has ANY handler -- so by the time
+    execution reached this point, the call that used to be here
+    (logging.basicConfig(handlers=[FileHandler(LOG_FILE), StreamHandler()]))
+    silently did nothing: the FileHandler it constructed was discarded,
+    never attached to any logger. That's why stdout/console logging
+    always worked (via realtime_socgraph's earlier StreamHandler, which
+    every logger in this process propagates to by default) while
+    LOG_FILE stayed empty regardless of real traffic -- not a buffering
+    or permissions problem, a handler that was never wired up.
+
+    Configures the ROOT logger (not just this module's "PreranaListener"
+    logger) to match the original design intent: LOG_FILE is meant to be
+    a durable record of everything this process logs while it runs
+    (MISP/CTI/campaign-manager included), the same set of messages the
+    console already shows, not only PreranaListener's own lines.
+
+    Idempotent by inspection of the root logger's current handlers
+    (matched by resolved file path / handler type), not a one-shot
+    "already ran" flag -- safe to call more than once (tests re-invoking
+    listener startup, a future caller importing this module and also
+    calling start_listener() explicitly) without attaching duplicate
+    handlers and duplicating every log line.
+    """
+    root = logging.getLogger()
+    if root.level == logging.NOTSET or root.level > logging.INFO:
+        root.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(LOG_FORMAT)
+    target_path = os.path.abspath(LOG_FILE)
+
+    has_file_handler = any(
+        isinstance(h, logging.FileHandler) and os.path.abspath(h.baseFilename) == target_path
+        for h in root.handlers
+    )
+    if not has_file_handler:
+        file_handler = logging.FileHandler(LOG_FILE)
+        file_handler.setFormatter(formatter)
+        root.addHandler(file_handler)
+
+    # FileHandler subclasses StreamHandler, so it must be excluded here --
+    # otherwise the FileHandler just added above would itself satisfy this
+    # check on a hypothetical second call.
+    has_console_handler = any(
+        isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler)
+        for h in root.handlers
+    )
+    if not has_console_handler:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        root.addHandler(stream_handler)
+
+
+_configure_logging()
 
 logger = logging.getLogger("PreranaListener")
 

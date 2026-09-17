@@ -55,4 +55,15 @@ class RuntimeCampaignPredictor:
         row = pd.DataFrame([{c: getattr(record, c) for c in FEATURE_COLUMNS}])
         feature_vector = row[FEATURE_COLUMNS].apply(pd.to_numeric, errors="coerce").fillna(0.0).values[0]
 
-        return self._model.predict(feature_vector)
+        result = self._model.predict(feature_vector)
+        # Traces this prediction back to the investigation state it was
+        # computed from -- the feature values themselves came from
+        # campaign_context (via feature_extractors.extractor), not from a
+        # standalone CSV row, so the identifiers that describe *which*
+        # investigation state produced them are worth keeping alongside it.
+        result["prediction_context"] = {
+            "campaign_id": campaign_context.campaign_id,
+            "attack_id": current_attack_id,
+            "event_id": event_id,
+        }
+        return result

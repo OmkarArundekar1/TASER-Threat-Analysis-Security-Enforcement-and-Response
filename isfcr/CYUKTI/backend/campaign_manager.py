@@ -320,15 +320,32 @@ class CampaignManager:
             victim_ip
         )
         print(f"Created Campaign : {campaign_id}")
+        # first_seen/last_seen must be set here, not left at the
+        # CampaignContext dataclass default of None: this path (the
+        # Phase 20 UNKNOWN-first-event path) deliberately bypasses
+        # activate_campaign() -- that function also calls
+        # append_technique(), which must never run for UNKNOWN events --
+        # but activate_campaign() is also the only other place that sets
+        # last_seen. Without it, expire_active_campaigns()'s maintenance
+        # loop crashes on `now - None` for as long as this context stays
+        # cached (a real, live-confirmed TypeError this repository's own
+        # audit already root-caused; see review_pack/10_limitations_and_future_work.md,
+        # "Current Issue 1" -- fixing the operational crash here does not
+        # touch or reopen any frozen Phase 21/22 investigation finding).
+        # Mirrors create_campaign_db's own Neo4j-side `first_seen:datetime(),
+        # last_seen:datetime()` at creation.
+        now = datetime.now(timezone.utc)
         context = CampaignContext(
             campaign_id=campaign_id,
             attacker_ip=attacker_ip,
             victim_ip=victim_ip,
             last_technique=current_technique,
-            observed_chain=[current_technique]
+            observed_chain=[current_technique],
+            first_seen=now,
+            last_seen=now,
         )
         context.skip_next_chain_update = True
-    
+
         self._store_cache(context)
         return context
         

@@ -31,6 +31,15 @@ FEATURE_COLUMNS = [
     if f.name not in IDENTIFIER_COLUMNS and f.name not in LABEL_COLUMNS and f.name not in LEAKAGE_COLUMNS
 ]
 
+# Bump only when CampaignDatasetRecord's feature fields change shape/meaning
+# (add/remove/rename/reorder a column that feeds FEATURE_COLUMNS). A model
+# trained under one version and served under another is not a valid
+# comparison even if len(FEATURE_COLUMNS) happens to match, since values at
+# the same index can now mean different things -- this string lets a
+# runtime predictor and a saved model both state which schema they agree
+# on rather than assuming compatibility from column count alone.
+FEATURE_SCHEMA_VERSION = "campaign_dataset_v1"
+
 MIN_TRAINING_ROWS = 30  # below this, a train/val split + cross-validated metrics are not meaningful
 
 

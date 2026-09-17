@@ -42,12 +42,32 @@ def test_encode_graph_shapes_and_type_onehot():
 
 
 def test_encode_graph_reads_numeric_properties():
-    encoded = encode_graph(_tiny_graph())
+    G = _tiny_graph()
+    G.nodes["c"]["total_tps"] = 42.0
+    encoded = encode_graph(G)
     campaign_row = encoded.x[encoded.node_ids.index("c")]
-    # risk_score is at offset len(NODE_TYPES) + index of "risk_score" in NUMERIC_PROPS
+    # total_tps is at offset len(NODE_TYPES) + index of "total_tps" in NUMERIC_PROPS
     from ml.gnn.graph_encoder import NODE_TYPES, NUMERIC_PROPS
-    risk_score_col = len(NODE_TYPES) + NUMERIC_PROPS.index("risk_score")
-    assert campaign_row[risk_score_col] == 50.0
+    total_tps_col = len(NODE_TYPES) + NUMERIC_PROPS.index("total_tps")
+    assert campaign_row[total_tps_col] == 42.0
+
+
+def test_encode_graph_excludes_risk_score_as_a_leakage_source():
+    """risk_score must never become a node feature: severity (the GNN's
+    intended prediction target -- see ../../GNN_FEASIBILITY.md) is a
+    deterministic function of a Campaign's risk_score, so encoding it
+    would let the model trivially reconstruct the label instead of
+    learning from graph structure -- the same leakage
+    ml/dataset_utils.py's LEAKAGE_COLUMNS already excludes for XGBoost."""
+    from ml.gnn.graph_encoder import NUMERIC_PROPS
+
+    assert "risk_score" not in NUMERIC_PROPS
+
+    G = _tiny_graph()
+    G.nodes["c"]["risk_score"] = 999.0  # even if present on the real node, must not leak in
+    encoded = encode_graph(G)
+    campaign_row = encoded.x[encoded.node_ids.index("c")]
+    assert 999.0 not in campaign_row.tolist()
 
 
 def test_encode_graph_symmetrizes_edges():

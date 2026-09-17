@@ -1,0 +1,51 @@
+flowchart TD
+    A["Raw Wazuh Alert (JSON)<br/>rule, agent, data, timestamp"]
+    B["extract_iocs()<br/>attacker_ip / victim_ip from data.src_ip/dest_ip,<br/>falls back to agent.name/id for host-based alerts"]
+    C["dedup_engine.is_duplicate()<br/>SHA-256 fingerprint(attacker,victim,technique,rule,agent)<br/>+ Neo4j find_recent_duplicate"]
+    D{"resolve_mitre(alert)"}
+    D1["Tier 1: NATIVE_WAZUH<br/>rule.mitre.id as-is, ALL ids preserved"]
+    D2["Tier 2: REVIEWED_RULE_MAPPING<br/>mitre_rule_registry.REVIEWED_RULE_MAPPINGS[rule_id]<br/>(currently EMPTY)"]
+    D3["Tier 3: DETERMINISTIC_INFERENCE<br/>explicit structural rules<br/>(currently ZERO live rules)"]
+    D4["Tier 4: UNKNOWN<br/>technique_ids=(), confidence=NONE"]
+    VAL["ATT&CK validation (Tiers 2/3 only)<br/>MATCH (t:Technique {attack_id}) -> reject if missing/revoked/deprecated<br/>Native mappings NOT subject to this veto"]
+    E1["create_attack_event()<br/>AttackEvent.attack_id = primary technique<br/>mitre_technique_ids = all native ids<br/>MERGE Technique, MATCHES rel"]
+    E2["create_unattributed_attack_event()<br/>NO attack_id property<br/>NO Technique/MATCHES relationship<br/>tps=0, mitre_status=UNKNOWN"]
+    F1["campaign_manager.get_or_create_campaign()<br/>append_technique(), last_technique updated"]
+    F2["campaign_manager.resolve_campaign_context()<br/>(include_inactive=False only)<br/>OR create_campaign_context(current_technique=None)"]
+    G["Neo4j: Campaign -[:HAS_EVENT]-> AttackEvent<br/>Attacker -[:LAUNCHED]-> Campaign -[:TARGETS]-> Host"]
+    H["chain_updater.update_attack_chain()<br/>Technique -[:NEXT_TECHNIQUE {count}]-> Technique<br/>(self-transitions deliberately excluded)"]
+    I["prediction_engine.predict_next()<br/>top learned transition, thresholded by<br/>MIN_TRANSITION_OBSERVATIONS / MIN_PREDICTION_CONFIDENCE"]
+    J["feature_orchestrator.extract_features()<br/>graph + mitre + runtime + threat-intel + detection features<br/>-> CampaignDatasetRecord (57 features)"]
+    K["campaign_correlation_engine.correlate()<br/>-> Operation matching/creation"]
+    L["threat_attribution_engine.attribute()<br/>historical campaign similarity by attacker"]
+    M["rag/mitre_retriever.py<br/>TF-IDF over real ATT&CK STIX corpus (25,843 objects, v19.1)"]
+    N["evidence/orchestrator.py<br/>collectors: mitre, graph, detection, cti, campaign_history, attribution"]
+    O["investigation/confidence.py<br/>evidence_reliability, evidence_coverage,<br/>model_confidence, model_uncertainty (predictive entropy),<br/>investigation_confidence (gated by coverage)"]
+    P["investigation/next_best_evidence.py + stopping.py<br/>selects highest-value unexplored evidence source,<br/>stops on confidence+low-uncertainty or max depth"]
+    Q["ml/train_xgboost.py severity model<br/>ml/ssl_pipeline.py autoencoder + ml/ssft.py<br/>ml/gnn/ hand-built GraphSAGE"]
+    R["cti_publisher.py / misp_sync.py<br/>publish_campaign() -- non-fatal on failure,<br/>runs AFTER Neo4j writes, SKIPPED for UNKNOWN"]
+    S["Final investigation result<br/>InvestigationState + ConfidenceEstimate<br/>-> dashboard_api.py -> React UI"]
+
+    A --> B --> C --> D
+    D --> D1 --> E1
+    D --> D2 --> VAL
+    D --> D3 --> VAL
+    VAL -->|valid| E1
+    VAL -->|invalid| D4
+    D --> D4 --> E2
+    E1 --> F1 --> G
+    E2 --> F2 --> G
+    F1 --> H --> G
+    F1 --> I
+    F1 --> J --> Q
+    F1 --> K
+    G --> L
+    G --> M
+    G --> N --> O --> P --> S
+    L --> N
+    Q --> N
+    H --> N
+    I --> S
+    K --> S
+    F1 --> R
+    S --> Analyst["Analyst / SOC (Dashboard)"]

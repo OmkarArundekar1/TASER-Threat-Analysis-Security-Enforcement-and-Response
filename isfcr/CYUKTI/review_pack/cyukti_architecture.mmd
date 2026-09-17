@@ -1,0 +1,47 @@
+flowchart TD
+    LAB["Attack / Lab Activity<br/>(Kali/Ubuntu VMs, VirtualBox host-only network)"]
+    AGENT["Wazuh Agent<br/>(Ubuntu, agent ID 001)"]
+    MGR["Wazuh Manager<br/>(WSL2, native service)"]
+    ALERTS["alerts.json<br/>(Wazuh rule engine output)"]
+    LISTENER["CYUKTI Listener<br/>listener/wazuh_listener.py<br/>(offset-based polling, dedup, queue worker)"]
+    PARSE["Alert Parsing<br/>realtime_socgraph.process_alert()"]
+    RESOLVER["MITRE Resolver<br/>mitre_resolver.resolve_mitre()<br/>NATIVE_WAZUH -> REVIEWED_RULE_MAPPING -> DETERMINISTIC_INFERENCE -> UNKNOWN"]
+    RESOLVED["RESOLVED path<br/>create_attack_event()"]
+    UNKNOWN["UNKNOWN path<br/>create_unattributed_attack_event()"]
+    NEO4J[("Neo4j Graph<br/>Campaign / AttackEvent / Technique / Attacker / Host / Operation")]
+    CHAIN["Attack-Chain Learning<br/>chain_updater.py -> NEXT_TECHNIQUE edges"]
+    PRED["Prediction Engine<br/>prediction_engine.py"]
+    CORR["Campaign Correlation<br/>campaign_correlation_engine.py -> Operation"]
+    ATTR["Threat Attribution<br/>threat_attribution_engine.py"]
+    ML["ML Models<br/>XGBoost severity, SSL autoencoder, SSFT, GNN (hand-built)"]
+    RAG["RAG / Evidence Retrieval<br/>rag/mitre_retriever.py (TF-IDF over ATT&CK STIX)"]
+    INVEST["Evidence-Aware Investigation Loop<br/>investigation/loop.py, confidence.py, next_best_evidence.py, stopping.py"]
+    MISP["MISP Publication<br/>misp_sync.py / cti_publisher.py"]
+    API["Dashboard API<br/>dashboard_api.py (Flask)"]
+    UI["React Dashboard<br/>frontend/"]
+    ANALYST["Analyst / Reviewer"]
+
+    LAB --> AGENT --> MGR --> ALERTS --> LISTENER --> PARSE --> RESOLVER
+    RESOLVER -->|technique_ids present| RESOLVED
+    RESOLVER -->|UNKNOWN / AMBIGUOUS| UNKNOWN
+    RESOLVED --> NEO4J
+    UNKNOWN --> NEO4J
+    RESOLVED --> CHAIN --> NEO4J
+    RESOLVED --> PRED --> NEO4J
+    RESOLVED --> CORR --> NEO4J
+    NEO4J --> ATTR
+    NEO4J --> ML
+    NEO4J --> RAG
+    ATTR --> INVEST
+    ML --> INVEST
+    RAG --> INVEST
+    PRED --> INVEST
+    CORR --> INVEST
+    RESOLVED --> MISP
+    INVEST --> API
+    NEO4J --> API
+    API --> UI --> ANALYST
+
+    style UNKNOWN fill:#5a2a2a,stroke:#c96
+    style RESOLVED fill:#1f4a2e,stroke:#6c6
+    style RESOLVER fill:#2a2a4a,stroke:#88f

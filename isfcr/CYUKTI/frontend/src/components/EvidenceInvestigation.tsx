@@ -24,6 +24,11 @@ function EvidenceCard({ e }: { e: EvidenceItem }) {
         </span>
       </div>
       <div className="text-slate-300 truncate" title={e.provenance}>{e.provenance}</div>
+      {e.derived_from.length > 0 && (
+        <div className="text-[10px] text-slate-500 mt-1" title={e.derived_from.join(', ')}>
+          derived from {e.derived_from.length} item{e.derived_from.length > 1 ? 's' : ''}
+        </div>
+      )}
     </div>
   );
 }
@@ -160,10 +165,22 @@ export function EvidenceInvestigation() {
             </div>
           )}
           {prediction && (
-            <div className="border border-[#1e2d4a] rounded p-2 text-xs">
-              <span className="text-slate-400">Predicted severity: </span>
-              <span className="font-bold text-slate-100">{prediction.label}</span>
-              <span className="text-slate-500"> ({(prediction.confidence * 100).toFixed(1)}%)</span>
+            <div className="border border-[#1e2d4a] rounded p-2 text-xs space-y-1">
+              <div>
+                <span className="text-slate-400">Predicted severity: </span>
+                <span className="font-bold text-slate-100">{prediction.label}</span>
+                <span className="text-slate-500"> ({(prediction.confidence * 100).toFixed(1)}%)</span>
+              </div>
+              {prediction.top_k.length > 1 && (
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-500">
+                  {prediction.top_k.map((k) => (
+                    <span key={k.label}>{k.label} {(k.probability * 100).toFixed(1)}%</span>
+                  ))}
+                </div>
+              )}
+              <div className="text-[10px] text-slate-600" title={`trained ${prediction.model_metadata.trained_at}`}>
+                model schema {prediction.model_metadata.feature_schema_version}
+              </div>
             </div>
           )}
 
@@ -205,6 +222,16 @@ export function EvidenceInvestigation() {
                         <span>model={s.model_confidence.toFixed(2)} (unc={s.model_uncertainty?.toFixed(2)})</span>
                       )}
                     </div>
+                    <div className="text-slate-600 text-[10px] mt-0.5 italic truncate" title={s.why_selected}>
+                      {s.why_selected}
+                    </div>
+                    {s.candidate_hypotheses.length > 1 && (
+                      <div className="flex flex-wrap gap-x-2 text-[10px] text-slate-500 mt-0.5">
+                        {s.candidate_hypotheses.map(([label, prob]) => (
+                          <span key={label}>{label} {(prob * 100).toFixed(0)}%</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

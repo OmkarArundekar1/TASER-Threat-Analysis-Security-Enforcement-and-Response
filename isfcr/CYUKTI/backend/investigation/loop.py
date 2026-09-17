@@ -36,11 +36,30 @@ from evidence.schema import Evidence
 from evidence.store import EvidenceStore
 from investigation.actions import ACTION_METADATA, InvestigationAction
 from investigation.confidence import ConfidenceEstimate, estimate_confidence
-from investigation.next_best_evidence import ActionValue, select_next_best_evidence
+from investigation.next_best_evidence import ActionValue, score_action
 from investigation.stopping import StoppingDecision, check_stopping
 
 ActionExecutor = Callable[[InvestigationAction], list[Evidence]]
 ModelPredictor = Callable[[], "dict[str, float] | None"]
+
+
+def _candidate_hypotheses(model_probabilities: dict[str, float] | None) -> list[tuple[str, float]]:
+    """All hypotheses the model assigned non-zero probability to, sorted
+    highest-first. Distinct from `conclusion` (the single argmax label):
+    this preserves the full competing-hypothesis picture — e.g. Critical
+    0.40 / Medium 0.35 / Low 0.25 is a genuinely different investigative
+    state from Critical 0.90 / Medium 0.06 / Low 0.04 even though both
+    have the same top label, which is exactly what model_uncertainty
+    (entropy) already measures numerically; this field makes the same
+    distinction inspectable per-hypothesis in the trace, not just as one
+    aggregate uncertainty number."""
+    if not model_probabilities:
+        return []
+    return sorted(
+        ((label, round(p, 4)) for label, p in model_probabilities.items() if p > 0),
+        key=lambda item: item[1],
+        reverse=True,
+    )
 
 
 @dataclass
@@ -48,7 +67,8 @@ class InvestigationState:
     """A reconstructable snapshot of the investigation at one point in time."""
 
     step_number: int
-    conclusion: str | None            # argmax(model_probabilities), if a model verdict exists
+    conclusion: str | None            # argmax(model_probabilities), if a model verdict exists — the single current_hypothesis
+    candidate_hypotheses: list[tuple[str, float]]  # every hypothesis with nonzero model probability, ranked
     model_probabilities: dict[str, float] | None
     model_confidence: float | None
     uncertainty: float
@@ -64,9 +84,24 @@ class InvestigationStep:
     step_index: int
     action_taken: InvestigationAction
     action_value: ActionValue
+    candidate_scores: list[ActionValue]  # every action considered this step, not just the chosen one
     evidence_added: int
+    confidence_before: ConfidenceEstimate
     confidence_after: ConfidenceEstimate
     state_after: InvestigationState
+
+    @property
+    def why_selected(self) -> str:
+        runner_up = max(
+            (av for av in self.candidate_scores if av.action != self.action_taken),
+            key=lambda av: av.value, default=None,
+        )
+        margin = (
+            f", value={self.action_value.value} vs. next-best "
+            f"{runner_up.action.value}={runner_up.value}"
+            if runner_up else f", value={self.action_value.value} (only candidate remaining)"
+        )
+        return f"highest-scoring of {len(self.candidate_scores)} candidate action(s){margin}"
 
 
 @dataclass
@@ -83,7 +118,25 @@ class InvestigationRecord:
                     "step_index": s.step_index,
                     "action_taken": s.action_taken.value,
                     "action_value": s.action_value.value,
+                    "why_selected": s.why_selected,
+                    "candidate_actions": [av.action.value for av in s.candidate_scores],
+                    "action_scores": [
+                        {
+                            "action": av.action.value,
+                            "value": av.value,
+                            "expected_gain": av.expected_gain,
+                            "reliability": av.reliability,
+                            "novelty": av.novelty,
+                            "uncertainty_reduction": av.uncertainty_reduction,
+                            "redundancy_penalty": av.redundancy_penalty,
+                            "cost": av.cost,
+                            "latency": av.latency,
+                        }
+                        for av in s.candidate_scores
+                    ],
                     "evidence_added": s.evidence_added,
+                    "previous_confidence": s.confidence_before.investigation_confidence,
+                    "previous_uncertainty": s.confidence_before.uncertainty,
                     "model_probabilities": s.confidence_after.model_probabilities,
                     "model_confidence": s.confidence_after.model_confidence,
                     "model_uncertainty": s.confidence_after.model_uncertainty,
@@ -91,6 +144,7 @@ class InvestigationRecord:
                     "evidence_coverage": s.confidence_after.evidence_coverage,
                     "investigation_confidence": s.confidence_after.investigation_confidence,
                     "uncertainty": s.confidence_after.uncertainty,
+                    "candidate_hypotheses": s.state_after.candidate_hypotheses,
                 }
                 for s in self.steps
             ],
@@ -105,6 +159,29 @@ class InvestigationRecord:
 
 def _cumulative_cost(taken_actions: list[InvestigationAction]) -> float:
     return round(sum(ACTION_METADATA[a].cost for a in taken_actions), 4)
+
+
+def _tag_derived_from(new_evidence: list[Evidence], action: InvestigationAction, store: EvidenceStore) -> None:
+    """Populates Evidence.derived_from on freshly-collected evidence when
+    ActionMeta.depends_on names a source this action's computation is
+    verified to overlap (e.g. ATTRIBUTION_MATCH / CAMPAIGN_HISTORY — see
+    investigation/actions.py). Mutates new_evidence in place, before it's
+    added to the store, so the dependency is recorded on the item itself
+    rather than reconstructed after the fact."""
+    depends_on = ACTION_METADATA[action].depends_on
+    if not depends_on:
+        return
+
+    overlapping_ids = [
+        e.evidence_id
+        for dep_action in depends_on
+        for e in store.by_source(ACTION_METADATA[dep_action].source)
+    ]
+    if not overlapping_ids:
+        return
+
+    for e in new_evidence:
+        e.derived_from = list(dict.fromkeys(e.derived_from + overlapping_ids))
 
 
 def run_investigation(
@@ -128,7 +205,11 @@ def run_investigation(
     while True:
         confidence = estimate_confidence(store, model_probabilities)
 
-        best_action_value = select_next_best_evidence(store, remaining_actions, confidence.uncertainty)
+        candidate_scores = [
+            score_action(a, store, confidence.uncertainty, frozenset(taken_actions))
+            for a in remaining_actions
+        ]
+        best_action_value = max(candidate_scores, key=lambda av: av.value) if candidate_scores else None
         stop = check_stopping(
             confidence, step_index, best_action_value.value if best_action_value else None,
             confidence_threshold=confidence_threshold, max_uncertainty=max_uncertainty, max_steps=max_steps,
@@ -146,6 +227,7 @@ def run_investigation(
             new_evidence: list[Evidence] = []
         else:
             new_evidence = action_executor(action)
+            _tag_derived_from(new_evidence, action, store)
 
         added = store.add_many(new_evidence)
         taken_actions.append(action)
@@ -158,13 +240,16 @@ def run_investigation(
             step_index=step_index,
             action_taken=action,
             action_value=best_action_value,
+            candidate_scores=candidate_scores,
             evidence_added=added,
+            confidence_before=confidence,
             confidence_after=confidence_after,
             state_after=InvestigationState(
                 step_number=step_index,
                 conclusion=(
                     max(model_probabilities, key=model_probabilities.get) if model_probabilities else None
                 ),
+                candidate_hypotheses=_candidate_hypotheses(confidence_after.model_probabilities),
                 model_probabilities=confidence_after.model_probabilities,
                 model_confidence=confidence_after.model_confidence,
                 uncertainty=confidence_after.uncertainty,
@@ -217,6 +302,22 @@ def default_action_executor(campaign_context, current_attack_id: str, event_id: 
             campaigns = attribution_context_module.context.load_historical_campaigns()
             return collect_campaign_history_evidence(campaign_context.techniques, campaigns)
 
+        if action == InvestigationAction.CAMPAIGN_NARRATIVE_SEARCH:
+            from rag.campaign_retriever import CampaignNarrativeRetriever
+            query_text = (
+                " ".join(campaign_context.attack_chain)
+                or " ".join(campaign_context.techniques)
+                or current_attack_id
+            )
+            try:
+                return CampaignNarrativeRetriever().query(query_text)
+            except RuntimeError:
+                # No historical campaign with a resolved technique exists
+                # yet to search (see rag/campaign_retriever.py's own
+                # guard) -- a real, expected state early in a
+                # deployment's life, not a failure.
+                return []
+
         if action == InvestigationAction.GRAPH_STRUCTURE:
             import graph_feature_engine
             from evidence.collectors.graph_collector import collect_graph_evidence
@@ -235,18 +336,26 @@ def default_action_executor(campaign_context, current_attack_id: str, event_id: 
     return execute
 
 
-def default_model_predictor(campaign_context, current_attack_id: str, event_id: str) -> ModelPredictor | None:
+def default_model_predictor(
+    campaign_context, current_attack_id: str, event_id: str, model_path: str | None = None,
+) -> ModelPredictor | None:
     """Real XGBoost severity predictor for production use.
 
     Returns None (controlled fallback, not an exception) if no trained
     model exists at the expected path — estimate_confidence() already
     handles model_probabilities=None correctly by falling back to pure
     evidence-based confidence.
+
+    model_path: overrides the default trained-model location. Production
+    callers (dashboard_api.py) never pass this — it exists so tests can
+    point at a small model trained on the synthetic fixture generator
+    instead of requiring the real committed artifact.
     """
     import os
 
-    model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ml", "models", "xgb_severity.json")
-    model_path = os.path.normpath(model_path)
+    if model_path is None:
+        model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ml", "models", "xgb_severity.json")
+        model_path = os.path.normpath(model_path)
 
     if not os.path.exists(model_path):
         return None

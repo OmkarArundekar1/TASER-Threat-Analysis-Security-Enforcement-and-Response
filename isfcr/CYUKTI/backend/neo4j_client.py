@@ -856,6 +856,7 @@ def get_active_operations():
             MATCH (o:Operation)
             WHERE o.status = 'ACTIVE'
             RETURN o.operation_id AS operation_id
+            ORDER BY o.last_seen DESC
             """
         )
         return [

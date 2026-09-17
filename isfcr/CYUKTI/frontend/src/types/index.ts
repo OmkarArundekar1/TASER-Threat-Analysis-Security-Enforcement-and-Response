@@ -178,13 +178,38 @@ export interface EvidenceItem {
   relevance: number;
   provenance: string;
   relationships: string[];
+  // evidence_ids of other Evidence already in the store that this item's
+  // computation drew on (investigation/loop.py's ActionMeta.depends_on) —
+  // empty unless a real, code-verified dependency exists.
+  derived_from: string[];
+}
+
+export interface ActionScore {
+  action: string;
+  value: number;
+  expected_gain: number;
+  reliability: number;
+  novelty: number;
+  uncertainty_reduction: number;
+  redundancy_penalty: number;
+  cost: number;
+  latency: number;
 }
 
 export interface InvestigationStepResult {
   step_index: number;
   action_taken: string;
   action_value: number;
+  // human-readable rationale for why this action beat the other candidates
+  why_selected: string;
+  // every action considered this step, not just the one taken
+  candidate_actions: string[];
+  action_scores: ActionScore[];
   evidence_added: number;
+  // confidence/uncertainty as they stood BEFORE this step's action ran —
+  // pairs with the (unprefixed) fields below, which are AFTER
+  previous_confidence: number;
+  previous_uncertainty: number;
   // model verdict (about the actual investigative conclusion, e.g. severity) —
   // null until the xgboost_prediction action has run this investigation
   model_probabilities: Record<string, number> | null;
@@ -196,6 +221,9 @@ export interface InvestigationStepResult {
   // investigation-level (what the stopping policy acts on)
   investigation_confidence: number;
   uncertainty: number;
+  // every hypothesis with nonzero model probability, ranked highest-first —
+  // the full competing-hypothesis picture, not just the argmax label
+  candidate_hypotheses: [string, number][];
 }
 
 export interface InvestigationResult {
@@ -213,9 +241,29 @@ export interface MitreSearchResult {
   results: EvidenceItem[];
 }
 
+export interface ModelMetadata {
+  target_column: string;
+  classes: string[];
+  feature_schema_version: string;
+  n_features: number;
+  trained_at: string;
+}
+
+export interface PredictionContext {
+  campaign_id: string;
+  attack_id: string;
+  event_id: string;
+}
+
 export interface SeverityPrediction {
   campaign_id: string;
   label: string;
   confidence: number;
   probabilities: Record<string, number>;
+  // classes ranked by probability, highest first (same data as
+  // `probabilities`, pre-sorted for convenience)
+  top_k: { label: string; probability: number }[];
+  model_metadata: ModelMetadata;
+  // traces this prediction back to the investigation state it was computed from
+  prediction_context: PredictionContext;
 }

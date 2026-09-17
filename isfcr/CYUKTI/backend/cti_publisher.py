@@ -151,6 +151,22 @@ class CTIPublisher:
                 "Created MISP Event [%s]",
                 event_id,
             )
+        else:
+            # A genuine MISP event-creation response always includes
+            # Event.id -- an HTTP 2xx with a body that doesn't match
+            # this shape (an unexpected proxy page, a differently-shaped
+            # error wrapped in a 200, a schema change) means no event
+            # was actually confirmed created, even though the HTTP layer
+            # reported success. Downgrading here, rather than passing a
+            # true `success` through with no usable event_id, is what
+            # lets callers (MISPSync._create) and their callers detect
+            # this instead of believing publication succeeded.
+            result["success"] = False
+            logger.error(
+                "MISP event creation response did not include an "
+                "Event id (status=%s) -- treating as failure.",
+                result["status"],
+            )
         return result
 
     def update_event(
@@ -163,6 +179,17 @@ class CTIPublisher:
             endpoint=f"/events/edit/{event_id}",
             payload=event,
         )
+        if result["success"] and not (
+            isinstance(result["response"], dict) and "Event" in result["response"]
+        ):
+            # Same reasoning as create_event: a genuine MISP edit
+            # response is always an {"Event": {...}} object.
+            result["success"] = False
+            logger.error(
+                "MISP event update response did not include an Event "
+                "object (status=%s) -- treating as failure.",
+                result["status"],
+            )
         if result["success"]:
             logger.info(
                 "Updated MISP Event [%s]",

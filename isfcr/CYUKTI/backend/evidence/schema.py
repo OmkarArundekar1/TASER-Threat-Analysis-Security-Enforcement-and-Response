@@ -22,6 +22,15 @@ Design intent (see backend/investigation/ and backend/rag/):
       historical-campaign match names the campaign_id it matched), so the
       investigation loop can navigate between related facts without a
       second query.
+    - `derived_from` holds evidence_ids of OTHER Evidence items already in
+      the store that this item's underlying computation drew on (e.g. an
+      ATTRIBUTION_MATCH verdict is computed from the same historical
+      campaign records a CAMPAIGN_HISTORY lookup would return -- see
+      investigation/actions.py's ActionMeta.depends_on and
+      investigation/loop.py, where this is populated). Empty by default;
+      populated only when a real, code-verified dependency exists -- never
+      guessed. Used by the investigation loop to avoid double-counting
+      corroboration that isn't actually independent.
 
 Both `confidence` and `relevance` are normalized to the same [0, 1]
 scale, regardless of the 0-100 scale several upstream engines use
@@ -70,6 +79,7 @@ class Evidence:
     relevance: float = 0.0
     provenance: str = ""
     relationships: list[str] = field(default_factory=list)
+    derived_from: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.confidence = _clamp01(self.confidence)
@@ -96,4 +106,5 @@ class Evidence:
             "relevance": round(self.relevance, 4),
             "provenance": self.provenance,
             "relationships": list(self.relationships),
+            "derived_from": list(self.derived_from),
         }

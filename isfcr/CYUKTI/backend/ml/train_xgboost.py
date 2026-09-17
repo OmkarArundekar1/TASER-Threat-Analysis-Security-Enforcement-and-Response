@@ -21,13 +21,14 @@ import json
 import logging
 import os
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
-from dataset_utils import FEATURE_COLUMNS, validate_dataset_size
+from dataset_utils import FEATURE_COLUMNS, FEATURE_SCHEMA_VERSION, validate_dataset_size
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,8 @@ class XGBoostCampaignClassifier:
         self._label_encoder: Any = None
         self._classes: list[str] = []
         self._target_column: str = ""
+        self._feature_schema_version: str = FEATURE_SCHEMA_VERSION
+        self._trained_at: str = ""
 
     def train(
         self,
@@ -150,6 +153,8 @@ class XGBoostCampaignClassifier:
         self._label_encoder = le
         self._classes = list(le.classes_)
         self._target_column = target_column
+        self._feature_schema_version = FEATURE_SCHEMA_VERSION
+        self._trained_at = datetime.now(timezone.utc).isoformat()
 
         save_path = Path(save_dir)
         save_path.mkdir(parents=True, exist_ok=True)
@@ -177,10 +182,23 @@ class XGBoostCampaignClassifier:
         proba = self._calibrated.predict_proba(x)[0]
         pred_idx = int(np.argmax(proba))
 
+        top_k = sorted(
+            ({"label": cls, "probability": round(float(p), 4)} for cls, p in zip(self._classes, proba)),
+            key=lambda item: item["probability"], reverse=True,
+        )
+
         return {
             "label": self._classes[pred_idx],
             "confidence": round(float(proba[pred_idx]), 4),
             "probabilities": {cls: round(float(p), 4) for cls, p in zip(self._classes, proba)},
+            "top_k": top_k,
+            "model_metadata": {
+                "target_column": self._target_column,
+                "classes": list(self._classes),
+                "feature_schema_version": self._feature_schema_version,
+                "n_features": len(FEATURE_COLUMNS),
+                "trained_at": self._trained_at,
+            },
         }
 
     def save(self, path: str | Path) -> None:
@@ -190,7 +208,13 @@ class XGBoostCampaignClassifier:
         self._model.save_model(str(path))
         meta_path = path.with_suffix(".meta.joblib")
         joblib.dump(
-            {"classes": self._classes, "target_column": self._target_column, "calibrated": self._calibrated},
+            {
+                "classes": self._classes,
+                "target_column": self._target_column,
+                "calibrated": self._calibrated,
+                "feature_schema_version": self._feature_schema_version,
+                "trained_at": self._trained_at,
+            },
             meta_path,
         )
 
@@ -210,6 +234,12 @@ class XGBoostCampaignClassifier:
         obj._calibrated = meta["calibrated"]
         obj._classes = meta["classes"]
         obj._target_column = meta["target_column"]
+        # .get(...) with a fallback: model artifacts saved before this field
+        # existed (e.g. the real xgb_severity.meta.joblib already committed)
+        # have no feature_schema_version/trained_at keys -- treat them as
+        # "unknown" rather than failing to load a real trained model.
+        obj._feature_schema_version = meta.get("feature_schema_version", "unknown")
+        obj._trained_at = meta.get("trained_at", "unknown")
         return obj
 
 

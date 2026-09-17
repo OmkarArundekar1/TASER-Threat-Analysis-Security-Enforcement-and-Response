@@ -9,6 +9,7 @@ import os
 import logging
 
 from neo4j.exceptions import Neo4jError, ServiceUnavailable
+from werkzeug.exceptions import HTTPException
 
 from campaign_context import CampaignContext
 from investigation.loop import default_action_executor, default_model_predictor, run_investigation
@@ -20,6 +21,55 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
+
+
+@app.errorhandler(ServiceUnavailable)
+def handle_neo4j_unavailable(e):
+    """Most routes in this file query `driver.session()` directly with no
+    per-route try/except (only the newer evidence-aware endpoints wrap this
+    themselves, via _try_load_campaign_context below). Without this handler,
+    a Neo4j outage reaching any other route fell through to Flask's default
+    error handling -- an HTML page, not the JSON this API otherwise always
+    returns. One handler here covers every route uniformly."""
+    logger.error("Neo4j unreachable handling %s %s: %s", request.method, request.path, e)
+    return jsonify({"error": f"Database unavailable: {e}"}), 503
+
+
+@app.errorhandler(Neo4jError)
+def handle_neo4j_error(e):
+    """ServiceUnavailable (above) and Neo4jError are siblings, not a
+    subclass relationship -- ServiceUnavailable means the driver couldn't
+    reach the server at all; Neo4jError means the server responded but
+    rejected the query (bad Cypher, a constraint violation, ...). Distinct
+    on purpose: a live, real example this session
+    (dashboard_api.attribution_actors' now-fixed `max(a, b)` syntax bug)
+    was a genuine server-side query defect, not an outage -- conflating
+    the two would have reported "Database unavailable" for a query bug,
+    which is misleading for anyone debugging from the API response alone.
+    500, not 503: the database IS up: this endpoint's own query is wrong.
+    """
+    logger.error("Neo4j query error handling %s %s: %s", request.method, request.path, e)
+    return jsonify({"error": f"Database query error: {e}"}), 500
+
+
+@app.errorhandler(HTTPException)
+def handle_http_exception(e):
+    # Preserve Flask/werkzeug's own real status code (404 for an unmatched
+    # route, 405 for a disallowed method, etc.) -- just return JSON instead
+    # of werkzeug's default HTML error page, consistent with every other
+    # error path in this API.
+    return jsonify({"error": e.description or e.name}), e.code
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(e):
+    # Last-resort catch-all for anything not covered above (an internal
+    # engine raising, a parameter that slipped past validation, etc.).
+    # Logs the real exception server-side for diagnosis; the client only
+    # ever sees a generic message -- no stack trace, no internals, no
+    # secrets reach the response body.
+    logger.exception("Unhandled exception handling %s %s", request.method, request.path)
+    return jsonify({"error": "Internal server error"}), 500
 
 
 def neo4j_datetime_to_iso(val):
@@ -200,7 +250,13 @@ def event_detail(event_id):
                 "generated_at": neo4j_datetime_to_iso(likely["generated_at"])
             }
         else:
-            engine_pred = prediction_engine.predict_next(record["technique_id"])
+            # predict_next_readonly, not predict_next: this is a read-only
+            # GET endpoint -- predict_next(campaign_id, technique) also
+            # requires a campaign_id (not just a TypeError bug fix: it has
+            # a real Neo4j WRITE side effect, overwriting the campaign's
+            # live LIKELY_NEXT/predicted_next on every page view, which a
+            # detail-view GET must never trigger).
+            engine_pred = prediction_engine.predict_next_readonly(record["technique_id"])
             if engine_pred:
                 pred = engine_pred
 
@@ -371,9 +427,17 @@ def attribution_actors(campaign_id):
         OPTIONAL MATCH (ta)-[:USES]->(tool:Tool)
         WITH c, ta, shared_tech_count, total_tech_count, shared_techniques, ta_malware, collect(DISTINCT tool.name) AS ta_tools
         
-        WITH ta.name AS actor_name, 
+        WITH ta.name AS actor_name,
              ta.description AS description,
-             (toFloat(shared_tech_count) / max(total_tech_count, 1)) * 100 AS base_confidence,
+             // total_tech_count is guaranteed > 0 here: the preceding
+             // `WHERE shared_tech_count > 0` means total_tech_count (which
+             // is always >= shared_tech_count, being a union-minus-overlap
+             // count) can never be 0. max(x, y) over two scalars is not
+             // valid Cypher (max() is an aggregate function) -- this
+             // previously raised Neo.ClientError.Statement.SyntaxError on
+             // every real call, live-confirmed this session; the division
+             // guard it was attempting is unneeded, not just invalid.
+             (toFloat(shared_tech_count) / total_tech_count) * 100 AS base_confidence,
              shared_tech_count,
              shared_techniques,
              ta_malware,
@@ -1109,7 +1173,7 @@ def predictions():
             RETURN c.campaign_id AS campaign_id, latest.attack_id AS technique_id, latest.stage AS stage
         """, seen=list(seen))
         for r in fallback:
-            pred = prediction_engine.predict_next(r["technique_id"])
+            pred = prediction_engine.predict_next_readonly(r["technique_id"])  # see event_detail() above
             if pred:
                 conf = pred.get("confidence", 0)
                 preds.append({
@@ -1148,7 +1212,12 @@ def predict():
     if not data or 'current_technique' not in data:
         return jsonify({"error": "Missing current_technique parameter"}), 400
     technique = data['current_technique']
-    result = prediction_engine.predict_next(technique)
+    # This endpoint's request contract has no campaign_id at all (it never
+    # did -- see frontend/src/services/api.ts's predict()), so it could
+    # never legally call predict_next(campaign_id, technique) in the first
+    # place; predict_next_readonly is also the correct choice on its own
+    # merits here (no live-state write from a generic lookup).
+    result = prediction_engine.predict_next_readonly(technique)
     if result:
         return jsonify(result)
     return jsonify({"current": technique, "predicted": None, "confidence": 0})

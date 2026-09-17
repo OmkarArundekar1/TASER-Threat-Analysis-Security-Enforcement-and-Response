@@ -50,7 +50,7 @@ from dataclasses import dataclass, field
 from evidence.schema import EvidenceSource
 from evidence.store import EvidenceStore
 
-CONFLICT_PENALTY = 0.85  # multiplicative penalty per investigation when conflicts are unresolved
+CONFLICT_PENALTY = 0.85  # multiplicative penalty PER unresolved conflict (compounds — see estimate_confidence)
 MIN_COVERAGE_FOR_MODEL_TRUST = 0.15  # see note in estimate_confidence
 
 
@@ -140,7 +140,12 @@ def estimate_confidence(
         investigation_confidence = reliability * coverage
 
     if conflicts:
-        investigation_confidence *= CONFLICT_PENALTY
+        # Compounds per conflict rather than a single flat discount
+        # regardless of count — one unresolved disagreement and five
+        # should not read as equally uncertain. Still bounded in [0, 1]
+        # by the clamp below, and never reaches exactly zero for a finite
+        # conflict count (matches "modifies," not "zeroes out," confidence).
+        investigation_confidence *= CONFLICT_PENALTY ** len(conflicts)
 
     investigation_confidence = round(max(0.0, min(1.0, investigation_confidence)), 4)
 
