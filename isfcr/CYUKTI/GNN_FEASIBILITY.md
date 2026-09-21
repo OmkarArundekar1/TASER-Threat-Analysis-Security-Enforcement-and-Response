@@ -1,6 +1,12 @@
 # GNN Feasibility — Graph Extraction & Dataset Design
 
-Companion to `ARCHITECTURE_AUDIT.md` and `GENERATION1_DISPOSITION.md`.
+Companion to `ARCHITECTURE_AUDIT.md`, `GENERATION1_DISPOSITION.md`, and
+(later session) `GNN_OBJECTIVE_DECISION.md` — that document analyzes
+the Section 14/15 "which learning objective" open decision in depth
+and, while doing so, found and corrected one claim in this document's
+own Section 2 (see the strikethrough there). Read
+`GNN_OBJECTIVE_DECISION.md` Section 8 before relying on this document's
+description of what `GraphSnapshotLoader` does or does not capture.
 Covers the first four stages of the intended GNN path (`Existing Graph
 → Graph Extraction → Graph Dataset → Node/Edge Features`) and answers,
 with real-data evidence rather than assumption, whether the remaining
@@ -101,15 +107,32 @@ depends on for XGBoost's 57 tabular features (via
 `ml/gnn/graph_encoder.py`'s `encode_graph` was already written to
 consume (confirmed by reading its docstring against the real query).
 
-**Not captured by this per-campaign extraction**: `Operation
+~~**Not captured by this per-campaign extraction**: `Operation
 -[HAS_CAMPAIGN]-> Campaign`, `Campaign -[SIMILAR_TO]-> Campaign`,
 `Campaign -[LIKELY_NEXT]-> Technique`, `Campaign -[RESEMBLES]->
-ThreatActor` — precisely the cross-campaign correlation structure
-(Section 4 explains why this matters for what a GNN could actually
-add). `GraphSnapshotLoader`'s query was **not modified this phase** —
-it is a live, working, shared dependency of XGBoost's own feature
-pipeline; extending its scope is a design question about what a
-"campaign graph" should mean for a GNN specifically, not a safe,
+ThreatActor`~~ — **correction, `GNN_OBJECTIVE_DECISION.md` Section 8
+(later session)**: this claim was wrong. `GraphSnapshotLoader`'s
+`(a)-[r1]->(c)` and `(c)-[r4]->(h)` Cypher patterns are untyped (no
+relationship-type or node-label filter), so all four of these
+relationship types are already incidentally captured whenever they
+exist — verified concretely on a real campaign (5 `SIMILAR_TO` + 1
+`HAS_CAMPAIGN` returned by the unmodified loader) and quantified (42 of
+71 real campaigns, 59%, affected). This does **not** mean the
+cross-campaign correlation structure (Section 4's reasoning for what a
+GNN could add) is cleanly available today — the capture is accidental,
+1-hop only, untyped-until-the-edge-type-encoding-phase (now generically
+`Unknown`), and asymmetric (only *incoming* `SIMILAR_TO`/`HAS_CAMPAIGN`
+and *outgoing* `RESEMBLES`/`LIKELY_NEXT` — never a campaign's own
+outgoing `SIMILAR_TO` edges). It also means **this was never a
+GNN-only question**: `campaign_feature_engine.py`'s XGBoost graph
+features already inherit this same inconsistency today, for the same
+59% of campaigns, since both call the identical `graph_analytics`
+singleton. See `GNN_OBJECTIVE_DECISION.md` Section 8 for the full
+analysis and Section 10 for loader-design alternatives (still not
+implemented). `GraphSnapshotLoader`'s query was **not modified** in
+either phase — it is a live, working, shared dependency of XGBoost's
+own feature pipeline; extending or correcting its scope is a design
+question about what a "campaign graph" should mean, not a safe,
 narrowly-scoped engineering change (see Section 14).
 
 ---
