@@ -48,11 +48,31 @@ NUMERIC_PROPS = [
 
 FEATURE_DIM = len(NODE_TYPES) + len(NUMERIC_PROPS)
 
+# Relationship types GraphSnapshotLoader's per-campaign query can actually
+# produce (neo4j_client.py: (Attacker)-[LAUNCHED]->(Campaign),
+# (Campaign)-[HAS_EVENT]->(AttackEvent), (AttackEvent)-[MATCHES]->(Technique),
+# (Campaign)-[TARGETS]->(Host) -- see GNN_FEASIBILITY.md Section 2/13's "not
+# captured by this per-campaign extraction" list for the cross-campaign types,
+# e.g. SIMILAR_TO, deliberately excluded here because this extraction scope
+# doesn't reach them). "Unknown" is a fallback, not a real observed type, kept
+# for the same forward-compatibility reason NODE_TYPES has one: if
+# GraphSnapshotLoader's scope is ever extended (GNN_FEASIBILITY.md Section 14,
+# item 2), an unrecognized relationship degrades gracefully instead of raising.
+EDGE_TYPES = ["LAUNCHED", "HAS_EVENT", "MATCHES", "TARGETS", "Unknown"]
+EDGE_TYPE_INDEX = {t: i for i, t in enumerate(EDGE_TYPES)}
+EDGE_FEATURE_DIM = len(EDGE_TYPES)
+
 
 @dataclass
 class EncodedGraph:
     x: torch.Tensor            # [N, FEATURE_DIM]
     edge_index: torch.Tensor   # [2, E] (symmetrized for message passing)
+    edge_attr: torch.Tensor = field(default_factory=lambda: torch.zeros((0, EDGE_FEATURE_DIM)))
+    # [E, EDGE_FEATURE_DIM] one-hot relationship type, aligned row-for-row
+    # with edge_index's columns. Not yet consumed by SAGEConvLayer/CampaignGNN
+    # (the mean aggregator in layers.py is edge-type-agnostic today) --
+    # available for a future edge-aware aggregation, per
+    # GNN_FEASIBILITY.md Section 7/14's "edge-type encoding design" gap.
     node_ids: list[str] = field(default_factory=list)
     node_types: list[str] = field(default_factory=list)
 
@@ -76,9 +96,18 @@ def _numeric(value) -> float:
     return 0.0
 
 
+def _edge_type(attrs: dict) -> str:
+    relationship = attrs.get("relationship")
+    return relationship if relationship in EDGE_TYPE_INDEX else "Unknown"
+
+
 def encode_graph(graph: nx.DiGraph) -> EncodedGraph:
     if graph.number_of_nodes() == 0:
-        return EncodedGraph(x=torch.zeros((0, FEATURE_DIM)), edge_index=torch.zeros((2, 0), dtype=torch.long))
+        return EncodedGraph(
+            x=torch.zeros((0, FEATURE_DIM)),
+            edge_index=torch.zeros((2, 0), dtype=torch.long),
+            edge_attr=torch.zeros((0, EDGE_FEATURE_DIM)),
+        )
 
     node_ids = list(graph.nodes())
     id_to_idx = {node_id: i for i, node_id in enumerate(node_ids)}
@@ -95,15 +124,31 @@ def encode_graph(graph: nx.DiGraph) -> EncodedGraph:
         for j, prop in enumerate(NUMERIC_PROPS):
             features[i, len(NODE_TYPES) + j] = _numeric(attrs.get(prop))
 
-    src, dst = [], []
-    for u, v in graph.edges():
+    src, dst, edge_types = [], [], []
+    for u, v, attrs in graph.edges(data=True):
+        edge_type = _edge_type(attrs)
         src.append(id_to_idx[u])
         dst.append(id_to_idx[v])
+        edge_types.append(edge_type)
         # symmetrize: message passing should flow both directions even
-        # though the underlying attack-chain relationship is directional
+        # though the underlying attack-chain relationship is directional.
+        # The reverse edge represents the same real relationship, just
+        # traversed backward, so it gets the same type one-hot rather than
+        # a distinct "reverse-X" type.
         src.append(id_to_idx[v])
         dst.append(id_to_idx[u])
+        edge_types.append(edge_type)
 
     edge_index = torch.tensor([src, dst], dtype=torch.long) if src else torch.zeros((2, 0), dtype=torch.long)
 
-    return EncodedGraph(x=features, edge_index=edge_index, node_ids=node_ids, node_types=node_types)
+    edge_attr = torch.zeros((len(edge_types), EDGE_FEATURE_DIM), dtype=torch.float32)
+    for i, edge_type in enumerate(edge_types):
+        edge_attr[i, EDGE_TYPE_INDEX[edge_type]] = 1.0
+
+    return EncodedGraph(
+        x=features,
+        edge_index=edge_index,
+        edge_attr=edge_attr,
+        node_ids=node_ids,
+        node_types=node_types,
+    )

@@ -10,7 +10,13 @@ import networkx as nx
 import pytest
 import torch
 
-from ml.gnn.graph_encoder import FEATURE_DIM, NODE_TYPE_INDEX, encode_graph
+from ml.gnn.graph_encoder import (
+    EDGE_FEATURE_DIM,
+    EDGE_TYPE_INDEX,
+    FEATURE_DIM,
+    NODE_TYPE_INDEX,
+    encode_graph,
+)
 from ml.gnn.layers import SAGEConvLayer
 from ml.gnn.model import CampaignGNN, batch_graphs
 from ml.gnn.synthetic_graphs import generate_synthetic_campaign_graph, generate_synthetic_dataset
@@ -22,8 +28,10 @@ def _tiny_graph():
     G.add_node("a", labels=["Attacker"], vt_reputation=80.0)
     G.add_node("c", labels=["Campaign"], risk_score=50.0)
     G.add_node("t", labels=["Technique"])
-    G.add_edge("a", "c")
-    G.add_edge("c", "t")
+    # relationship types as GraphBuilder.build actually sets them (see
+    # graph_feature_engine.py: G.add_edge(..., relationship=rel["type"], ...))
+    G.add_edge("a", "c", relationship="LAUNCHED")
+    G.add_edge("c", "t", relationship="HAS_EVENT")
     return G
 
 
@@ -76,10 +84,52 @@ def test_encode_graph_symmetrizes_edges():
     assert encoded.edge_index.shape[1] == 4
 
 
+def test_encode_graph_edge_attr_shape_and_alignment():
+    encoded = encode_graph(_tiny_graph())
+    # edge_attr must have one row per edge_index column, one-hot over EDGE_TYPES
+    assert encoded.edge_attr.shape == (encoded.edge_index.shape[1], EDGE_FEATURE_DIM)
+    assert torch.allclose(encoded.edge_attr.sum(dim=1), torch.ones(encoded.edge_attr.shape[0]))
+
+
+def test_encode_graph_edge_attr_reflects_real_relationship_type():
+    encoded = encode_graph(_tiny_graph())
+    # forward a->c edge is column 0 (insertion order before symmetrization pass)
+    launched_row = encoded.edge_attr[0]
+    assert launched_row[EDGE_TYPE_INDEX["LAUNCHED"]] == 1.0
+    assert launched_row.sum().item() == 1.0
+
+
+def test_encode_graph_symmetrized_reverse_edge_keeps_same_type():
+    encoded = encode_graph(_tiny_graph())
+    # a->c (forward, col 0) and c->a (reverse, col 1) represent the same
+    # LAUNCHED relationship traversed backward for message passing -- both
+    # must carry the same type one-hot, not a distinct "reverse" type.
+    assert torch.equal(encoded.edge_attr[0], encoded.edge_attr[1])
+
+
+def test_encode_graph_unrecognized_relationship_falls_back_to_unknown():
+    G = nx.DiGraph()
+    G.add_node("x", labels=["Campaign"])
+    G.add_node("y", labels=["ThreatActor"])
+    G.add_edge("x", "y", relationship="RESEMBLES")  # real type, outside per-campaign scope
+    encoded = encode_graph(G)
+    assert encoded.edge_attr[0, EDGE_TYPE_INDEX["Unknown"]] == 1.0
+
+
+def test_encode_graph_missing_relationship_attr_falls_back_to_unknown():
+    G = nx.DiGraph()
+    G.add_node("x", labels=["Campaign"])
+    G.add_node("y", labels=["Host"])
+    G.add_edge("x", "y")  # no relationship attr at all
+    encoded = encode_graph(G)
+    assert encoded.edge_attr[0, EDGE_TYPE_INDEX["Unknown"]] == 1.0
+
+
 def test_encode_empty_graph_returns_zero_nodes():
     encoded = encode_graph(nx.DiGraph())
     assert encoded.num_nodes == 0
     assert encoded.edge_index.shape == (2, 0)
+    assert encoded.edge_attr.shape == (0, EDGE_FEATURE_DIM)
 
 
 def test_unknown_label_falls_back_to_unknown_type():

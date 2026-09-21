@@ -277,13 +277,27 @@ phase only removed one leakage-causing feature (Section 10). One
 authoritative mapping continues to exist in `graph_encoder.py`; nothing
 duplicates it.
 
-**Edge features**: none exist. `edge_index` carries structure only (no
-edge-type or edge-property tensor), and edges are symmetrized for
-message passing (`encode_graph`'s existing, pre-this-phase behavior) —
-meaning the real relationship *type* (`HAS_EVENT` vs `MATCHES` vs
-`TARGETS`) is currently discarded, not encoded. This is a genuine
-engineering gap (Section 13), not evaluated further this phase since
-it does not block dataset-design work.
+**Edge features**: at the time this phase concluded, none existed —
+`edge_index` carried structure only, with the real relationship *type*
+(`HAS_EVENT` vs `MATCHES` vs `TARGETS`) discarded. **Addendum (added in
+a later session, does not change this phase's verdict):** this was the
+one item Section 14 flagged as a pure engineering gap rather than a
+research decision, and it has since been closed —
+`graph_encoder.py` now emits `edge_attr` (`EDGE_TYPES = ["LAUNCHED",
+"HAS_EVENT", "MATCHES", "TARGETS", "Unknown"]`, one-hot per edge,
+row-aligned with `edge_index`, symmetrized edges keeping their forward
+type rather than inventing a reverse one). Edges are still symmetrized
+for message passing (`encode_graph`'s existing, pre-this-phase
+behavior). `edge_attr` is **not yet consumed** by `SAGEConvLayer`/
+`CampaignGNN` — the mean aggregator in `layers.py` remains
+edge-type-agnostic — so this is additive plumbing, not a model change,
+and does not alter Section 13's training-readiness verdict (labels and
+dataset size are still the blocker, not feature availability). 5 new
+regression tests in `tests/test_gnn.py`; live re-verification via
+`python -m ml.gnn.campaign_graphs` against this environment's real
+Neo4j reproduced the identical 71-sample/severity-distribution output
+in Section 6, confirming the change is transparent to existing
+consumers.
 
 ---
 
@@ -451,7 +465,7 @@ training):
 | Requirement | Status |
 |---|---|
 | Real graph extraction works | **Yes** (Section 6, new this phase) |
-| Node/edge features defined | **Partially** — node features yes (Section 7); edge features (relationship type) do not exist |
+| Node/edge features defined | **Yes** — node features (Section 7); edge/relationship-type features added in a later session (Section 7 addendum) — neither changes the remaining rows below |
 | Learning objective is defensible | **No** — genuinely open, Section 4-5 |
 | Labels are real/defensible | **No** — heuristic proxy label, severely imbalanced, one class entirely unobserved (Section 8) |
 | Leakage is controlled | **Yes, for the one found source** (Section 10) — but the split-strategy leakage risks (Section 10, attacker/host sharing) are unaddressed because no split exists yet |
@@ -460,9 +474,10 @@ training):
 | Framework available or safely introduced | **Yes** (Section 12) |
 
 ### Engineering blockers
-- Edge-type/edge-feature encoding does not exist (`encode_graph`
-  discards relationship type). Straightforward to add, not done this
-  phase since it doesn't change the training-readiness verdict.
+- ~~Edge-type/edge-feature encoding does not exist~~ **Closed in a later
+  session** — `encode_graph` now emits one-hot relationship-type
+  `edge_attr` (Section 7 addendum). Did not change the training-readiness
+  verdict, as predicted.
 - No dataset persistence/export step exists yet (deliberately, Section 6).
 
 ### Infrastructure blockers
@@ -516,11 +531,12 @@ correct on the data shape it's given (Section 1, 6-7).
 3. **Whether/when to revisit** once more real campaign data has
    accumulated, and what class-balance bar should be required before
    training is attempted — Section 13, item 3.
-4. **Edge-type encoding design** (Section 7, 13) — a smaller, more
-   purely engineering decision (which relationship types to one-hot,
-   whether to keep symmetrization) that was left open only because
-   resolving it doesn't change this phase's overall verdict, not
-   because it's contentious.
+4. ~~**Edge-type encoding design**~~ (Section 7, 13) — resolved in a
+   later session: one-hot over the 4 relationship types this
+   extraction scope actually produces (`LAUNCHED`, `HAS_EVENT`,
+   `MATCHES`, `TARGETS`) plus an `Unknown` fallback, symmetrized edges
+   keep their forward type. As anticipated, this did not require
+   revisiting the overall verdict.
 
 ## 15. What can safely be implemented now (and was)
 
@@ -546,12 +562,21 @@ cd backend
 python -m pytest tests/ -q
 ```
 
-**371 passed** (356 baseline at the start of this phase + 15 new: 13 in
-`tests/test_campaign_graphs.py`, 1 replaced + 1 added in
+**371 passed** at the end of this phase (356 baseline at the start +
+15 new: 13 in `tests/test_campaign_graphs.py`, 1 replaced + 1 added in
 `tests/test_gnn.py`). Zero regressions. Two of the 13 new tests are
 live-Neo4j integration tests (`requires_live_neo4j`, same skip
 convention as `tests/test_dashboard_api_routes.py`) — both ran (not
 skipped) and passed against this environment's real database.
+
+**Addendum (later session, edge-type encoding):** **376 passed** (371
++ 5 new in `tests/test_gnn.py` covering `edge_attr` shape/alignment,
+real-type reflection, symmetrized-edge type consistency, and the
+`Unknown` fallback for both an unrecognized real type and a missing
+`relationship` attr). `python -m ml.gnn.campaign_graphs` re-run against
+this environment's live Neo4j reproduced the identical 71-sample output
+in Section 6, confirming the addition is transparent to existing
+consumers.
 
 ## Runtime verification
 
