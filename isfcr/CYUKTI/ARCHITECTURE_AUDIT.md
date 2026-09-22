@@ -281,12 +281,46 @@ XGBoost's live graph features today, not only a future GNN's; (2) a
 campaign continue/close decision) — distinct from the well-known
 `OperationFeatures.graph_similarity` stub (`return 0.0`, weight `0.00`,
 feeding operation-correlation) this document already described.
-**Accurate current status**: GNN extraction/encoding infrastructure
-exists and is real; the representation-learning objective and a
-non-circular evaluation protocol have been formally designed but not
-implemented or trained — training remains gated on that design being
-approved and, for some candidate objectives, on more real data
-accumulating (`GNN_REPRESENTATION_DESIGN.md` Sections 8, 13).
+**Update (representation-implementation phase, later session)**: the
+Objective A (graph autoencoding) design from `GNN_REPRESENTATION_DESIGN.md`
+has now actually been trained on the real 71-campaign dataset, and a
+separate, real temporal-snapshot dataset (21 campaigns, real
+`AttackEvent` timestamps only) has been built for Objective C. Full
+detail, exact configuration, and honest (non-overclaiming) results in
+`GNN_REPRESENTATION_IMPLEMENTATION.md`. Summary, factual, not a
+production-readiness claim:
+
+```text
+GNN extraction              done (prior phase)
+GNN encoding                done (prior phase; edge-type encoding added)
+GNN training infrastructure done (this phase: autoencoder_model.py, train_autoencoder.py)
+Real graph autoencoder      done — trained, 59/12 attacker-group split, converges
+                             (train loss 3.62 -> 0.665 / 200 epochs; val edge-existence
+                             AUC 0.735, real generalization gap disclosed, not hidden)
+Temporal representation     partial — 21/71 real campaigns have a usable temporal
+                             dataset (2+ distinctly-timestamped events); snapshot
+                             extraction is real and verified monotonic/leakage-free;
+                             no dedicated temporal model was trained, only the
+                             autoencoder's embeddings were checked for temporal
+                             self-consistency (20/21 campaigns pass, one exception)
+Non-circular evaluation     done — identity-aware retrieval (real, above chance-
+                             baseline result) and temporal self-consistency; explicitly
+                             does NOT include SIMILAR_TO/RESEMBLES anywhere
+Production integration      not done, not attempted — graph_similarity (either slot)
+                             remains unpopulated; no decision engine, XGBoost feature,
+                             or dashboard consumes these embeddings
+Research validation         partial — honest reconstruction/embedding diagnostics
+                             exist; no ablation against XGBoost's 19 scalar features
+                             beyond a single correlation number (r=0.581, disclosed as
+                             evidence, not proof); no downstream-task improvement
+                             measured (none was in scope this phase)
+```
+
+None of this changes `GraphSnapshotLoader`, XGBoost, campaign
+correlation, or either `graph_similarity` slot — verified via `git
+status` showing only new files added this phase (`ARCHITECTURE_AUDIT.md`'s
+own update and `GNN_REPRESENTATION_IMPLEMENTATION.md` included).
+Backend: 401 passed (376 baseline + 25 new, zero regressions).
 
 ### Multi-RAG
 
