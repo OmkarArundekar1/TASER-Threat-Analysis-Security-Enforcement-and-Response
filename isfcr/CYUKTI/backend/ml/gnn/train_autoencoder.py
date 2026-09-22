@@ -299,6 +299,62 @@ def _edge_type_accuracy(model: GraphAutoencoder, samples: list[CampaignGraphSamp
     return float(correct / total) if total > 0 else float("nan")
 
 
+def fit_autoencoder(
+    train_samples: list[CampaignGraphSample],
+    hidden_dim: int = 16,
+    embedding_dim: int = 8,
+    num_layers: int = 2,
+    epochs: int = 200,
+    lr: float = 0.01,
+    seed: int = 42,
+) -> tuple[GraphAutoencoder, torch.Tensor, torch.Tensor, float, list[dict]]:
+    """Fold-safe core fit: trains a fresh GraphAutoencoder on exactly
+    the samples given (no internal train/val split of its own) and
+    returns (model, feature_mean, feature_std, pos_weight, loss_history)
+    -- everything a caller needs to embed OTHER (e.g. held-out) samples
+    consistently, without this function ever seeing them. Factored out
+    of train_autoencoder() (below) so the GNN-XGBoost ablation
+    (xgboost_ablation.py) can fit a fresh, fold-scoped encoder per
+    cross-validation fold without duplicating the training loop --
+    train_autoencoder()'s own behavior/return value is unchanged by
+    this refactor (verified: its own tests pass unchanged)."""
+    feature_mean, feature_std = _feature_stats(train_samples)
+    pos_weight = _compute_pos_weight(train_samples)
+
+    set_seed(seed)
+    model = GraphAutoencoder(hidden_dim=hidden_dim, embedding_dim=embedding_dim, num_layers=num_layers)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+    history = []
+    for epoch in range(epochs):
+        train_loss = _epoch_pass(model, train_samples, feature_mean, feature_std, pos_weight, optimizer)
+        history.append({"epoch": epoch, **train_loss.__dict__})
+
+    return model, feature_mean, feature_std, pos_weight, history
+
+
+def embed_samples(
+    model: GraphAutoencoder,
+    samples: list[CampaignGraphSample],
+    feature_mean: torch.Tensor,
+    feature_std: torch.Tensor,
+) -> dict[str, torch.Tensor]:
+    """Inference only -- passes each sample's graph through the
+    already-trained `model` (no gradient, no parameter update, no
+    statistics fitting). Safe to call with samples the model was never
+    trained on (that is precisely the fold-safe embedding-generation
+    step the ablation needs)."""
+    model.eval()
+    embeddings = {}
+    for sample in samples:
+        if sample.graph.num_nodes == 0:
+            continue
+        x = sample.graph.x.clone()
+        x[:, NUMERIC_FEATURE_OFFSET:] = (x[:, NUMERIC_FEATURE_OFFSET:] - feature_mean) / feature_std
+        embeddings[sample.campaign_id] = model.embed_graph(x, sample.graph.edge_index)
+    return embeddings
+
+
 def train_autoencoder(
     samples: list[CampaignGraphSample],
     save_dir: str = "ml/models",
@@ -326,17 +382,10 @@ def train_autoencoder(
     train_samples = [train_set[cid] for cid in train_ids]
     val_samples = [train_set[cid] for cid in val_ids]
 
-    feature_mean, feature_std = _feature_stats(train_samples)
-    pos_weight = _compute_pos_weight(train_samples)
-
-    set_seed(seed)
-    model = GraphAutoencoder(hidden_dim=hidden_dim, embedding_dim=embedding_dim, num_layers=num_layers)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-
-    history = []
-    for epoch in range(epochs):
-        train_loss = _epoch_pass(model, train_samples, feature_mean, feature_std, pos_weight, optimizer)
-        history.append({"epoch": epoch, **train_loss.__dict__})
+    model, feature_mean, feature_std, pos_weight, history = fit_autoencoder(
+        train_samples, hidden_dim=hidden_dim, embedding_dim=embedding_dim,
+        num_layers=num_layers, epochs=epochs, lr=lr, seed=seed,
+    )
 
     val_loss = _epoch_pass(model, val_samples, feature_mean, feature_std, pos_weight, None) if val_samples else None
 

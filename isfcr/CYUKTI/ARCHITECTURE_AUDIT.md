@@ -322,6 +322,48 @@ status` showing only new files added this phase (`ARCHITECTURE_AUDIT.md`'s
 own update and `GNN_REPRESENTATION_IMPLEMENTATION.md` included).
 Backend: 401 passed (376 baseline + 25 new, zero regressions).
 
+**Update (XGBoost ablation phase, later session)**: the "Research
+validation" gap above (no ablation against XGBoost) has been closed —
+`GNN_XGBOOST_ABLATION.md` reports a real, leakage-safe (fold-scoped
+GNN refit per Leave-One-Attacker-Group-Out fold, never using held-out
+campaigns to fit the encoder or its standardization statistics),
+reproducible experiment on the 60 campaigns present in both the
+persisted XGBoost dataset and the live GNN extraction (11 live-only
+campaigns explicitly excluded and disclosed, not silently dropped).
+
+**Factual outcome: augmentation did not help.** Adding the 8-dim `z_G`
+to XGBoost's existing 57 features produced **zero change** on every
+metric (accuracy, macro/weighted F1, balanced accuracy, full confusion
+matrix) in every one of the 3 LOGO folds and in the pooled
+out-of-fold result — not a small delta, an exact match. The mechanism
+is directly observed, not inferred: `XGBClassifier.feature_importances_`
+shows all 8 embedding columns at exactly `0.0` importance — XGBoost's
+tree-building never selected an embedding dimension for a split, given
+this dataset's severity distribution and the 57 features already
+available. This is reported as a real negative result, not forced
+positive, per this phase's explicit instruction.
+
+```text
+GNN embedding vs. XGBoost severity   NULL RESULT — no measurable incremental
+                                      predictive utility demonstrated on this
+                                      task, this split, this dataset size.
+                                      Embedding itself remains non-redundant
+                                      with the 19 scalar features (r=0.581,
+                                      prior phase) -- that non-redundant
+                                      information was simply not useful for
+                                      THIS classification task under these
+                                      conditions.
+```
+
+This does not reopen or contradict the representation-learning work
+itself (Sections above) — it answers one narrow question (incremental
+severity-prediction utility) honestly, and leaves open whether the
+embedding would help a different downstream task (correlation,
+retrieval, attribution — none tested). `graph_similarity` (either
+slot) remains unpopulated; no production file was touched (verified
+via `git status`). Backend: 413 passed (401 baseline + 12 new, zero
+regressions).
+
 ### Multi-RAG
 
 **Before this session**: one real concrete source (`rag/mitre_retriever.py`)
