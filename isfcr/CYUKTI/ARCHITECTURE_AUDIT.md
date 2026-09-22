@@ -251,16 +251,42 @@ implemented at the unit level, never run on real data, and per
 `GNN_FEASIBILITY.md`'s real-data evidence should not be yet. **The
 extraction layer is newly A** — real, tested (including 2 live-Neo4j
 integration tests), reproducible (`python -m ml.gnn.campaign_graphs`).
-See `GNN_FEASIBILITY.md` for the full feasibility analysis, including
-which learning objective (severity classification vs. representation
-learning over the cross-campaign `SIMILAR_TO`/`RESEMBLES`/`HAS_CAMPAIGN`
-correlation graph) is better evidenced — an open decision, not resolved
-here. Graph *features* (not embeddings) still substitute for GNN
-functionality in the real pipeline — `graph_feature_engine.py`'s
-hand-computed structural metrics (density, clustering, betweenness,
-etc., already feeding both XGBoost and the investigation loop's
-`GRAPH_STRUCTURE` evidence) are what a GNN's learned embeddings would
-eventually replace or augment, not what they currently are.
+Node/edge encoding now also carries one-hot relationship-type
+`edge_attr` (`LAUNCHED`/`HAS_EVENT`/`MATCHES`/`TARGETS`/`Unknown`) —
+additive, not yet consumed by the model. Graph *features* (not
+embeddings) still substitute for GNN functionality in the real
+pipeline — `graph_feature_engine.py`'s hand-computed structural metrics
+(density, clustering, betweenness, etc., already feeding both XGBoost
+and the investigation loop's `GRAPH_STRUCTURE` evidence) are what a
+GNN's learned embeddings would eventually replace or augment, not what
+they currently are.
+
+**Update (objective-decision + representation-design phases, later
+sessions)**: the project owner has selected **Option E — cross-campaign
+graph representation learning** (not severity classification) as the
+GNN's learning objective; see `GNN_OBJECTIVE_DECISION.md` for the
+comparative analysis and `GNN_REPRESENTATION_DESIGN.md` for the
+resulting formal representation/objective/evaluation design. Neither
+document trains a model or changes this section's status. Two
+corrections/refinements to this document's and `GNN_FEASIBILITY.md`'s
+earlier claims, found while tracing the code for that analysis (real
+evidence, not assumption — see the two documents above for full
+detail): (1) `GraphSnapshotLoader`'s query is untyped and already
+incidentally captures `SIMILAR_TO`/`HAS_CAMPAIGN`/`RESEMBLES`/
+`LIKELY_NEXT` for 42 of 71 real campaigns (59%) — this already affects
+XGBoost's live graph features today, not only a future GNN's; (2) a
+*second*, real (non-stub) `graph_similarity` field exists
+(`CampaignFeatureEngine`/`CampaignDecisionEngine`, weight `0.01` in
+`config.CAMPAIGN_WEIGHTS`, feeding `campaign_manager.py`'s active-
+campaign continue/close decision) — distinct from the well-known
+`OperationFeatures.graph_similarity` stub (`return 0.0`, weight `0.00`,
+feeding operation-correlation) this document already described.
+**Accurate current status**: GNN extraction/encoding infrastructure
+exists and is real; the representation-learning objective and a
+non-circular evaluation protocol have been formally designed but not
+implemented or trained — training remains gated on that design being
+approved and, for some candidate objectives, on more real data
+accumulating (`GNN_REPRESENTATION_DESIGN.md` Sections 8, 13).
 
 ### Multi-RAG
 
