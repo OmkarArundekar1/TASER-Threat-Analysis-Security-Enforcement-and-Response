@@ -318,6 +318,21 @@ def default_action_executor(campaign_context, current_attack_id: str, event_id: 
                 # deployment's life, not a failure.
                 return []
 
+        if action == InvestigationAction.GNN_TOPOLOGY_RETRIEVAL:
+            from rag.gnn_topology_retriever import GNNTopologyRetriever
+            try:
+                return GNNTopologyRetriever().query(campaign_context.campaign_id)
+            except Exception:
+                # Fail-safe, same principle as ml.gnn.inference's own
+                # catch-everything design: GNN evidence is never allowed
+                # to break the investigation loop.
+                import logging
+                logging.getLogger(__name__).exception(
+                    "GNN topology retrieval failed for campaign %s -- continuing without it.",
+                    campaign_context.campaign_id,
+                )
+                return []
+
         if action == InvestigationAction.GRAPH_STRUCTURE:
             import graph_feature_engine
             from evidence.collectors.graph_collector import collect_graph_evidence

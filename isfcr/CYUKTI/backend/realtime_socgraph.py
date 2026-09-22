@@ -38,10 +38,26 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 from config import (
     ENABLE_DUPLICATE_BUFFER,
+    GNN_ENABLED,
     MISP_URL,
     MISP_API_KEY,
     VERIFY_MISP_SSL,
 )
+
+# Windows DLL load-order defense-in-depth -- see dashboard_api.py's
+# identical block for the real WinError 1114 torch/xgboost DLL conflict
+# this was found and fixed for (GNN_PRODUCTION_INTEGRATION.md Section 11).
+# This process doesn't currently import xgboost in its normal alert path,
+# so the conflict wasn't reproduced here, but campaign_manager.py's GNN
+# diagnostic (_log_gnn_nearest_topology_neighbor) does run in this
+# process -- warming torch first, cheaply, keeps both entrypoints
+# consistent rather than relying on that being true forever.
+if GNN_ENABLED:
+    try:
+        from ml.gnn.inference import gnn_inference_service as _gnn_prewarm
+        _gnn_prewarm.available
+    except Exception:
+        logger.exception("GNN pre-warm failed at startup -- GNN inference may be unavailable this session.")
 from campaign_correlation_engine import engine as operation_engine
 from operation_manager import operation_manager
 from detection_confidence_engine import engine as detection_engine

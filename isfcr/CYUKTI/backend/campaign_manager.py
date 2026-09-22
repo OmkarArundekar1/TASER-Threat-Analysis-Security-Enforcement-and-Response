@@ -41,6 +41,31 @@ from campaign_decision_engine import engine as campaign_decision_engine
 from campaign_correlation_engine import engine
 from datetime_utils import normalize_datetime
 
+def _log_gnn_nearest_topology_neighbor(campaign_id: str) -> None:
+    """Additive diagnostic only -- see the call site's comment. Fails
+    silently (logs and returns) for any reason: GNN disabled, no
+    artifact, malformed graph. Never raises into resolve_campaign."""
+    try:
+        import config
+        if not config.GNN_ENABLED:
+            return
+        from rag.gnn_topology_retriever import GNNTopologyRetriever
+        matches = GNNTopologyRetriever().query(campaign_id, top_k=1)
+        if matches:
+            content = matches[0].content
+            print(
+                f"{'GNN Topology':<15}: nearest={content['campaign_id']} "
+                f"similarity={content['topology_similarity']:.2f}"
+            )
+        else:
+            print(f"{'GNN Topology':<15}: N/A (no comparable historical campaign)")
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "GNN topology diagnostic failed for campaign %s -- continuing without it.", campaign_id,
+        )
+
+
 ACTIVE = "ACTIVE"
 INACTIVE = "INACTIVE"
 REOPENED = "REOPENED"
@@ -417,6 +442,13 @@ class CampaignManager:
                         else "N/A"
                     )
                     print(f"{label:<15}: {display}")
+                # Additive, informational only -- see GNN_PRODUCTION_INTEGRATION.md.
+                # NOT part of `decision.score`/`decision.breakdown`/CAMPAIGN_WEIGHTS
+                # -- CampaignDecisionEngine.evaluate() above is completely
+                # untouched. Logged, not returned, since this call site has no
+                # result object further callers consume (unlike
+                # CampaignCorrelationEngine.correlate()'s CorrelationResult).
+                _log_gnn_nearest_topology_neighbor(context.campaign_id)
                 print("\n--------------------------------------")
                 print(f"{'Score':<15}: {decision.score:.2f}")
                 print(

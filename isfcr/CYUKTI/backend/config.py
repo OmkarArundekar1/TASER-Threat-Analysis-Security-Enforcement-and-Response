@@ -32,6 +32,20 @@ SHUFFLE_WEBHOOK = os.environ.get("SHUFFLE_WEBHOOK", "")
 
 LOG_LEVEL = "INFO"
 
+# GNN topology-aware representation (see GNN_PRODUCTION_INTEGRATION.md).
+# Default False: the severity ablation (GNN_XGBOOST_ABLATION.md) found no
+# predictive benefit for the severity model, and the retrieval evaluation
+# (GNN_RETRIEVAL_EVALUATION.md) found promising-but-limited evidence for
+# retrieval/correlation -- not yet strong enough to enable by default. When
+# False, every GNN integration point in this codebase short-circuits to
+# "no GNN evidence available" without importing torch or touching the model
+# artifact, so CYUKTI's pre-GNN-integration behavior is exactly preserved.
+GNN_ENABLED = os.environ.get("GNN_ENABLED", "false").strip().lower() in ("1", "true", "yes")
+GNN_MODEL_PATH = os.environ.get(
+    "GNN_MODEL_PATH",
+    os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "ml", "models", "gnn_autoencoder.pt")),
+)
+
 TPS_MAP = {
     "Reconnaissance": 10,
     "Credential Access": 45,

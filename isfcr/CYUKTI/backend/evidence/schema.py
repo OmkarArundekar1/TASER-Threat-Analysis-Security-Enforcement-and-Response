@@ -53,6 +53,13 @@ class EvidenceSource(str, Enum):
     GRAPH = "graph"
     CAMPAIGN_HISTORY = "campaign_history"
     ATTRIBUTION = "attribution"
+    # Topology-aware GNN embedding similarity (GNN_RETRIEVAL_EVALUATION.md).
+    # Deliberately its own source, not shared with CAMPAIGN_HISTORY -- it
+    # answers "which historical campaigns have a structurally similar
+    # attack graph", a genuinely different question from CAMPAIGN_HISTORY's
+    # technique-overlap-based matches, so its provenance must stay
+    # separately identifiable (see GNN_PRODUCTION_INTEGRATION.md).
+    GNN_TOPOLOGY = "gnn_topology"
 
 
 class EvidenceType(str, Enum):

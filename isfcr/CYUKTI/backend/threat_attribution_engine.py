@@ -9,6 +9,23 @@ from threat_actor_context import ThreatActorContext
 
 TOP_K = 5
 
+
+def _gnn_topology_similarity_for_attribution(campaign_id_a: str, campaign_id_b: str) -> float | None:
+    """Additive, informational only -- see ThreatActorContext.topology_similarity's
+    docstring. Fails safe to None for any reason, never raises into
+    attribute()."""
+    try:
+        from ml.gnn.topology_similarity import gnn_topology_similarity_between_campaigns
+        return gnn_topology_similarity_between_campaigns(campaign_id_a, campaign_id_b)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "GNN topology similarity computation failed for attribution (%s vs %s) -- "
+            "continuing without it.", campaign_id_a, campaign_id_b,
+        )
+        return None
+
+
 class ThreatAttributionEngine:
     def attribute(
         self,
@@ -55,6 +72,14 @@ class ThreatAttributionEngine:
                 observed &
                 historical
             )
+            # Additive, informational only -- see ThreatActorContext's own
+            # field docstring. Computed from `similarity` above's already-
+            # decided candidate, never influences it or the eventual sort
+            # (candidates.sort(key=lambda x: x.total_score, ...) below is
+            # unchanged and never reads topology_similarity).
+            topology_similarity = _gnn_topology_similarity_for_attribution(
+                campaign_context.campaign_id, campaign.campaign_id,
+            )
             result = ThreatActorContext(
                 actor=campaign.campaign_id,
                 confidence=round(
@@ -87,6 +112,7 @@ class ThreatAttributionEngine:
                     precision * 100,
                     2,
                 ),
+                topology_similarity=topology_similarity,
             )
             candidates.append(
                 result

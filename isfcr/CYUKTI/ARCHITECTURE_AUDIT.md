@@ -364,6 +364,58 @@ slot) remains unpopulated; no production file was touched (verified
 via `git status`). Backend: 413 passed (401 baseline + 12 new, zero
 regressions).
 
+**Update (retrieval evaluation phase, later session)**: the
+"downstream task — none tested" gap above was partially closed —
+`GNN_RETRIEVAL_EVALUATION.md` tests topology-aware retrieval/correlation
+independently of severity. Findings: temporal retrieval (fold-safe,
+21 campaigns) MRR 0.377 against a ~0.06 chance baseline — the
+strongest, least-trivially-explained result; attacker/host retrieval
+MRR ~0.97-0.98, strong but mechanistically explained by shared literal
+input features (a low bar, not deep structural understanding); a
+structural diagnostic on real campaign pairs found 82 pairs with
+identical topology and zero technique overlap receiving near-identical
+embeddings, and 226 pairs with identical technique sets but different
+topology receiving materially different embeddings — real evidence the
+embedding tracks structure the technique-overlap-based mechanisms
+cannot see, though partly a structural fact about the encoding (no
+technique-identity feature exists) rather than a purely learned
+preference. Backend: 430 passed (413 + 17 new, zero regressions). No
+production integration decision was made in that phase.
+
+**Update (production integration phase, later session)**: the GNN has
+been additively wired into the live system, disabled by default
+(`config.GNN_ENABLED=false`). Full detail in the new
+`GNN_PRODUCTION_INTEGRATION.md`. Summary: a production inference
+service (`ml/gnn/inference.py`) and topology-similarity function
+(`ml/gnn/topology_similarity.py`) were built (none existed before);
+wired additively into operation correlation, campaign correlation,
+threat attribution, historical retrieval (a new GNN topology retriever
+alongside the existing TF-IDF one), and the investigation action menu
+— every integration point proven, by test, to leave the pre-existing
+decision/ranking/score byte-identical whether GNN is on or off. Two
+new dashboard API routes (`/api/gnn/status`, `/api/gnn/topology/<id>`),
+additive only, all 24 pre-existing routes regression-verified
+unchanged. XGBoost integration remains explicitly not done (Section
+above's null result preserved). A real Windows DLL load-order conflict
+between torch and XGBoost (`WinError 1114`) was found during live
+investigation testing — reproduced 3/3 times, and fixed by pre-warming
+torch's import at process startup when GNN is enabled; the fail-safe
+design's correctness was independently validated by this real failure
+(investigation completed successfully with 70 evidence items from 6
+other sources while GNN evidence was silently unavailable, before the
+fix). Live-verified against real Neo4j data: deterministic embeddings,
+real cross-campaign topology retrieval, and a full real investigation
+producing 75 evidence items (70 pre-existing + 5 real GNN topology
+matches). Live Wazuh end-to-end testing (the architecture's Kali →
+Ubuntu → Wazuh Manager → CYUKTI lab) could not be performed — confirmed
+unavailable in this session's environment (a local Windows development
+machine, not the lab), not assumed, not fabricated. MISP authenticated
+publication remains blocked on a missing credential, unchanged. SSFT
+and WebSocket limitations unchanged. Backend: 470 passed (430 + 40
+new, zero regressions). Frontend: 61 passed, unchanged (not modified
+this phase; TypeScript build and production bundle both verified
+still succeeding).
+
 ### Multi-RAG
 
 **Before this session**: one real concrete source (`rag/mitre_retriever.py`)

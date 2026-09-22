@@ -17,6 +17,15 @@ class CorrelationResult:
     breakdown: dict
     candidate_count: int
     candidates: list
+    # Additive, informational only -- see GNN_PRODUCTION_INTEGRATION.md.
+    # Max GNN topology-embedding cosine similarity between this campaign
+    # and the campaigns already in `operation_id` (None if GNN is disabled,
+    # unavailable, or there is no matched operation). NEVER participates in
+    # `score`/`matched`/`decision` -- OperationDecisionEngine.weights still
+    # has graph_similarity at 0.00 and is completely untouched by this
+    # field; this is a separate, additive signal for downstream reasoning
+    # to consult, not a silent redefinition of the existing decision.
+    gnn_topology_similarity: float | None = None
     
 class CampaignCorrelationEngine:
 
@@ -131,21 +140,52 @@ class CampaignCorrelationEngine:
                 best_operation.operation_id
             )
 
+        matched = best_decision.decision == "ATTACH_TO_OPERATION"
+
         return CorrelationResult(
-            matched=(
-                best_decision.decision
-                == "ATTACH_TO_OPERATION"
-            ),
+            matched=matched,
             operation_id=(
                 best_operation.operation_id
-                if best_decision.decision == "ATTACH_TO_OPERATION"
+                if matched
                 else None
             ),
             confidence=best_decision.confidence,
             score=best_decision.score,
             breakdown=best_decision.breakdown,
             candidate_count=len(operation_ids),
-            candidates=candidate_results
+            candidates=candidate_results,
+            gnn_topology_similarity=(
+                self._gnn_topology_similarity_to_operation(campaign_context, best_operation)
+                if matched else None
+            ),
         )
+
+    def _gnn_topology_similarity_to_operation(self, campaign_context, operation_context) -> float | None:
+        """Additive, informational only (see CorrelationResult's own
+        docstring note above). Max GNN topology similarity between the
+        current campaign and any campaign already in this operation --
+        fails safe to None for any reason (GNN disabled, no artifact,
+        empty operation, malformed graphs), never raises, never affects
+        the decision already made above."""
+        try:
+            from ml.gnn.topology_similarity import gnn_topology_similarity_between_campaigns
+
+            campaign_ids = getattr(operation_context, "campaign_ids", None) or []
+            similarities = [
+                s for s in (
+                    gnn_topology_similarity_between_campaigns(campaign_context.campaign_id, other_id)
+                    for other_id in campaign_ids
+                    if other_id != campaign_context.campaign_id
+                )
+                if s is not None
+            ]
+            return max(similarities) if similarities else None
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "GNN topology similarity computation failed for operation correlation "
+                "(campaign %s) -- continuing without it.", campaign_context.campaign_id,
+            )
+            return None
 
 engine = CampaignCorrelationEngine()

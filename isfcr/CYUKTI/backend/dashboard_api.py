@@ -22,6 +22,25 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
+# Windows DLL load-order fix (found during live verification, not a
+# synthetic concern -- see GNN_PRODUCTION_INTEGRATION.md Section 11):
+# on this platform, importing torch (ml.gnn.inference) AFTER xgboost has
+# already loaded its own native runtime can fail with WinError 1114
+# ("DLL initialization routine failed" loading torch's c10.dll) --
+# a real DLL conflict between the two libraries' bundled native
+# binaries, not a CYUKTI bug. Reproducibly fixed by importing torch
+# BEFORE any XGBoost-touching code path runs (investigate_campaign's
+# ATTRIBUTION_MATCH/XGBOOST_PREDICTION actions both eventually import
+# xgboost). Only warms the import when GNN is actually enabled -- a
+# no-op, zero-cost branch when it's off (the default).
+import config as _startup_config
+if _startup_config.GNN_ENABLED:
+    try:
+        from ml.gnn.inference import gnn_inference_service as _gnn_prewarm
+        _gnn_prewarm.available  # triggers the lazy torch import now, while it's still safe
+    except Exception:
+        logger.exception("GNN pre-warm failed at startup -- GNN inference may be unavailable this session.")
+
 
 @app.errorhandler(ServiceUnavailable)
 def handle_neo4j_unavailable(e):
@@ -1351,6 +1370,63 @@ def rag_mitre_search():
         return jsonify({"error": f"MITRE corpus unavailable: {e}"}), 503
 
     return jsonify({"query": query_text, "results": [e.to_dict() for e in results]})
+
+
+@app.route('/api/gnn/status')
+def gnn_status():
+    """GNN availability/metadata -- additive, read-only. Never trains,
+    never errors the request if GNN is disabled or the artifact is
+    missing (that is reported as gnn_available=false, not a 5xx)."""
+    from ml.gnn.inference import gnn_inference_service
+
+    available = gnn_inference_service.available
+    metadata = gnn_inference_service.metadata
+    return jsonify({
+        "gnn_available": available,
+        "gnn_model_version": metadata.model_version if metadata else None,
+        "gnn_metadata": metadata.to_dict() if metadata else None,
+    })
+
+
+@app.route('/api/gnn/topology/<campaign_id>')
+def gnn_topology(campaign_id):
+    """Topology-nearest historical campaigns by GNN embedding similarity
+    (rag/gnn_topology_retriever.py) -- additive alongside the existing
+    TF-IDF/technique-overlap retrievers, never a replacement for them.
+    Returns gnn_available=false (200, not an error) rather than a 5xx
+    when GNN is disabled/unavailable -- consistent with
+    ml_predict_severity's 503-for-genuinely-missing-artifact pattern
+    would be too strong here, since "no GNN evidence this time" is an
+    expected, non-exceptional state for an additive signal.
+    """
+    top_k = int(request.args.get('top_k', 5))
+
+    context, error_response = _try_load_campaign_context(campaign_id)
+    if error_response:
+        return error_response
+    if context is None:
+        return jsonify({"error": f"Campaign {campaign_id} not found"}), 404
+
+    from ml.gnn.inference import gnn_inference_service
+    if not gnn_inference_service.available:
+        return jsonify({
+            "campaign_id": campaign_id, "gnn_available": False,
+            "topology_neighbors": [],
+        })
+
+    from rag.gnn_topology_retriever import GNNTopologyRetriever
+    try:
+        results = GNNTopologyRetriever().query(campaign_id, top_k=top_k)
+    except Exception as e:
+        logger.exception("GNN topology retrieval failed for campaign %s", campaign_id)
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({
+        "campaign_id": campaign_id,
+        "gnn_available": True,
+        "gnn_model_version": gnn_inference_service.metadata.model_version,
+        "topology_neighbors": [e.to_dict() for e in results],
+    })
 
 
 @app.route('/api/ml/predict/severity', methods=['POST'])

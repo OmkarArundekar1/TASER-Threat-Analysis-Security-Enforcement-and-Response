@@ -29,6 +29,7 @@ class InvestigationAction(str, Enum):
     CAMPAIGN_NARRATIVE_SEARCH = "campaign_narrative_search"  # rag.campaign_retriever (TF-IDF over historical campaign records)
     GRAPH_STRUCTURE = "graph_structure"          # graph_feature_engine (Neo4j structural analytics)
     XGBOOST_PREDICTION = "xgboost_prediction"    # ml.train_xgboost (severity classifier)
+    GNN_TOPOLOGY_RETRIEVAL = "gnn_topology_retrieval"  # rag.gnn_topology_retriever (GNN embedding similarity over historical campaigns)
 
 
 @dataclass(frozen=True)
@@ -83,4 +84,19 @@ ACTION_METADATA: dict[InvestigationAction, ActionMeta] = {
     # existing category (it consumes graph+CTI+MITRE features) purely so the
     # novelty accounting in next_best_evidence.py has something to compare against.
     InvestigationAction.XGBOOST_PREDICTION: ActionMeta(EvidenceSource.GRAPH, reliability=0.6, cost=0.25, latency=0.25),
+    # rag.gnn_topology_retriever queries attribution_context.context.load_historical_campaigns()
+    # for its candidate pool (same reason as CAMPAIGN_HISTORY/ATTRIBUTION_MATCH's
+    # depends_on -- a real, code-verified overlap, declared explicitly since
+    # EvidenceSource.GNN_TOPOLOGY is its own distinct source, not shared with
+    # CAMPAIGN_HISTORY, so the same-source discount doesn't already catch it).
+    # reliability=0.5, deliberately not high: GNN_RETRIEVAL_EVALUATION.md's own
+    # findings are "promising but limited" (temporal retrieval well above chance;
+    # attacker/host retrieval strong but a mechanistically low bar; no validated
+    # comparison establishing GNN retrieval beats CAMPAIGN_NARRATIVE_SEARCH for
+    # this specific investigation use case) -- not a research-validated high-trust
+    # source yet, and this number should not be read as one.
+    InvestigationAction.GNN_TOPOLOGY_RETRIEVAL: ActionMeta(
+        EvidenceSource.GNN_TOPOLOGY, reliability=0.5, cost=0.35, latency=0.4,
+        depends_on=frozenset({InvestigationAction.CAMPAIGN_HISTORY}),
+    ),
 }
