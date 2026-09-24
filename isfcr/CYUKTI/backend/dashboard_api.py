@@ -48,6 +48,9 @@ if _startup_config.GNN_ENABLED:
     except Exception:
         logger.exception("GNN pre-warm failed at startup -- GNN inference may be unavailable this session.")
 
+from soar.api import soar_bp
+app.register_blueprint(soar_bp)
+
 
 @app.errorhandler(ServiceUnavailable)
 def handle_neo4j_unavailable(e):

@@ -15,6 +15,7 @@ import { PredictionIntelligencePage } from './components/PredictionIntelligenceP
 import { ThreatIntelligencePage } from './components/ThreatIntelligencePage';
 import { SystemHealthPage } from './components/SystemHealthPage';
 import { AuditLogPage } from './components/AuditLogPage';
+import { SOARPage } from './components/SOARPage';
 
 function DashboardLayout() {
   const { isPathExplorerOpen } = useDashboard();
@@ -34,6 +35,8 @@ function DashboardLayout() {
         <SystemHealthPage />
       ) : activeView === 'audit' ? (
         <AuditLogPage />
+      ) : activeView === 'soar' ? (
+        <SOARPage />
       ) : (
         <>
       {isPathExplorerOpen && <PathExplorer />}

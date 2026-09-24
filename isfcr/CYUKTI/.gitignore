@@ -45,6 +45,8 @@ offset.dat
 runtime/
 cache/
 tmp/
+misp_cache.json
+backend/soar/playbook_memory.db
 temp/
 
 # =========================

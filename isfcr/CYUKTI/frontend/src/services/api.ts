@@ -175,4 +175,60 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ query: params.query, campaign_id: params.campaignId, top_k: params.topK ?? 5 }),
     }),
+
+  soarStatus: () =>
+    fetchApi<import('../types').SoarStatus>('/soar/status'),
+
+  generatePlaybook: (campaignId: string) =>
+    fetchApi<import('../types').Playbook>('/soar/playbooks/generate', {
+      method: 'POST',
+      body: JSON.stringify({ campaign_id: campaignId }),
+    }),
+
+  listPlaybooks: () =>
+    fetchApi<{ playbooks: import('../types').Playbook[] }>('/soar/playbooks'),
+
+  getPlaybook: (playbookId: string) =>
+    fetchApi<import('../types').Playbook>(`/soar/playbooks/${encodeURIComponent(playbookId)}`),
+
+  adaptPlaybook: (sourcePlaybookId: string, campaignId: string) =>
+    fetchApi<import('../types').Playbook>('/soar/playbooks/adapt', {
+      method: 'POST',
+      body: JSON.stringify({ source_playbook_id: sourcePlaybookId, campaign_id: campaignId }),
+    }),
+
+  executePlaybook: (playbookId: string, campaignId?: string) =>
+    fetchApi<import('../types').PlaybookExecution>(`/soar/playbooks/${encodeURIComponent(playbookId)}/execute`, {
+      method: 'POST',
+      body: JSON.stringify({ campaign_id: campaignId }),
+    }),
+
+  listExecutions: (limit: number = 100) =>
+    fetchApi<{ executions: import('../types').PlaybookExecution[] }>(`/soar/executions?limit=${limit}`),
+
+  getExecution: (executionId: string) =>
+    fetchApi<import('../types').PlaybookExecution>(`/soar/executions/${encodeURIComponent(executionId)}`),
+
+  pollExecution: (executionId: string) =>
+    fetchApi<import('../types').PlaybookExecution>(`/soar/executions/${encodeURIComponent(executionId)}/poll`, {
+      method: 'POST',
+    }),
+
+  approveExecution: (executionId: string, approvedBy: string = 'analyst') =>
+    fetchApi<import('../types').PlaybookExecution>(`/soar/executions/${encodeURIComponent(executionId)}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ approved_by: approvedBy }),
+    }),
+
+  rejectExecution: (executionId: string, reason: string) =>
+    fetchApi<import('../types').PlaybookExecution>(`/soar/executions/${encodeURIComponent(executionId)}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
+  soarRecommendations: (campaignId: string) =>
+    fetchApi<import('../types').SoarRecommendationsResponse>(`/soar/recommendations/${encodeURIComponent(campaignId)}`),
+
+  soarEffectiveness: () =>
+    fetchApi<{ effectiveness: import('../types').PlaybookEffectiveness[] }>('/soar/effectiveness'),
 };

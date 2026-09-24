@@ -336,3 +336,131 @@ export interface SeverityPrediction {
   // traces this prediction back to the investigation state it was computed from
   prediction_context: PredictionContext;
 }
+
+/* ── SOAR / Playbook layer (backend/soar, see SOAR_PLAYBOOK_INTEGRATION.md) ── */
+
+export type ExecutionPolicy = 'recommend_only' | 'analyst_approval' | 'automatic';
+export type ExecutionStatus =
+  | 'pending' | 'pending_approval' | 'rejected' | 'running' | 'success' | 'failed' | 'timeout' | 'cancelled';
+
+export interface PlaybookAction {
+  action_id: string;
+  action_type: string;
+  name: string;
+  description: string;
+  order: number;
+  inputs: Record<string, unknown>;
+  expected_output: string;
+  destructive: boolean;
+  requires_approval: boolean;
+  timeout_seconds: number;
+  reason: string;
+}
+
+export interface Playbook {
+  playbook_id: string;
+  name: string;
+  version: number;
+  description: string;
+  trigger_conditions: Record<string, unknown>;
+  campaign_type: string;
+  mitre_techniques: string[];
+  severity: string;
+  risk: number;
+  required_evidence: string[];
+  actions: PlaybookAction[];
+  execution_policy: ExecutionPolicy;
+  shuffle_workflow_id: string | null;
+  shuffle_workflow_version: string | null;
+  created_at: string;
+  updated_at: string;
+  status: 'active' | 'deprecated';
+  source_campaign_id: string | null;
+  adapted_from_playbook_id: string | null;
+  has_destructive_action: boolean;
+}
+
+export interface PlaybookActionResult {
+  action_result_id: string;
+  action_id: string;
+  status: ExecutionStatus;
+  input: Record<string, unknown>;
+  output: Record<string, unknown> | string | null;
+  error: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export interface PlaybookExecution {
+  execution_id: string;
+  playbook_id: string;
+  playbook_version: number;
+  campaign_id: string;
+  operation_id: string | null;
+  investigation_id: string | null;
+  status: ExecutionStatus;
+  shuffle_execution_id: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  action_results: PlaybookActionResult[];
+  approved_by: string | null;
+  approval_decision_at: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+  audit_events?: SoarAuditEvent[];
+}
+
+export interface SoarAuditEvent {
+  event_type: string;
+  timestamp: string;
+  campaign_id: string | null;
+  operation_id: string | null;
+  investigation_id: string | null;
+  playbook_id: string | null;
+  execution_id: string | null;
+  detail: Record<string, unknown>;
+}
+
+export interface HistoricalPlaybookMatch {
+  playbook_id: string;
+  playbook_name: string;
+  source_campaign_id: string;
+  technique_similarity: number;
+  topology_similarity: number | null;
+  attacker_ip_match: boolean;
+  victim_ip_match: boolean;
+  historical_executions: number;
+  historical_successes: number;
+  historical_failures: number;
+  historical_success_rate: number | null;
+  recommendation_reason: string;
+}
+
+export interface PlaybookEffectiveness {
+  playbook_id: string;
+  playbook_name: string;
+  executions: number;
+  successful_executions: number;
+  failed_executions: number;
+  success_rate: number | null;
+  average_execution_seconds: number | null;
+  analyst_approvals: number;
+  analyst_rejections: number;
+  last_execution_at: string | null;
+  failure_reasons: string[];
+}
+
+export interface SoarStatus {
+  shuffle_webhook_configured: boolean;
+  shuffle_api_configured: boolean;
+  shuffle_reachable: boolean | null;
+  stored_playbooks: number;
+  stored_executions: number;
+}
+
+export interface SoarRecommendationsResponse {
+  campaign_id: string;
+  historical_matches: HistoricalPlaybookMatch[];
+  candidate_playbook: Playbook;
+  adapted_playbook: Playbook | null;
+}

@@ -21,8 +21,8 @@ or the dashboard (`dashboard_api.py` → a mounted React component). A
 
 | Component | Purpose | Current implementation | Integration | Status |
 |---|---|---|---|---|
-| `listener/wazuh_listener.py` | Tails Wazuh's alert JSON file, feeds `realtime_socgraph.process_alert` | Real, threaded queue worker + maintenance worker | Real entrypoint; requires an actual Wazuh manager writing to `WAZUH_ALERT_FILE` | **INFRASTRUCTURE BLOCKED in this dev environment** (no Wazuh manager reachable — confirmed: no `/var/ossec`, no `wazuh-*` binaries on PATH) |
-| `realtime_socgraph.py` | Per-alert orchestration: MITRE resolve → IOC → dedup → campaign → operation → Neo4j → severity → CTI → MISP sync | Real, calls every module below in sequence | Called by the listener above | FULLY INTEGRATED (code path), blocked only by the listener's own infra dependency |
+| `listener/wazuh_listener.py` | Tails Wazuh's alert JSON file, feeds `realtime_socgraph.process_alert` | Real, threaded queue worker + maintenance worker | **Correction (2026-09-24, live-verified):** a real Wazuh manager IS installed and running in this environment (`wazuh-apid.py` processes live since boot, `/var/ossec/logs/alerts/alerts.json` actively growing) and the listener process was observed running live, tailing it, creating real campaigns end-to-end. The "INFRASTRUCTURE BLOCKED" classification below was written from an earlier session's state and was wrong for this session — corrected here rather than left stale. | **FULLY INTEGRATED AND LIVE** — confirmed via a running listener process's own log: real alert ingestion, real campaign creation (e.g. `CAMP_E8E9F042`), real MISP publish attempts observed in flight. |
+| `realtime_socgraph.py` | Per-alert orchestration: MITRE resolve → IOC → dedup → campaign → operation → Neo4j → severity → CTI → MISP sync | Real, calls every module below in sequence | Called by the listener above | FULLY INTEGRATED AND LIVE, confirmed running |
 | `mitre_resolver.py`, `mitre_mapper.py`, `mitre_rule_registry.py`, `mitre_feature_engine.py` | MITRE ATT&CK technique resolution, stage mapping, Neo4j-backed feature lookup | Real, called from `realtime_socgraph.py` and `investigation/loop.py`'s `MITRE_KNOWLEDGE` action | Live pipeline + investigation | FULLY INTEGRATED |
 | `dedup_engine.py` (+ `duplicate_buffer`) | Fingerprint-based enterprise deduplication | Real, background flush worker | Live pipeline | FULLY INTEGRATED |
 | `campaign_manager.py`, `campaign_context.py`, `campaign_feature_engine.py`, `campaign_decision_engine.py` | Campaign lifecycle (create/continue/close), 7-feature continuation decision | Real | Live pipeline; `CampaignDecisionEngine`'s real (non-stub) `graph_similarity` weighted 1% (`config.CAMPAIGN_WEIGHTS`) | FULLY INTEGRATED |
@@ -46,7 +46,7 @@ or the dashboard (`dashboard_api.py` → a mounted React component). A
 | `misp_cache.py` | Persisted `campaign_id -> MISP event_id` map (`misp_cache.json`) | Real, thread-safe | Read/written by `misp_sync.py` | FULLY INTEGRATED (pipeline) |
 | `cti_publisher.py` | Real HTTP client (`CTIPublisher`), retries, `.health_check()` (real `/servers/getVersion` probe, read-only) | Real | Instantiated in `realtime_socgraph.py` | FULLY INTEGRATED (pipeline) |
 | `campaign_cti_builder.py` | Builds `IncidentContext`/CTI payload for a campaign | Real | Feeds `misp_sync` | FULLY INTEGRATED (pipeline) |
-| **Authenticated MISP round-trip** | — | `CTIPublisher.health_check()` would confirm it | `config.MISP_API_KEY` is empty in this environment (verified live: `len(config.MISP_API_KEY) == 0`) | **CREDENTIAL BLOCKED** |
+| **Authenticated MISP round-trip** | — | `CTIPublisher.health_check()` confirms it | **Update (2026-09-24):** a real MISP admin auth key was provided and configured in `backend/.env` this session. A live, running listener process was observed attempting real `POST /events/add` calls against it and getting **403** — the key it's using was loaded at process start, before a trailing-whitespace bug in the `.env` value was fixed, so that in-flight process is running on a corrupted key. Both `dashboard_api.py` and `wazuh_listener.py` need a restart to pick up the corrected key; not yet re-verified live as of this writing. | **CREDENTIAL CONFIGURED, pending restart to verify** (was CREDENTIAL BLOCKED earlier this session) |
 | **Dashboard visibility of any of the above** | — | — | **Zero** — grep of `dashboard_api.py` finds no `/api/misp/*` or `/api/cti/*` route at all | **ISOLATED (real gap) → addressed this phase, Section 6** |
 
 ## 3. Backend — evidence, investigation, RAG, GNN
@@ -115,10 +115,10 @@ or the dashboard (`dashboard_api.py` → a mounted React component). A
 
 | Classification | Count (approx., backend modules) |
 |---|---|
-| FULLY INTEGRATED | ~46 |
+| FULLY INTEGRATED (incl. Wazuh listener + live MISP publish attempts, corrected 2026-09-24) | ~47 |
 | PARTIALLY INTEGRATED | 1 (`rag/campaign_retriever.py` — investigation-only, no standalone route; not changed this phase, since Multi-RAG's unified endpoint (Section 5) now covers this same retriever's output through a new path) |
-| INFRASTRUCTURE BLOCKED | 2 (Wazuh listener in this dev environment, SSL/SSFT) |
-| CREDENTIAL BLOCKED | 1 (MISP authenticated publish) |
+| INFRASTRUCTURE BLOCKED | 1 (SSL/SSFT — Wazuh reclassified as live, see Section 1's correction) |
+| CREDENTIAL CONFIGURED, pending restart to verify | 1 (MISP authenticated publish — real key set in `.env`, running processes need a restart to load it; was CREDENTIAL BLOCKED earlier this session) |
 | OBSOLETE FOR PRODUCTION BY DESIGN | ~7 (GNN Option C / research-only tooling, Generation-1 per `GENERATION1_DISPOSITION.md` — unchanged, not touched this phase) |
 | ISOLATED, now fixed this phase | 3 (`PredictionPanel.tsx`, MISP dashboard visibility, unified Multi-RAG endpoint) |
 

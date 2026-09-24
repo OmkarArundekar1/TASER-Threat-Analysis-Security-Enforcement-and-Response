@@ -29,6 +29,13 @@ MAX_BATCH_SIZE = 200
 ENABLE_DUPLICATE_BUFFER = True
 
 SHUFFLE_WEBHOOK = os.environ.get("SHUFFLE_WEBHOOK", "")
+# Optional -- only needed for soar/shuffle_client.py's execution-status
+# polling path (Shuffle's REST API, distinct from the webhook trigger
+# URL above). Empty by default: this environment has no Shuffle API
+# key configured, so polling is honestly reported as unavailable rather
+# than fabricated (see SOAR_PLAYBOOK_INTEGRATION.md).
+SHUFFLE_BASE_URL = os.environ.get("SHUFFLE_BASE_URL", "")
+SHUFFLE_API_KEY = os.environ.get("SHUFFLE_API_KEY", "")
 
 LOG_LEVEL = "INFO"
 

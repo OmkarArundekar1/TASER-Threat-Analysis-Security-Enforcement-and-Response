@@ -1,13 +1,14 @@
-import { Shield, Clock, LayoutDashboard, GitBranch, Zap, Radio, Activity, ScrollText } from 'lucide-react';
+import { Shield, Clock, LayoutDashboard, GitBranch, Zap, Radio, Activity, ScrollText, Bot } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { useEffect, useState } from 'react';
 
-export type TopLevelView = 'dashboard' | 'gnn' | 'prediction' | 'threat-intel' | 'system' | 'audit';
+export type TopLevelView = 'dashboard' | 'gnn' | 'prediction' | 'threat-intel' | 'system' | 'audit' | 'soar';
 
 const VIEWS: { id: TopLevelView; label: string; icon: typeof LayoutDashboard; activeClass: string }[] = [
   { id: 'dashboard', label: 'SOC Dashboard', icon: LayoutDashboard, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
   { id: 'gnn', label: 'GNN Intelligence', icon: GitBranch, activeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' },
   { id: 'prediction', label: 'Prediction', icon: Zap, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
+  { id: 'soar', label: 'SOAR', icon: Bot, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
   { id: 'threat-intel', label: 'Threat Intel', icon: Radio, activeClass: 'bg-orange-500/20 text-orange-300 border-orange-500/40' },
   { id: 'system', label: 'System Health', icon: Activity, activeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' },
   { id: 'audit', label: 'Audit Log', icon: ScrollText, activeClass: 'bg-slate-500/20 text-slate-300 border-slate-500/40' },
