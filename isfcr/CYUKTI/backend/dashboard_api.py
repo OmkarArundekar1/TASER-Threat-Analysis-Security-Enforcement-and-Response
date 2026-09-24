@@ -422,9 +422,29 @@ def correlation_campaigns(campaign_id):
                 "shared_techniques": r["shared_techniques"],
                 "shared_tactics": tactics_set,
                 "shared_attackers": r["shared_attackers"],
-                "shared_hosts": r["shared_hosts"]
+                "shared_hosts": r["shared_hosts"],
+                # Additive, informational only -- computed independently of
+                # the technique/attacker/host Cypher formula above, never
+                # blended into `similarity_score` or the ORDER BY/LIMIT
+                # ranking already decided by the query. None (not 0) when
+                # GNN is disabled/unavailable -- see GNN_PRODUCTION_INTEGRATION.md.
+                "gnn_topology_similarity": _gnn_topology_similarity_for_dashboard(campaign_id, r["campaign_id"]),
             })
         return jsonify({"campaign_id": campaign_id, "similar_campaigns": similar_campaigns})
+
+
+def _gnn_topology_similarity_for_dashboard(campaign_id_a: str, campaign_id_b: str) -> float | None:
+    """Fails safe to None for any reason (GNN disabled, no artifact,
+    malformed graph) -- never raises into a dashboard route."""
+    try:
+        from ml.gnn.topology_similarity import gnn_topology_similarity_between_campaigns
+        return gnn_topology_similarity_between_campaigns(campaign_id_a, campaign_id_b)
+    except Exception:
+        logger.exception(
+            "GNN topology similarity computation failed for dashboard correlation "
+            "(%s vs %s) -- continuing without it.", campaign_id_a, campaign_id_b,
+        )
+        return None
 
 @app.route('/api/attribution/actors/<campaign_id>')
 def attribution_actors(campaign_id):

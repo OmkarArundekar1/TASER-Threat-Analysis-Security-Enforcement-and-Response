@@ -79,6 +79,39 @@ describe('EvidenceInvestigation -- investigation flow', () => {
     expect(screen.getByText(/derived from 1 item/)).toBeInTheDocument();
   });
 
+  it('renders GNN topology evidence generically, same as any other source', async () => {
+    setSelectedCampaign('CAMP_7331E223');
+    mockApi.investigate.mockResolvedValue({
+      ...investigationResultFixture,
+      evidence: [
+        ...investigationResultFixture.evidence,
+        {
+          evidence_id: 'gnn_topology:CAMP_PAST_2:historical_match',
+          source: 'gnn_topology',
+          source_id: 'CAMP_PAST_2',
+          timestamp: '2026-01-01T00:00:00+00:00',
+          type: 'historical_match',
+          content: { campaign_id: 'CAMP_PAST_2', topology_similarity: 0.94 },
+          confidence: 1.0,
+          relevance: 0.97,
+          provenance: 'ml.gnn.inference (GraphAutoencoder topology similarity, model_version=test-v1)',
+          relationships: ['CAMP_PAST_2'],
+          derived_from: [],
+        },
+      ],
+      total_evidence: 3,
+    });
+
+    render(<EvidenceInvestigation />);
+    fireEvent.click(screen.getByRole('button', { name: /run investigation/i }));
+
+    await waitFor(() => expect(screen.getByText(/Evidence \(3\)/)).toBeInTheDocument());
+    expect(screen.getByText('gnn_topology')).toBeInTheDocument();
+    expect(screen.getByText(/ml\.gnn\.inference/)).toBeInTheDocument();
+    expect(screen.getByText('matched: CAMP_PAST_2')).toBeInTheDocument();
+    expect(screen.getByText('topology similarity: 94.0%')).toBeInTheDocument();
+  });
+
   it('shows a controlled error message and clears any prior result when the investigation call fails', async () => {
     setSelectedCampaign('CAMP_7331E223');
     mockApi.investigate.mockRejectedValue(new Error('Database unavailable: connection refused'));

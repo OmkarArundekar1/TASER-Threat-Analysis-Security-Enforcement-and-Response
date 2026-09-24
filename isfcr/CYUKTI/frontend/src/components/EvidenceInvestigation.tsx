@@ -11,10 +11,21 @@ const SOURCE_COLOR: Record<string, string> = {
   graph: 'border-blue-500/30 bg-blue-500/5 text-blue-400',
   campaign_history: 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400',
   attribution: 'border-red-500/30 bg-red-500/5 text-red-400',
+  gnn_topology: 'border-cyan-500/30 bg-cyan-500/5 text-cyan-400',
 };
 
 function EvidenceCard({ e }: { e: EvidenceItem }) {
   const colorClass = SOURCE_COLOR[e.source] || 'border-slate-500/30 bg-slate-500/5 text-slate-400';
+  // Populated by both rag/gnn_topology_retriever.py (source: gnn_topology)
+  // and threat_attribution_engine.py's additive field on ATTRIBUTION
+  // evidence (see GNN_PRODUCTION_INTEGRATION.md) -- same content key,
+  // same meaning (GNN embedding cosine similarity), two different
+  // sources. Not present (undefined) when GNN is disabled/unavailable.
+  const topologySimilarity = e.content.topology_similarity;
+  const matchedCampaignId =
+    (e.content.campaign_id as string | undefined) ||
+    (e.content.candidate_campaign_id as string | undefined);
+
   return (
     <div className={`border rounded-md p-2 text-xs ${colorClass}`}>
       <div className="flex justify-between items-center mb-1">
@@ -24,6 +35,16 @@ function EvidenceCard({ e }: { e: EvidenceItem }) {
         </span>
       </div>
       <div className="text-slate-300 truncate" title={e.provenance}>{e.provenance}</div>
+      {matchedCampaignId && (
+        <div className="text-[10px] text-slate-400 mt-1 font-mono truncate">
+          matched: {matchedCampaignId}
+        </div>
+      )}
+      {typeof topologySimilarity === 'number' && (
+        <div className="text-[10px] text-cyan-400 mt-1 font-mono">
+          topology similarity: {(topologySimilarity * 100).toFixed(1)}%
+        </div>
+      )}
       {e.derived_from.length > 0 && (
         <div className="text-[10px] text-slate-500 mt-1" title={e.derived_from.join(', ')}>
           derived from {e.derived_from.length} item{e.derived_from.length > 1 ? 's' : ''}

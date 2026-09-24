@@ -169,7 +169,7 @@ export interface HealthStatus {
 
 export interface EvidenceItem {
   evidence_id: string;
-  source: 'siem' | 'mitre' | 'cti' | 'graph' | 'campaign_history' | 'attribution';
+  source: 'siem' | 'mitre' | 'cti' | 'graph' | 'campaign_history' | 'attribution' | 'gnn_topology';
   source_id: string;
   timestamp: string;
   type: string;

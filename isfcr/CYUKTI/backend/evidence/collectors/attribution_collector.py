@@ -42,6 +42,13 @@ def collect_attribution_evidence(attribution_result) -> list[Evidence]:
                     "precision": actor.precision,
                     "notes": actor.evidence,
                     "rank": rank,
+                    # Additive, informational only (GNN_PRODUCTION_INTEGRATION.md).
+                    # ThreatAttributionEngine already computes this independently
+                    # of coverage/precision/chain_similarity/total_score above --
+                    # this was previously computed but never actually surfaced
+                    # here, so it never reached investigation evidence. None
+                    # (not 0) when GNN is disabled/unavailable.
+                    "topology_similarity": actor.topology_similarity,
                 },
                 confidence=score,
                 relevance=score * rank_decay,

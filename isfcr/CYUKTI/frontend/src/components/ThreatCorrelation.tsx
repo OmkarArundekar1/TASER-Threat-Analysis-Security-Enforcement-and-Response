@@ -60,7 +60,23 @@ export function ThreatCorrelation() {
                 </div>
               </div>
             </div>
-            
+
+            {/* Additive, informational only -- computed independently of
+                similarity_score above (technique/attacker/host overlap),
+                never blended into it. See GNN_PRODUCTION_INTEGRATION.md.
+                Absent (undefined) when GNN is disabled -- renders nothing. */}
+            {typeof camp.gnn_topology_similarity === 'number' && (
+              <div className="flex items-center gap-2 text-[10px] mb-1">
+                <span className="text-slate-500 uppercase tracking-wider">GNN Topology</span>
+                <span className="font-mono text-cyan-400 font-bold">
+                  {(camp.gnn_topology_similarity * 100).toFixed(1)}%
+                </span>
+                <span className="text-slate-600" title="Cosine similarity between learned graph embeddings -- a separate, structural signal, not blended into the similarity score above.">
+                  (structural, separate signal)
+                </span>
+              </div>
+            )}
+
             <div className="space-y-2 mt-3 text-xs">
               {camp.shared_tactics && camp.shared_tactics.length > 0 && (
                 <div>

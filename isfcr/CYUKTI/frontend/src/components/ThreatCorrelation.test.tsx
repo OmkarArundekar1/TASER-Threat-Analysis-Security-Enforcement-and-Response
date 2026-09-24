@@ -56,6 +56,30 @@ it('selects the correlated campaign when its label is clicked', async () => {
   expect(selectCampaign).toHaveBeenCalledWith('CAMP_PAST_1');
 });
 
+it('renders GNN topology similarity when present, without affecting the existing similarity score', async () => {
+  setSelectedCampaign('CAMP_7331E223');
+  mockApi.campaignCorrelation.mockResolvedValue({
+    campaign_id: 'CAMP_7331E223',
+    similar_campaigns: [{ ...correlationCampaignsFixture.similar_campaigns[0], gnn_topology_similarity: 0.87 }],
+  });
+
+  render(<ThreatCorrelation />);
+
+  await waitFor(() => expect(screen.getByText('78%')).toBeInTheDocument());
+  expect(screen.getByText('GNN Topology')).toBeInTheDocument();
+  expect(screen.getByText('87.0%')).toBeInTheDocument();
+});
+
+it('omits the GNN topology row when the field is absent (GNN disabled) -- pre-existing fixtures still render correctly', async () => {
+  setSelectedCampaign('CAMP_7331E223');
+  mockApi.campaignCorrelation.mockResolvedValue(correlationCampaignsFixture);
+
+  render(<ThreatCorrelation />);
+
+  await waitFor(() => expect(screen.getByText('78%')).toBeInTheDocument());
+  expect(screen.queryByText('GNN Topology')).not.toBeInTheDocument();
+});
+
 it('shows the no-similar-campaigns state for an empty result (matches the documented "no 404" contract)', async () => {
   setSelectedCampaign('CAMP_7331E223');
   mockApi.campaignCorrelation.mockResolvedValue({ campaign_id: 'CAMP_7331E223', similar_campaigns: [] });
