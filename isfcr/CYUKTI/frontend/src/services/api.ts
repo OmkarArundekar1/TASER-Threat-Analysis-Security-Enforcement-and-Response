@@ -160,4 +160,19 @@ export const api = {
     fetchApi<import('../types').GNNTopologyResponse>(
       `/gnn/topology/${encodeURIComponent(campaignId)}?top_k=${topK}`
     ),
+
+  mispStatus: () =>
+    fetchApi<import('../types').MISPStatus>('/misp/status'),
+
+  systemHealth: () =>
+    fetchApi<import('../types').SystemHealthResponse>('/system/health'),
+
+  auditLogs: (limit: number = 200) =>
+    fetchApi<import('../types').AuditLogResponse>(`/audit/logs?limit=${limit}`),
+
+  ragSearch: (params: { query?: string; campaignId?: string; topK?: number }) =>
+    fetchApi<import('../types').RagSearchResponse>('/rag/search', {
+      method: 'POST',
+      body: JSON.stringify({ query: params.query, campaign_id: params.campaignId, top_k: params.topK ?? 5 }),
+    }),
 };

@@ -11,6 +11,10 @@ import { AttackerIntelligence } from './components/AttackerIntelligence';
 import { IntelligenceWorkspace } from './components/IntelligenceWorkspace';
 import { PathExplorer } from './components/PathExplorer';
 import { GNNIntelligencePage } from './components/GNNIntelligencePage';
+import { PredictionIntelligencePage } from './components/PredictionIntelligencePage';
+import { ThreatIntelligencePage } from './components/ThreatIntelligencePage';
+import { SystemHealthPage } from './components/SystemHealthPage';
+import { AuditLogPage } from './components/AuditLogPage';
 
 function DashboardLayout() {
   const { isPathExplorerOpen } = useDashboard();
@@ -22,6 +26,14 @@ function DashboardLayout() {
 
       {activeView === 'gnn' ? (
         <GNNIntelligencePage />
+      ) : activeView === 'prediction' ? (
+        <PredictionIntelligencePage />
+      ) : activeView === 'threat-intel' ? (
+        <ThreatIntelligencePage />
+      ) : activeView === 'system' ? (
+        <SystemHealthPage />
+      ) : activeView === 'audit' ? (
+        <AuditLogPage />
       ) : (
         <>
       {isPathExplorerOpen && <PathExplorer />}

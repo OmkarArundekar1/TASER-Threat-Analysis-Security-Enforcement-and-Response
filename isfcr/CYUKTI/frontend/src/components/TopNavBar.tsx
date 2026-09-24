@@ -1,8 +1,17 @@
-import { Shield, Clock, LayoutDashboard, GitBranch } from 'lucide-react';
+import { Shield, Clock, LayoutDashboard, GitBranch, Zap, Radio, Activity, ScrollText } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { useEffect, useState } from 'react';
 
-export type TopLevelView = 'dashboard' | 'gnn';
+export type TopLevelView = 'dashboard' | 'gnn' | 'prediction' | 'threat-intel' | 'system' | 'audit';
+
+const VIEWS: { id: TopLevelView; label: string; icon: typeof LayoutDashboard; activeClass: string }[] = [
+  { id: 'dashboard', label: 'SOC Dashboard', icon: LayoutDashboard, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
+  { id: 'gnn', label: 'GNN Intelligence', icon: GitBranch, activeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' },
+  { id: 'prediction', label: 'Prediction', icon: Zap, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
+  { id: 'threat-intel', label: 'Threat Intel', icon: Radio, activeClass: 'bg-orange-500/20 text-orange-300 border-orange-500/40' },
+  { id: 'system', label: 'System Health', icon: Activity, activeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' },
+  { id: 'audit', label: 'Audit Log', icon: ScrollText, activeClass: 'bg-slate-500/20 text-slate-300 border-slate-500/40' },
+];
 
 interface TopNavBarProps {
   activeView: TopLevelView;
@@ -39,23 +48,18 @@ export function TopNavBar({ activeView, onChangeView }: TopNavBarProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-[#131c2e] border border-[#1e2d4a] rounded-md p-0.5 ml-2">
-          <button
-            onClick={() => onChangeView('dashboard')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold transition-colors ${
-              activeView === 'dashboard' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' : 'text-slate-400 hover:text-slate-200 border border-transparent'
-            }`}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" /> SOC Dashboard
-          </button>
-          <button
-            onClick={() => onChangeView('gnn')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold transition-colors ${
-              activeView === 'gnn' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-slate-400 hover:text-slate-200 border border-transparent'
-            }`}
-          >
-            <GitBranch className="w-3.5 h-3.5" /> GNN Intelligence
-          </button>
+        <div className="flex items-center gap-1 bg-[#131c2e] border border-[#1e2d4a] rounded-md p-0.5 ml-2 overflow-x-auto max-w-[52vw]">
+          {VIEWS.map(({ id, label, icon: Icon, activeClass }) => (
+            <button
+              key={id}
+              onClick={() => onChangeView(id)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold transition-colors whitespace-nowrap ${
+                activeView === id ? `${activeClass} border` : 'text-slate-400 hover:text-slate-200 border border-transparent'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" /> {label}
+            </button>
+          ))}
         </div>
       </div>
 

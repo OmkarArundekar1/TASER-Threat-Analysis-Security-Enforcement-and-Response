@@ -217,6 +217,42 @@ export interface GNNTopologyResponse {
   topology_neighbors: EvidenceItem[];
 }
 
+/* ── MISP/CTI, system health, audit log (dashboard visibility for
+   pipeline state that already existed but had no frontend surface) ── */
+
+export interface MISPStatus {
+  misp_url: string;
+  credential_configured: boolean;
+  authenticated: boolean;
+  cached_campaigns: number;
+  campaign_event_map: Record<string, number>;
+  status_message: string;
+}
+
+export interface SystemHealthResponse {
+  status: 'healthy' | 'degraded';
+  timestamp: string;
+  subsystems: Record<string, { status: string; [key: string]: unknown }>;
+}
+
+export interface AuditLogEntry {
+  timestamp: string | null;
+  level: string | null;
+  message: string;
+}
+
+export interface AuditLogResponse {
+  entries: AuditLogEntry[];
+  total_lines: number;
+  log_path: string;
+}
+
+export interface RagSearchResponse {
+  query: string | null;
+  campaign_id: string | null;
+  sources: Record<string, EvidenceItem[] | { error: string } | { gnn_available: boolean; results: EvidenceItem[] }>;
+}
+
 export interface ActionScore {
   action: string;
   value: number;

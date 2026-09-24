@@ -22,6 +22,13 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 
+# Real path listener/wazuh_listener.py writes to when run with `backend/`
+# as the working directory (confirmed by inspecting the actual file on
+# disk, not assumed from LOG_DIR/LOG_FILE's own module-relative
+# definition). A module-level constant so tests can monkeypatch it
+# instead of pointing at the real, live log file.
+LISTENER_LOG_PATH = os.path.join(os.path.dirname(__file__), "logs", "prerana_listener.log")
+
 # Windows DLL load-order fix (found during live verification, not a
 # synthetic concern -- see GNN_PRODUCTION_INTEGRATION.md Section 11):
 # on this platform, importing torch (ml.gnn.inference) AFTER xgboost has
@@ -1447,6 +1454,214 @@ def gnn_topology(campaign_id):
         "gnn_model_version": gnn_inference_service.metadata.model_version,
         "topology_neighbors": [e.to_dict() for e in results],
     })
+
+
+@app.route('/api/rag/search', methods=['POST'])
+def rag_search():
+    """Unified Multi-RAG query surface.
+
+    Queries every real retrieval source that applies to the given
+    request in one call, but never blends their scores into a single
+    ranking -- each source's results come back tagged with their own
+    `source` and `relevance`/`confidence`, exactly as
+    investigation/loop.py's per-action evidence collection already
+    keeps them distinct. This route exists because, before now, the
+    only way to see all three sources together was to run a full
+    campaign investigation (`/api/investigate/<id>`); MITRE and
+    campaign-narrative text search had no standalone entry point (GNN
+    topology already had one: /api/gnn/topology/<id>).
+
+    Body: {"query": str (optional), "campaign_id": str (optional), "top_k": int}
+    At least one of query/campaign_id is required: `query` drives the
+    MITRE + campaign-narrative TF-IDF sources, `campaign_id` drives the
+    GNN topology source (which ranks by graph structure, not text).
+    """
+    body = request.get_json(silent=True) or {}
+    query_text = body.get('query')
+    campaign_id = body.get('campaign_id')
+    top_k = int(body.get('top_k', 5))
+
+    if not query_text and not campaign_id:
+        return jsonify({"error": "Provide at least one of: query, campaign_id"}), 400
+
+    sources = {}
+
+    if query_text:
+        try:
+            mitre_results = mitre_retriever.query(query_text, top_k=top_k)
+            sources['mitre_knowledge'] = [e.to_dict() for e in mitre_results]
+        except Exception as e:
+            logger.exception("rag_search: MITRE retrieval failed")
+            sources['mitre_knowledge'] = {"error": str(e)}
+
+        try:
+            from rag.campaign_retriever import CampaignNarrativeRetriever
+            narrative_results = CampaignNarrativeRetriever().query(query_text, top_k=top_k)
+            sources['campaign_history'] = [e.to_dict() for e in narrative_results]
+        except Exception as e:
+            logger.exception("rag_search: campaign narrative retrieval failed")
+            sources['campaign_history'] = {"error": str(e)}
+
+    if campaign_id:
+        from ml.gnn.inference import gnn_inference_service
+        if not gnn_inference_service.available:
+            sources['gnn_topology'] = {"gnn_available": False, "results": []}
+        else:
+            try:
+                from rag.gnn_topology_retriever import GNNTopologyRetriever
+                gnn_results = GNNTopologyRetriever().query(campaign_id, top_k=top_k)
+                sources['gnn_topology'] = {
+                    "gnn_available": True,
+                    "results": [e.to_dict() for e in gnn_results],
+                }
+            except Exception as e:
+                logger.exception("rag_search: GNN topology retrieval failed")
+                sources['gnn_topology'] = {"error": str(e)}
+
+    return jsonify({"query": query_text, "campaign_id": campaign_id, "sources": sources})
+
+
+@app.route('/api/misp/status')
+def misp_status():
+    """Real, read-only MISP/CTI integration status.
+
+    realtime_socgraph.py already instantiates CTIPublisher/MISPSync and
+    attempts to sync every resolved campaign to MISP as part of the
+    live alert pipeline (see FULL_SYSTEM_INTEGRATION_AUDIT.md Section
+    2) -- this route is the first place that state becomes visible to
+    the dashboard. Never publishes or modifies anything; never returns
+    the API key. If MISP_API_KEY isn't configured, that is reported
+    honestly rather than faking a connected state.
+    """
+    import config
+    credential_configured = bool(config.MISP_API_KEY)
+    result = {
+        "misp_url": config.MISP_URL,
+        "credential_configured": credential_configured,
+        "authenticated": False,
+        "cached_campaigns": 0,
+        "campaign_event_map": {},
+    }
+    if not credential_configured:
+        result["status_message"] = (
+            "MISP publication requires configured authentication (MISP_API_KEY is not set)."
+        )
+        return jsonify(result)
+
+    try:
+        from cti_publisher import CTIPublisher
+        from misp_cache import cache as misp_cache
+        publisher = CTIPublisher(config.MISP_URL, config.MISP_API_KEY, verify_ssl=config.VERIFY_MISP_SSL)
+        result["authenticated"] = publisher.health_check()
+        stats = misp_cache.all()
+        result["cached_campaigns"] = len(stats)
+        result["campaign_event_map"] = stats
+        result["status_message"] = (
+            "Connected" if result["authenticated"]
+            else "Credential configured but MISP is unreachable or rejected the request."
+        )
+    except Exception as e:
+        logger.exception("MISP status check failed")
+        result["status_message"] = f"MISP status check failed: {e}"
+    return jsonify(result)
+
+
+@app.route('/api/system/health')
+def system_health():
+    """Per-subsystem health, distinct from the minimal /api/health
+    (which only checks Neo4j connectivity). Every check here is a real
+    probe of that subsystem's own real state -- never a hardcoded
+    "ok" -- and a failure in one check never prevents the others from
+    reporting.
+    """
+    import config
+    subsystems = {}
+
+    try:
+        driver.verify_connectivity()
+        subsystems['neo4j'] = {"status": "connected"}
+    except Exception as e:
+        subsystems['neo4j'] = {"status": "disconnected", "detail": str(e)}
+
+    xgb_path = os.path.join(os.path.dirname(__file__), "ml", "models", "xgb_severity.json")
+    if os.path.exists(xgb_path):
+        subsystems['xgboost_severity'] = {
+            "status": "available",
+            "model_path": xgb_path,
+            "modified": datetime.datetime.fromtimestamp(
+                os.path.getmtime(xgb_path), tz=datetime.timezone.utc
+            ).isoformat(),
+        }
+    else:
+        subsystems['xgboost_severity'] = {"status": "not_trained"}
+
+    try:
+        from ml.gnn.inference import gnn_inference_service
+        if config.GNN_ENABLED:
+            available = gnn_inference_service.available
+            subsystems['gnn'] = {
+                "status": "available" if available else "enabled_but_unavailable",
+                "model_version": gnn_inference_service.metadata.model_version if available else None,
+            }
+        else:
+            subsystems['gnn'] = {"status": "disabled"}
+    except Exception as e:
+        subsystems['gnn'] = {"status": "error", "detail": str(e)}
+
+    credential_configured = bool(config.MISP_API_KEY)
+    subsystems['misp'] = {
+        "status": "credential_configured" if credential_configured else "credential_missing",
+    }
+
+    if os.path.exists(LISTENER_LOG_PATH):
+        age_seconds = datetime.datetime.now().timestamp() - os.path.getmtime(LISTENER_LOG_PATH)
+        subsystems['wazuh_listener'] = {
+            "status": "recently_active" if age_seconds < 300 else "idle",
+            "log_last_modified_seconds_ago": round(age_seconds, 1),
+        }
+    else:
+        subsystems['wazuh_listener'] = {"status": "no_log_found"}
+
+    overall_ok = subsystems['neo4j']['status'] == 'connected'
+    return jsonify({
+        "status": "healthy" if overall_ok else "degraded",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "subsystems": subsystems,
+    })
+
+
+@app.route('/api/audit/logs')
+def audit_logs():
+    """Tails the real Wazuh-listener log (logs/prerana_listener.log --
+    written by listener/wazuh_listener.py's own logging setup, one line
+    per real event: 'TIMESTAMP | LEVEL | message'). Parses into
+    structured entries; never fabricates entries if the file is
+    missing or empty.
+    """
+    limit = min(int(request.args.get('limit', 200)), 2000)
+    log_path = LISTENER_LOG_PATH
+
+    if not os.path.exists(log_path):
+        return jsonify({"entries": [], "total_lines": 0, "log_path": log_path})
+
+    with open(log_path, 'r', errors='replace') as f:
+        lines = f.readlines()
+
+    total_lines = len(lines)
+    tail = lines[-limit:]
+
+    entries = []
+    for line in tail:
+        line = line.rstrip('\n')
+        if not line:
+            continue
+        parts = line.split(' | ', 2)
+        if len(parts) == 3:
+            entries.append({"timestamp": parts[0], "level": parts[1], "message": parts[2]})
+        else:
+            entries.append({"timestamp": None, "level": None, "message": line})
+
+    return jsonify({"entries": entries, "total_lines": total_lines, "log_path": log_path})
 
 
 @app.route('/api/ml/predict/severity', methods=['POST'])
