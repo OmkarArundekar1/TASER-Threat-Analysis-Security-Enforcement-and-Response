@@ -1,8 +1,15 @@
-import { Shield, Clock } from 'lucide-react';
+import { Shield, Clock, LayoutDashboard, GitBranch } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { useEffect, useState } from 'react';
 
-export function TopNavBar() {
+export type TopLevelView = 'dashboard' | 'gnn';
+
+interface TopNavBarProps {
+  activeView: TopLevelView;
+  onChangeView: (view: TopLevelView) => void;
+}
+
+export function TopNavBar({ activeView, onChangeView }: TopNavBarProps) {
   const { health, overview, globalTimeRange, setGlobalTimeRange, resetDashboard, selectedCampaign, selectedAttacker, selectedTechnique } = useDashboard();
   const [time, setTime] = useState('');
 
@@ -31,10 +38,29 @@ export function TopNavBar() {
             </span>
           </div>
         </div>
+
+        <div className="flex items-center gap-1 bg-[#131c2e] border border-[#1e2d4a] rounded-md p-0.5 ml-2">
+          <button
+            onClick={() => onChangeView('dashboard')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold transition-colors ${
+              activeView === 'dashboard' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40' : 'text-slate-400 hover:text-slate-200 border border-transparent'
+            }`}
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" /> SOC Dashboard
+          </button>
+          <button
+            onClick={() => onChangeView('gnn')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold transition-colors ${
+              activeView === 'gnn' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-slate-400 hover:text-slate-200 border border-transparent'
+            }`}
+          >
+            <GitBranch className="w-3.5 h-3.5" /> GNN Intelligence
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={resetDashboard}
           disabled={!hasActiveFilters}
           className={`text-xs font-semibold px-3 py-1 rounded-md transition-colors border ${

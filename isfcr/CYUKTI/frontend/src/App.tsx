@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { DashboardProvider, useDashboard } from './context/DashboardContext';
-import { TopNavBar } from './components/TopNavBar';
+import { TopNavBar, type TopLevelView } from './components/TopNavBar';
 import { SecurityOverview } from './components/SecurityOverview';
 import { LiveEventsFeed } from './components/LiveEventsFeed';
 import { AttackGraph } from './components/AttackGraph';
@@ -9,14 +10,20 @@ import { QueryConsole } from './components/QueryConsole';
 import { AttackerIntelligence } from './components/AttackerIntelligence';
 import { IntelligenceWorkspace } from './components/IntelligenceWorkspace';
 import { PathExplorer } from './components/PathExplorer';
+import { GNNIntelligencePage } from './components/GNNIntelligencePage';
 
 function DashboardLayout() {
   const { isPathExplorerOpen } = useDashboard();
+  const [activeView, setActiveView] = useState<TopLevelView>('dashboard');
 
   return (
     <div className="h-screen flex flex-col bg-[#060a13] text-slate-200 overflow-hidden">
-      <TopNavBar />
-      
+      <TopNavBar activeView={activeView} onChangeView={setActiveView} />
+
+      {activeView === 'gnn' ? (
+        <GNNIntelligencePage />
+      ) : (
+        <>
       {isPathExplorerOpen && <PathExplorer />}
 
       <main className="flex-1 p-2 md:p-3 flex flex-col gap-2 md:gap-3 overflow-hidden min-h-0">
@@ -59,6 +66,8 @@ function DashboardLayout() {
           </div>
         </div>
       </main>
+        </>
+      )}
     </div>
   );
 }
