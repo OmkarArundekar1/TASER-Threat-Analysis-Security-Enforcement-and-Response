@@ -54,6 +54,42 @@ function EvidenceCard({ e }: { e: EvidenceItem }) {
   );
 }
 
+const SOURCE_DOT: Record<string, string> = {
+  mitre: 'bg-indigo-400',
+  cti: 'bg-purple-400',
+  siem: 'bg-yellow-400',
+  graph: 'bg-blue-400',
+  campaign_history: 'bg-emerald-400',
+  attribution: 'bg-red-400',
+  gnn_topology: 'bg-cyan-400',
+};
+
+/**
+ * Makes CYUKTI's Multi-RAG design (multiple independent retrieval
+ * sources feeding one evidence store -- MITRE semantic search,
+ * campaign-narrative TF-IDF, GNN topology embeddings, plus SIEM/CTI/
+ * attribution) visible at a glance, rather than only discoverable by
+ * reading through every individual evidence card's badge.
+ */
+function MultiRagSourceBar({ evidence }: { evidence: EvidenceItem[] }) {
+  if (evidence.length === 0) return null;
+  const counts = new Map<string, number>();
+  for (const e of evidence) counts.set(e.source, (counts.get(e.source) || 0) + 1);
+  const sources = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1 pb-1 text-[10px] text-slate-400">
+      <span className="text-slate-600 uppercase tracking-wider">Multi-RAG:</span>
+      {sources.map(([source, count]) => (
+        <span key={source} className="flex items-center gap-1">
+          <span className={`w-1.5 h-1.5 rounded-full ${SOURCE_DOT[source] || 'bg-slate-400'}`} />
+          {source} <span className="font-mono text-slate-500">{count}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function EvidenceInvestigation() {
   const { selectedCampaign } = useDashboard();
   const [running, setRunning] = useState(false);
@@ -260,6 +296,7 @@ export function EvidenceInvestigation() {
               <div className="text-[10px] uppercase tracking-wider text-slate-500 pt-1">
                 Evidence ({result.total_evidence})
               </div>
+              <MultiRagSourceBar evidence={result.evidence} />
               <div className="space-y-1">
                 {result.evidence.map((e) => <EvidenceCard key={e.evidence_id} e={e} />)}
               </div>

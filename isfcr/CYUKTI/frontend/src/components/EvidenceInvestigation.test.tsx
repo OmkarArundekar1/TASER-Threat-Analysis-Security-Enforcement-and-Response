@@ -106,10 +106,23 @@ describe('EvidenceInvestigation -- investigation flow', () => {
     fireEvent.click(screen.getByRole('button', { name: /run investigation/i }));
 
     await waitFor(() => expect(screen.getByText(/Evidence \(3\)/)).toBeInTheDocument());
-    expect(screen.getByText('gnn_topology')).toBeInTheDocument();
+    // appears twice: the evidence card's own badge, and the Multi-RAG source summary bar
+    expect(screen.getAllByText('gnn_topology').length).toBe(2);
     expect(screen.getByText(/ml\.gnn\.inference/)).toBeInTheDocument();
     expect(screen.getByText('matched: CAMP_PAST_2')).toBeInTheDocument();
     expect(screen.getByText('topology similarity: 94.0%')).toBeInTheDocument();
+  });
+
+  it('shows a Multi-RAG source breakdown reflecting every distinct evidence source', async () => {
+    setSelectedCampaign('CAMP_7331E223');
+    mockApi.investigate.mockResolvedValue(investigationResultFixture);
+
+    render(<EvidenceInvestigation />);
+    fireEvent.click(screen.getByRole('button', { name: /run investigation/i }));
+
+    await waitFor(() => expect(screen.getByText(/Multi-RAG:/)).toBeInTheDocument());
+    expect(screen.getAllByText('campaign_history').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('attribution').length).toBeGreaterThan(0);
   });
 
   it('shows a controlled error message and clears any prior result when the investigation call fails', async () => {

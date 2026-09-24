@@ -152,4 +152,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ campaign_id: campaignId, attack_id: attackId, event_id: eventId }),
     }),
+
+  gnnStatus: () =>
+    fetchApi<import('../types').GNNStatus>('/gnn/status'),
+
+  gnnTopology: (campaignId: string, topK: number = 5) =>
+    fetchApi<import('../types').GNNTopologyResponse>(
+      `/gnn/topology/${encodeURIComponent(campaignId)}?top_k=${topK}`
+    ),
 };

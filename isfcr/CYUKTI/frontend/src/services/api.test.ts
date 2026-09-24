@@ -101,6 +101,27 @@ describe('api service -- success paths', () => {
     expect(result.prediction_context.campaign_id).toBe('CAMP_7331E223');
   });
 
+  it('gnnStatus() calls GET /api/gnn/status and returns the parsed body', async () => {
+    const body = { gnn_available: true, gnn_model_version: 'gnn_autoencoder.pt@123-456b', gnn_metadata: null };
+    mockFetchOnce(body);
+    const result = await api.gnnStatus();
+    expect(fetch).toHaveBeenCalledWith('/api/gnn/status', expect.anything());
+    expect(result).toEqual(body);
+  });
+
+  it('gnnTopology() encodes campaign_id and top_k', async () => {
+    const body = { campaign_id: 'CAMP_1', gnn_available: true, topology_neighbors: [] };
+    mockFetchOnce(body);
+    await api.gnnTopology('CAMP_1', 8);
+    expect(fetch).toHaveBeenCalledWith('/api/gnn/topology/CAMP_1?top_k=8', expect.anything());
+  });
+
+  it('gnnTopology() defaults top_k to 5', async () => {
+    mockFetchOnce({ campaign_id: 'CAMP_1', gnn_available: false, topology_neighbors: [] });
+    await api.gnnTopology('CAMP_1');
+    expect(fetch).toHaveBeenCalledWith('/api/gnn/topology/CAMP_1?top_k=5', expect.anything());
+  });
+
   it('predict() POSTs current_technique', async () => {
     mockFetchOnce({ current: 'T1110', predicted: 'T1078', confidence: 50 });
     await api.predict('T1110');

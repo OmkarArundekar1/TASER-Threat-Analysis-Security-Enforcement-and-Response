@@ -184,6 +184,39 @@ export interface EvidenceItem {
   derived_from: string[];
 }
 
+/* ── GNN topology (backend/ml/gnn, additive -- see GNN_PRODUCTION_INTEGRATION.md) ── */
+
+export interface GNNModelMetadata {
+  model_type: string;
+  architecture: string;
+  hidden_dim: number;
+  embedding_dim: number;
+  num_layers: number;
+  node_feature_schema: string[];
+  edge_feature_schema: string[];
+  normalization: string;
+  training_seed: number;
+  model_version: string;
+  training_dataset_description: string;
+  artifact_scope: string;
+}
+
+export interface GNNStatus {
+  gnn_available: boolean;
+  gnn_model_version: string | null;
+  gnn_metadata: GNNModelMetadata | null;
+}
+
+export interface GNNTopologyResponse {
+  campaign_id: string;
+  gnn_available: boolean;
+  gnn_model_version?: string;
+  // Each neighbor is a real Evidence item (evidence/schema.py's
+  // Evidence.to_dict()) -- same shape the investigation panel renders,
+  // reused here rather than duplicated.
+  topology_neighbors: EvidenceItem[];
+}
+
 export interface ActionScore {
   action: string;
   value: number;

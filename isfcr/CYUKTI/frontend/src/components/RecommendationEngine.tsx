@@ -1,8 +1,7 @@
 import { useDashboard } from '../context/DashboardContext';
-import { ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { RecommendationItem } from '../types';
-import { PanelWrapper } from './PanelWrapper';
 
 function normalizeRecs(recs: RecommendationItem[] | string[]): RecommendationItem[] {
   if (!recs?.length) return [];
@@ -35,11 +34,9 @@ export function RecommendationEngine() {
 
   if (!items.length) {
     return (
-      <PanelWrapper title="Defensive Playbook" icon={<ShieldCheck className="w-4 h-4 text-emerald-400" />} className="h-full">
-        <div className="flex-1 flex items-center justify-center text-slate-500 text-sm p-4 text-center">
-          No automated recommendations available for the selected campaign.
-        </div>
-      </PanelWrapper>
+      <div className="flex-1 flex items-center justify-center text-slate-500 text-sm p-4 text-center">
+        No automated recommendations available for the selected campaign.
+      </div>
     );
   }
 
@@ -48,17 +45,11 @@ export function RecommendationEngine() {
     : predictions[0];
 
   return (
-    <PanelWrapper
-      title="Defensive Playbook"
-      icon={<ShieldCheck className="w-4 h-4 text-emerald-400" />}
-      className="h-full"
-      headerExtra={
-        <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-          <span className="font-mono text-cyan-400">{activeRecs?.technique_id}</span>
-          {activePrediction?.predicted_name && <span className="truncate max-w-[120px]" title={activePrediction.predicted_name}>{activePrediction.predicted_name}</span>}
-        </div>
-      }
-    >
+    <div className="flex-1 flex flex-col h-full overflow-hidden animate-slide-in">
+      <div className="shrink-0 px-3 py-2 border-b border-[#1e2d4a] bg-[#0a0e17] flex items-center gap-1.5 text-[10px] text-slate-400">
+        <span className="font-mono text-cyan-400">{activeRecs?.technique_id}</span>
+        {activePrediction?.predicted_name && <span className="truncate max-w-[200px]" title={activePrediction.predicted_name}>{activePrediction.predicted_name}</span>}
+      </div>
       <div className="flex-1 overflow-auto p-3 bg-[#060a13] custom-scrollbar space-y-2">
         {items.map((rec, idx) => {
           const key = `${rec.recommendation}-${idx}`;
@@ -90,6 +81,6 @@ export function RecommendationEngine() {
           );
         })}
       </div>
-    </PanelWrapper>
+    </div>
   );
 }
