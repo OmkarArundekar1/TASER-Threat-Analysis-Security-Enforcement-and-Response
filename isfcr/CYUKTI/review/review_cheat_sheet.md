@@ -1,19 +1,25 @@
 # CYUKTI — One-Page Review Cheat Sheet
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+
 ## CYUKTI in one sentence
 CYUKTI ingests real Wazuh security telemetry into a Neo4j campaign graph and resolves MITRE ATT&CK attribution through a provenance-tracked, four-tier resolver that preserves unattributable evidence as an explicit, structurally-isolated UNKNOWN state instead of discarding or fabricating it.
 
-## 10 numbers to memorize
-1. **391** — real alerts in the representative MITRE-coverage snapshot (2026-08-31)
-2. **39/391 (10.0%)** — native ATT&CK-mapped alerts
-3. **352/391 (90.0%)** — preserved as UNKNOWN (by design, not a deficiency)
-4. **0/5** — fabricated `attack_id` values across all live-inspected UNKNOWN events
-5. **3 → 3** — NEXT_TECHNIQUE edge count, unchanged across UNKNOWN ingestion
-6. **44 → 0** — orphaned AttackEvents repaired
-7. **150/150** — automated tests passing
-8. **858** — real ATT&CK Technique nodes imported (STIX v19.1)
-9. **91.7%** — XGBoost accuracy, **in-sample only**, n=60
-10. **4/12 (33.3%)** — NEXT_TECHNIQUE accuracy, labeled `INSUFFICIENT_FOR_SUPERVISED_ML`
+## 14 numbers to memorize
+1. **120 alerts, 26 native (21.7%), 94 UNKNOWN (78.3%)** — current MITRE-coverage snapshot, post rule-fix + reboot (2026-09-25); the older 391-alert snapshot (10.0%/90.0%, 2026-08-31) is preserved as historical in `quantitative_results.md`
+2. **0/5** — fabricated `attack_id` values across all live-inspected UNKNOWN events
+3. **3 → 3** — NEXT_TECHNIQUE edge count, unchanged across UNKNOWN ingestion
+4. **44 → 0** — orphaned AttackEvents repaired (as of the 2026-09-12 check)
+5. **798** — automated tests passing: 689 backend (65 files) + 109 frontend (17 files)
+6. **83** — SOAR/playbook tests (9 files)
+7. **858** — real ATT&CK Technique nodes imported (STIX v19.1)
+8. **2,539 / 20,804** — total Neo4j nodes / relationships (2026-09-25)
+9. **111 / 212 / 50** — Campaigns / AttackEvents / Operations (2026-09-25)
+10. **93.3%** — dedup ratio (212 distinct AttackEvents vs. 3,185 tracked occurrences)
+11. **46** — API routes (33 core + 13 SOAR)
+12. **10** — investigation actions (not 8 — `CAMPAIGN_NARRATIVE_SEARCH`/`GNN_TOPOLOGY_RETRIEVAL` added later)
+13. **91.7%** — XGBoost accuracy, **in-sample only**, n=60
+14. **4/12 (33.3%)** — NEXT_TECHNIQUE accuracy, labeled `INSUFFICIENT_FOR_SUPERVISED_ML`
 
 ## 5 strongest contributions
 1. Provenance-aware, precedence-ordered MITRE resolution with mandatory confidence/reason on every result.
@@ -34,7 +40,7 @@ CYUKTI ingests real Wazuh security telemetry into a Neo4j campaign graph and res
 2. **"Is 91.7% a test accuracy?"** → No — in-sample, n=60, no held-out split exists; we say so explicitly.
 3. **"How do you validate attribution?"** → We don't yet — no ground-truth dataset exists, and we report that honestly rather than inventing a number.
 4. **"What's actually novel here?"** → Not the algorithms — the structurally-enforced, live-proven separation of detection from attribution.
-5. **"Does 150/150 tests mean it's bug-free?"** → No — we found a real production bug live that no test anticipated, and disclose it.
+5. **"Does 798/798 tests mean it's bug-free?"** → No — we found a real production bug live that no test anticipated, and disclose it.
 
 ## One sentence on ML
 The ML pipeline (XGBoost severity, SSL autoencoder, GNN) is real, trained, and tested end-to-end, but every reported metric is in-sample or synthetic-only — no held-out generalization claim exists yet, by deliberate, evidence-based choice.

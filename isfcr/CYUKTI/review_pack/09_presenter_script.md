@@ -1,5 +1,7 @@
 # CYUKTI — Presenter Script (30s / 2min / 5min)
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+
 ## 30 seconds — elevator pitch
 
 "CYUKTI ingests real Wazuh security telemetry into a Neo4j attack-campaign graph and tries to attribute each alert to a MITRE ATT&CK technique. Most real alerts don't come with a native ATT&CK tag — so instead of discarding them, we built a provenance-tracked resolver with four precedence levels, ending in an explicit UNKNOWN state, so we never fabricate an attribution but never lose the evidence either. We verified live that UNKNOWN events can't contaminate the attack-chain learning or risk scoring."
@@ -10,7 +12,7 @@
 
 Downstream, resolved events flow through attack-chain learning, a prediction engine, campaign correlation, and an evidence-aware investigation loop that separates evidence reliability, evidence coverage, model confidence, and model uncertainty as distinct signals — so the system can't manufacture confidence just because evidence is missing.
 
-We validated this live, not just in tests: right now, of 391 real alerts processed, 10% resolve to a native ATT&CK technique and 90% are correctly preserved as UNKNOWN — and we directly inspected five of those UNKNOWN events in Neo4j to confirm zero fabricated technique IDs, zero contamination of the learned attack-chain graph, and zero TPS contribution. Our own dataset-validity audit also found the accumulated real dataset — 60 campaigns — isn't yet large or diverse enough for severity calibration or next-technique prediction, and we report that honestly rather than overstating results on 60 rows."
+We validated this live, not just in tests: right now, of 120 real alerts processed (the current snapshot, taken after a recent rule fix and manager restart), 21.7% resolve to a native ATT&CK technique and 78.3% are correctly preserved as UNKNOWN — and we directly inspected five of those UNKNOWN events in Neo4j to confirm zero fabricated technique IDs, zero contamination of the learned attack-chain graph, and zero TPS contribution. Our own dataset-validity audit also found the accumulated real dataset — 60 campaigns — isn't yet large or diverse enough for severity calibration or next-technique prediction, and we report that honestly rather than overstating results on 60 rows."
 
 ## 5 minutes — full narrative
 
@@ -20,7 +22,7 @@ We validated this live, not just in tests: right now, of 391 real alerts process
 
 **Implementation.** The centerpiece is `mitre_resolver.py`: a four-tier precedence — native Wazuh mapping, a manually-reviewed rule registry (currently empty by design, populated only when independently justifiable), deterministic structural inference (currently zero live rules — infrastructure only), and UNKNOWN. Resolved events get the full pipeline: attack-chain learning, next-technique prediction, campaign correlation, threat attribution, MISP publication. UNKNOWN events are preserved as evidence — attached to the right campaign, full raw alert retained — but structurally barred from touching any of those, verified by both code inspection and live data.
 
-**Metrics.** 150 of 150 tests pass. Live: 65 campaigns, 124 attack events, zero orphaned events, 858 real techniques, only 3 learned attack-chain transitions. Coverage today: 10% native, 90% UNKNOWN, out of 391 real alerts — and we show, not just claim, that none of that 90% leaked into technique learning. Our XGBoost severity model reaches 0.917 accuracy, but only in-sample on the 60 rows it was trained on — we don't have a held-out split yet, and we say so explicitly.
+**Metrics.** 798 of 798 tests pass (689 backend across 65 files, plus 109 frontend across 17 files, including a new 83-test SOAR/playbook layer). Live: 111 campaigns, 212 attack events (2,539 total nodes, 20,804 total relationships), 858 real techniques, only 3 learned attack-chain transitions. Coverage today: 21.7% native, 78.3% UNKNOWN, out of 120 real alerts — and we show, not just claim, that none of that leaked into technique learning. Our XGBoost severity model reaches 0.917 accuracy, but only in-sample on the 60 rows it was trained on — we don't have a held-out split yet, and we say so explicitly. End-to-end latency is now measured too: p50 35.5ms, p95 66.9ms on a real HTTP round trip.
 
 **Research contribution.** Not the individual algorithms — graph databases, TF-IDF, gradient boosting are all standard. The contribution is the system-level design: separating detection from attribution from investigation from prediction, with mandatory provenance on every attribution decision and a structurally-enforced explicit-UNKNOWN state that cannot contaminate learning. We can prove this holds, live, not just assert it.
 

@@ -1,12 +1,14 @@
 # CYUKTI — "Do Not Say This" Sheet
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+
 Bad claim → Safe claim, for every major result in the review package.
 
 **"CYUKTI achieves 91.7% accuracy"**
 → "XGBoost achieved 91.7% in-sample accuracy on 60 campaigns; held-out generalization has not been established."
 
 **"CYUKTI has 10% MITRE coverage"**
-→ "In the representative 391-alert snapshot (2026-08-31), 39 alerts carried native Wazuh ATT&CK mappings; the remaining 352 were explicitly preserved as UNKNOWN, not discarded."
+→ "In the current 120-alert snapshot (2026-09-25, post rule-fix/reboot), 26 alerts carried native Wazuh ATT&CK mappings (21.7%); the remaining 94 (78.3%) were explicitly preserved as UNKNOWN, not discarded. An earlier 391-alert snapshot from 2026-08-31 measured 10.0% — both are traffic-composition-dependent, not fixed."
 
 **"CYUKTI predicts the next attack technique with 33% accuracy"**
 → "An offline evaluation on 12 evaluable real transitions produced 4 correct predictions; the project formally classifies this as `INSUFFICIENT_FOR_SUPERVISED_ML`."
@@ -17,8 +19,8 @@ Bad claim → Safe claim, for every major result in the review package.
 **"RAG has high retrieval accuracy"**
 → "More than 500 real ATT&CK documents are indexed and the RAG pipeline is test-verified, but retrieval precision/recall has not been measured."
 
-**"150/150 tests means CYUKTI is reliable"**
-→ "150/150 automated tests passed; this demonstrates tested behavior for known cases, not the absence of undiscovered production failures — we found one such failure live, outside test coverage, during this project."
+**"798/798 tests means CYUKTI is reliable"**
+→ "689 backend (65 files) + 109 frontend (17 files) = 798 automated tests passed, as of 2026-09-25 (up from 150 backend-only on 2026-09-12); this demonstrates tested behavior for known cases, not the absence of undiscovered production failures — we found one such failure live, outside test coverage, during this project."
 
 **"0 orphaned events means the graph can never become inconsistent"**
 → "The current graph contains 0 orphaned AttackEvents as of the last integrity check, and the reconstruction mechanism is proven idempotent by test — this is a current-state measurement, not a standing guarantee."
@@ -26,8 +28,8 @@ Bad claim → Safe claim, for every major result in the review package.
 **"CYUKTI has 858 ATT&CK techniques"** (implying all are observed/relevant)
 → "858 real Technique nodes are imported from the vendored MITRE ATT&CK STIX corpus (v19.1); only 15 distinct techniques have actually been observed in real campaign data."
 
-**"The system detects 90% unknown threats"**
-→ "90% of alerts in the representative snapshot could not be defensibly attributed to a specific ATT&CK technique and were preserved as UNKNOWN evidence — this is an attribution-coverage measurement, not a detection or threat-relevance measurement."
+**"The system detects 78% unknown threats"**
+→ "78.3% of alerts in the current snapshot (2026-09-25) could not be defensibly attributed to a specific ATT&CK technique and were preserved as UNKNOWN evidence — this is an attribution-coverage measurement, not a detection or threat-relevance measurement."
 
 **"The ML model correctly classifies severity"**
 → "The XGBoost model reaches 91.7% in-sample accuracy overall, but only 25% recall on the Critical class (3 of 4 missed) — reported alongside the aggregate number, not instead of it."

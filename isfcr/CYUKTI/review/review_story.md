@@ -1,8 +1,10 @@
 # CYUKTI Review Story
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date. Sections 1-7 (current-state narrative) have been refreshed; the Phase-dated sections below the divider are historical records of specific experiments and retain their original numbers.
+
 ## 1. Problem
 
-Real-world SOC telemetry (Wazuh, in this project's case) mostly arrives without a native MITRE ATT&CK tag — verified empirically: of 391 real alerts, only 39 (10.0%) carried a native technique mapping. A pipeline that requires attribution before ingestion discards the other 90% of its own evidence. A pipeline that fabricates attribution to avoid that corrupts every downstream consumer that trusts the technique label as ground truth — attack-chain learning, risk scoring, and any ML trained on it. This is the "detection paradox": detection (a sensor firing) and attribution (defensibly naming the technique) are different questions, and conflating them forces a false choice between losing evidence and fabricating conclusions.
+Real-world SOC telemetry (Wazuh, in this project's case) mostly arrives without a native MITRE ATT&CK tag — verified empirically: of the current 120-alert live snapshot (2026-09-25, post rule-fix/reboot), only 26 (21.7%) carried a native technique mapping (an earlier, larger 391-alert snapshot from 2026-08-31 measured 10.0%). A pipeline that requires attribution before ingestion discards most of its own evidence either way. A pipeline that fabricates attribution to avoid that corrupts every downstream consumer that trusts the technique label as ground truth — attack-chain learning, risk scoring, and any ML trained on it. This is the "detection paradox": detection (a sensor firing) and attribution (defensibly naming the technique) are different questions, and conflating them forces a false choice between losing evidence and fabricating conclusions.
 
 ## 2. Design response
 
@@ -10,10 +12,10 @@ CYUKTI separates ingestion from attribution with an explicit, provenance-tracked
 
 ## 3. Evidence
 
-- Live measurement (391 alerts, 2026-08-31): 39 native (10.0%), 352 UNKNOWN (90.0%), 0 reviewed/inferred/ambiguous.
+- Live measurement (120 alerts, 2026-09-25, post rule-fix/reboot): 26 native (21.7%), 94 UNKNOWN (78.3%), 0 reviewed/inferred/ambiguous. (Earlier snapshot, 391 alerts, 2026-08-31: 39 native (10.0%), 352 UNKNOWN (90.0%) — preserved as historical, superseded traffic composition.)
 - Live Neo4j inspection of 5 real UNKNOWN events, across two sessions separated by an infrastructure outage: 0 fabricated `attack_id`, 0 `Technique` relationships, `NEXT_TECHNIQUE` edge count unchanged (3→3), `tps=0` on all 5, raw payload preserved on all 5.
 - Structural (control-flow) proof that the UNKNOWN code branch can never reach `append_technique()`, `chain_updater.update_attack_chain()`, `predict_next()`, or MISP publish.
-- 150/150 automated tests passing, including 15 resolver-specific and 8 integration tests built specifically to catch regressions in this mechanism.
+- 798/798 automated tests passing (689 backend across 65 files + 109 frontend across 17 files, as of 2026-09-25), including 15 resolver-specific and 8 integration tests built specifically to catch regressions in this mechanism.
 
 ## 4. Key result
 

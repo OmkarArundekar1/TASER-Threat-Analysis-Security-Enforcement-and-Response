@@ -1,36 +1,43 @@
 # CYUKTI — Results, Metrics, and Dataset Evidence
 
-All values below were extracted from live queries, fresh test runs, or repository files on **2026-08-31**. Every entry states its source explicitly. Entries with no repository evidence are marked `NOT MEASURED / NOT AVAILABLE`.
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date. The original 2026-08-31 extraction date below is preserved for the sections that describe the frozen ML dataset and its Phase 17/18 analyses (those numbers are unchanged by design); the test-suite and live-Neo4j sections have been refreshed to 2026-09-25.
+
+All values below were extracted from live queries, fresh test runs, or repository files on **2026-08-31**, except where marked as re-verified 2026-09-25. Every entry states its source explicitly. Entries with no repository evidence are marked `NOT MEASURED / NOT AVAILABLE`.
 
 ## Test suite
 
 | Metric | Value | Source |
 |---|---|---|
-| Total tests | 150 | `pytest -q` fresh run, backend/, 2026-08-31 |
-| Passed | 150 | same |
+| Total tests (backend) | 689 | `pytest -q` fresh run, backend/, 2026-09-25 (was 150 on 2026-08-31) |
+| Passed | 689 | same |
 | Failed | 0 | same |
 | Skipped | 0 | same |
-| Test files | 21 | `tests/` directory listing |
-| Runtime | ~23.5s | same run |
+| Test files (backend) | 65 | `tests/` directory listing, 2026-09-25 (was 21) |
+| Total tests (frontend) | 109 | frontend test run, 2026-09-25 (new since the 2026-08-31 snapshot — no frontend suite existed then) |
+| Test files (frontend) | 17 | frontend `tests/`/`__tests__` listing |
+| **Combined total** | **798** | 689 backend + 109 frontend |
+| SOAR/playbook tests (subset of backend total) | 83 | 9 files, `tests/test_soar_*.py` — new subsystem since 2026-08-31 |
 
-Largest test files by count: `test_investigation.py` (25), `test_evidence.py` (13), `test_mitre_resolver.py` (12), `test_gnn.py` (11), `test_next_technique_pipeline.py` (9).
+Largest test files by count (2026-08-31 snapshot, not re-tallied at the current 689-test scale): `test_investigation.py` (25), `test_evidence.py` (13), `test_mitre_resolver.py` (12), `test_gnn.py` (11), `test_next_technique_pipeline.py` (9).
 
-## Neo4j graph statistics (live, 2026-08-31)
+## Neo4j graph statistics (live, 2026-09-25; was 2026-08-31)
 
 | Metric | Value | Source |
 |---|---|---|
-| Campaign nodes | 65 | `MATCH (c:Campaign) RETURN count(c)` |
-| AttackEvent nodes | 124 | `MATCH (e:AttackEvent) RETURN count(e)` |
-| Orphaned AttackEvents | 0 (124/124 linked) | `MATCH (:Campaign)-[:HAS_EVENT]->(e) RETURN count(DISTINCT e)` |
-| Technique nodes | 858 | `MATCH (t:Technique) RETURN count(t)` |
-| NEXT_TECHNIQUE edges | 3 | `MATCH ()-[r:NEXT_TECHNIQUE]->() RETURN count(r)` |
-| Attacker nodes | 5 | live query |
-| Host nodes | 4 | live query |
-| Operation nodes | 43 | live query |
-| AttackEvents with `mitre_status="UNKNOWN"` | 5 | live query (Phase 20 live-created events only) |
-| AttackEvents with `mitre_status="RESOLVED"` | 0 | live query — no native-mapped alert has been processed by the Phase 20 code path yet; all pre-Phase-20 events lack this property entirely |
+| Campaign nodes | 111 | `MATCH (c:Campaign) RETURN count(c)` (was 65 on 2026-08-31) |
+| AttackEvent nodes | 212 | `MATCH (e:AttackEvent) RETURN count(e)` (was 124) |
+| Orphaned AttackEvents | 0 (124/124 linked) as of 2026-09-12 | `MATCH (:Campaign)-[:HAS_EVENT]->(e) RETURN count(DISTINCT e)` — not re-run at the current 212-event scale |
+| Technique nodes | 858 | `MATCH (t:Technique) RETURN count(t)` — unchanged, vendored corpus |
+| NEXT_TECHNIQUE edges | 3 | `MATCH ()-[r:NEXT_TECHNIQUE]->() RETURN count(r)` — unchanged |
+| Attacker nodes | 9 | live query (was 5) |
+| Host nodes | 12 | live query (was 4) |
+| Operation nodes | 50 | live query (was 43) |
+| **Total nodes (all labels)** | **2,539** | live query, 2026-09-25 |
+| **Total relationships (all types)** | **20,804** | live query, 2026-09-25 |
+| AttackEvents with `mitre_status="UNKNOWN"` | 5 (as of the 2026-08-31/09-12 check) | live query (Phase 20 live-created events only) — current total unattributed count is higher at the new 212-event scale, not individually re-broken-out this pass |
+| AttackEvents with `mitre_status="RESOLVED"` | 0 (as of the same check) | live query — no native-mapped alert had been processed by the Phase 20 code path yet at that time; all pre-Phase-20 events lack this property entirely |
 
-**Interpretation**: the 65/124/858 figures represent the *entire accumulated history* of the live lab (real campaigns from Phases 16-19, plus 5 new Phase-20-tagged UNKNOWN events). This is not a fixed "dataset" — it is live, growing graph state. The frozen ML dataset (below) is a separate, deliberately-snapshotted 60-row CSV that does **not** include the 5 new UNKNOWN events or the 2 campaigns/4 events added since the Phase 17 snapshot.
+**Interpretation**: the 111/212/858 figures (2026-09-25) represent the *entire accumulated history* of the live lab, grown further since the 65/124/858 snapshot on 2026-08-31 (real campaigns from Phases 16-19, the 5 Phase-20-tagged UNKNOWN events, plus continued live ingestion since). This is not a fixed "dataset" — it is live, growing graph state. The frozen ML dataset (below) is a separate, deliberately-snapshotted 60-row CSV that does **not** track this growth at all — it was frozen at the Phase 17/18 snapshot and has not been rebuilt since.
 
 ## Frozen ML dataset (`ml/datasets/campaign_dataset.csv`)
 
@@ -93,7 +100,7 @@ Mean model confidence: 0.7639.
 | Metric | Value | Source |
 |---|---|---|
 | Threat attribution accuracy (real ground truth) | NOT MEASURED / NOT AVAILABLE | No ground-truth attacker-identity dataset exists in the repo |
-| Operation/correlation matching accuracy | NOT MEASURED / NOT AVAILABLE | 43 Operation nodes exist (existence confirmed) but no labeled "correct grouping" evaluation exists |
+| Operation/correlation matching accuracy | NOT MEASURED / NOT AVAILABLE | 50 Operation nodes exist as of 2026-09-25 (existence confirmed, was 43 on 2026-08-31) but no labeled "correct grouping" evaluation exists |
 
 ## RAG
 
@@ -104,12 +111,22 @@ Mean model confidence: 0.7639.
 
 ## Latency / throughput / infrastructure
 
+**Update, 2026-09-25**: a real benchmark harness (`backend/benchmarks/run_benchmarks.py`) now exists and has been run — per-stage latency is no longer `NOT MEASURED`. See `BENCHMARKS.md` and `journal_ready_data.md` Section 23 for the full table; summary below.
+
 | Metric | Value | Source |
 |---|---|---|
-| Per-alert processing latency | NOT MEASURED / NOT AVAILABLE | No timing instrumentation found in `process_alert()` |
-| Listener throughput | NOT MEASURED / NOT AVAILABLE | Not instrumented; only qualitative "offset caught up, no backlog" observed live |
-| API response latency | NOT MEASURED / NOT AVAILABLE | Not instrumented |
+| MITRE resolution (p50/p95/p99) | 0.001 / 0.001 / 0.002 ms | `run_benchmarks.py`, committed run `benchmark_20260925T075030Z.json` |
+| Deduplication check (p50/p95/p99) | 0.001 / 0.002 / 0.003 ms | same |
+| Neo4j simple query (p50/p95/p99) | 0.904 / 1.251 / 1.285 ms | same |
+| Campaign selection candidate discovery (p50/p95/p99) | 21.035 / 24.285 / 26.480 ms | same |
+| Severity prediction / XGBoost (p50/p95/p99) | 21.975 / 39.158 / 117.582 ms | same |
+| GNN embedding (p50/p95/p99) | 2.818 / 3.981 / 4.070 ms | same |
+| **End-to-end** `GET /api/incidents/<id>/overview` (p50/p95/p99) | **35.538 / 66.869 / 100.484 ms** | same — real HTTP round trip |
+| Throughput (end-to-end) | ~22.8 ops/sec | same |
+| Listener throughput (sustained ingestion rate) | NOT MEASURED / NOT AVAILABLE | Only qualitative "offset caught up, no backlog" observed live; not separately benchmarked |
 | Memory usage | NOT MEASURED / NOT AVAILABLE | Not instrumented |
+
+Caveat carried from `BENCHMARKS.md`: single-process, single-machine, low-concurrency numbers on a development machine — not a load-tested production SLA.
 
 ## Investigation confidence architecture — real XGBoost probabilities (historical claim, not re-verified this session)
 

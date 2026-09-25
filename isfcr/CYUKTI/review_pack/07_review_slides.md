@@ -1,5 +1,7 @@
 # CYUKTI — Suggested Review Slide Deck (10-12 slides)
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+
 ## Slide 1 — Problem
 - Real Wazuh deployments generate mostly-untagged telemetry; most rules have no native ATT&CK mapping.
 - Naive SOC pipelines require MITRE attribution before ingestion — discarding most real alerts.
@@ -24,7 +26,7 @@
 
 ## Slide 4 — Data Flow
 - Alert → dedup → MITRE resolution → {create_attack_event, create_unattributed_attack_event} → campaign attachment → chain/prediction/correlation (resolved only).
-- Live-verified: 124 AttackEvents, 0 orphans, 65 Campaigns.
+- Live-verified (2026-09-25): 212 AttackEvents, 111 Campaigns (was 124/65 on 2026-09-12; orphan count from 2026-09-12, 0/124, not re-run at the new scale).
 - Diagram: `cyukti_detailed_architecture.mmd`.
 - **Say**: "Every alert reaches the graph — the fork is only in what it's allowed to do once it's there."
 
@@ -54,31 +56,33 @@
 
 ## Slide 9 — Phase 20: MITRE Resolution
 - 4-tier precedence: NATIVE_WAZUH > REVIEWED_RULE_MAPPING > DETERMINISTIC_INFERENCE > UNKNOWN.
-- Live coverage (2026-08-31, 391 alerts): 10.0% NATIVE_WAZUH, 90.0% UNKNOWN, 0% reviewed/inferred/ambiguous.
+- Live coverage (2026-09-25, post rule-fix + reboot, 120 alerts): 21.7% NATIVE_WAZUH, 78.3% UNKNOWN, 0% reviewed/inferred/ambiguous. (Earlier snapshot, 2026-08-31, 391 alerts: 10.0%/90.0%.)
 - Live-verified: 0 fabricated attack_id, 0 Technique contamination, NEXT_TECHNIQUE unchanged.
-- **Say**: "90% unresolved is expected and correct — it's Wazuh's own out-of-the-box coverage gap, and we chose to preserve that evidence rather than fake an answer."
+- **Say**: "The large majority unresolved is expected and correct — it's Wazuh's own out-of-the-box coverage gap, and we chose to preserve that evidence rather than fake an answer."
 
 ## Slide 10 — Results & Metrics (consolidated dashboard)
 
 | Component | Implementation Status | Dataset/Test Size | Primary Metric | Result | Evidence |
 |---|---|---|---|---|---|
-| Wazuh ingestion | Complete, live | 391 live alerts | Ingestion success (post-Phase 20) | 100% ingested (resolved or preserved-unknown) | Live listener log, PID 10228 |
-| Neo4j graph | Complete, live | 65 Campaigns / 124 AttackEvents | Orphan rate | 0/124 | Live Cypher query |
-| Campaign reconstruction | Complete, validated | 44 real orphaned events repaired | Orphans after repair | 0 | `campaign_reconstruction.py`, 10 tests |
+| Wazuh ingestion | Complete, live | 120 live alerts (current snapshot) | Ingestion success (post-Phase 20) | 100% ingested (resolved or preserved-unknown) | Live listener log |
+| Neo4j graph | Complete, live | 111 Campaigns / 212 AttackEvents (2,539 total nodes, 20,804 total relationships) | Orphan rate | 0/124 (2026-09-12 check; not re-run at current scale) | Live Cypher query, 2026-09-25 |
+| Campaign reconstruction | Complete, validated | 44 real orphaned events repaired | Orphans after repair | 0 (as of 2026-09-12) | `campaign_reconstruction.py`, 10 tests |
 | Attack chain (NEXT_TECHNIQUE) | Implemented, data-limited | 3 learned edges | Evaluable prediction accuracy | 4/12 correct (33%) | Phase 18 rebuild |
 | MITRE mapping (stage) | Complete, 1 known gap | 13 technique→stage entries | T1548.003 coverage | Missing | `mitre_mapper.py`, live check |
-| MITRE resolver (Phase 20) | Complete, live-validated | 391 live alerts | Resolution coverage | 10.0% native / 90.0% unknown | `mitre_coverage_report.py`, 2026-08-31 |
+| MITRE resolver (Phase 20) | Complete, live-validated | 120 live alerts (post rule-fix/reboot) | Resolution coverage | 21.7% native / 78.3% unknown | `mitre_coverage_report.py`, 2026-09-25 |
 | UNKNOWN handling | Complete, live-validated | 5 real UNKNOWN events | Fabricated attack_id | 0 | Direct Neo4j inspection |
 | Prediction engine | Implemented, not viable yet | 12 evaluable transitions | Own validity verdict | `INSUFFICIENT_FOR_SUPERVISED_ML` | Phase 18 audit |
 | Attribution | Implemented, unvalidated | — | Accuracy | NOT MEASURED | No ground-truth dataset |
 | RAG | Complete, tested | 500+ real ATT&CK docs | Index size | >500 documents | `test_rag.py` |
 | MISP | Implemented, unconfirmed live | — | Publish success | NOT MEASURED | Client initializes; not confirmed |
-| Dashboard/API | Complete | 7+3 tests | — | Passing | `test_dashboard_api.py` |
+| SOAR/Playbook layer | Complete, unit-tested | 83 tests, 9 files | Live Shuffle trigger | Not live-executed (webhook configured, unfired) | `tests/test_soar_*.py` |
+| Dashboard/API | Complete | 46 routes (33 core + 13 SOAR) | — | Passing | `test_dashboard_api.py`, `test_soar_api.py` |
 | Dataset generation | Complete, frozen | 60 campaigns | Validity gate | `NOT_READY_FOR_CALIBRATION` | Phase 17 report |
 | ML (XGBoost) | Complete, in-sample only | 60 rows, no held-out split | Accuracy (in-sample) | 0.917 | `evaluate_model.py`, 2026-08-31 |
 | ML (SSL autoencoder) | Complete, trained | Real CICIDS2017 windows | Convergence | Confirmed by test | `test_ssl_pipeline.py` |
 | ML (GNN) | Implemented, synthetic-tested only | Synthetic graphs | Real-data benchmark | NOT MEASURED | `test_gnn.py` |
-| Test suite | Complete | 150 tests | Pass rate | 150/150 | Fresh run, 2026-08-31 |
+| Latency (end-to-end) | Measured | Real HTTP round trip | p50 / p95 | 35.5ms / 66.9ms | `run_benchmarks.py`, 2026-09-25 |
+| Test suite | Complete | 798 tests (689 backend, 65 files + 109 frontend, 17 files) | Pass rate | 798/798 | Fresh run, 2026-09-25 |
 
 - **Say**: "This is the full component-by-component status — note that we distinguish complete-and-tested from complete-but-unbenchmarked throughout, deliberately."
 

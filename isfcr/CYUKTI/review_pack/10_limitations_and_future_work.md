@@ -1,5 +1,7 @@
 # CYUKTI — Known Limitations, Current Issues, and Final Verdict
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+
 ## Current Issue 1: maintenance-worker `TypeError` (found live, 2026-08-31, NOT fixed)
 
 **Status: present in the current code, confirmed still reachable.**
@@ -51,7 +53,7 @@ Confirmed absent, live-checked this session. Native Wazuh attribution for it (vi
 
 - MISP live-publish success not reconfirmed this session (`MISP_API_KEY` was empty as of a prior audit).
 - Neo4j-unavailable fallback behavior not tested.
-- No latency/throughput instrumentation exists anywhere in the pipeline.
+- **Update, 2026-09-25**: per-stage latency IS now measured (`backend/benchmarks/run_benchmarks.py`, see `BENCHMARKS.md`) — end-to-end p50 35.5ms/p95 66.9ms on a real HTTP round trip. Throughput beyond the benchmark harness's own ops/sec figures (e.g. sustained listener ingestion rate under load) remains unmeasured.
 - File-based audit log (`logs/prerana_listener.log`) observed at 0 bytes despite active logging to stdout — the file-handler is not reliably capturing a durable audit trail in the current environment.
 
 ## What must NOT be claimed in the review
@@ -68,7 +70,7 @@ Confirmed absent, live-checked this session. Native Wazuh attribution for it (vi
 
 ### Maturity classification: **Research Prototype**
 
-**Justification**: CYUKTI is well past a bare prototype — it has a real, live, multi-service integration (Wazuh + Neo4j + MISP + a trained ML pipeline), 150 passing tests, a genuinely-fixed production defect discovered and repaired mid-project (Phase 18's next-technique pipeline, Phase 20's live blocker), and disciplined self-auditing (the Phase 17 validity gate explicitly refusing to proceed to calibration). It falls short of "Functional Prototype" or higher because: several core modules (attribution, GNN, prediction) have no benchmark beyond unit tests; the dataset itself is explicitly, formally judged not ready for the experiments it was built to support; and at least one live, disclosed defect (maintenance-worker crash) remains unresolved. It is not "Production-like" because there is no held-out evaluation methodology, no load/latency testing, and no confirmed MISP publish path.
+**Justification**: CYUKTI is well past a bare prototype — it has a real, live, multi-service integration (Wazuh + Neo4j + MISP + a trained ML pipeline), 798 passing tests (689 backend + 109 frontend, as of 2026-09-25; was 150 backend-only), a genuinely-fixed production defect discovered and repaired mid-project (Phase 18's next-technique pipeline, Phase 20's live blocker), and disciplined self-auditing (the Phase 17 validity gate explicitly refusing to proceed to calibration). It falls short of "Functional Prototype" or higher because: several core modules (attribution, GNN, prediction) have no benchmark beyond unit tests; the dataset itself is explicitly, formally judged not ready for the experiments it was built to support; and at least one live, disclosed defect (maintenance-worker crash) remains unresolved. It is not "Production-like" because there is no held-out evaluation methodology, no load/latency testing, and no confirmed MISP publish path.
 
 ### What is genuinely completed
 Wazuh→Neo4j ingestion pipeline; Phase 20 MITRE resolution (resolver, registry, unattributed-event path, live-validated); campaign reconstruction (real 44-event repair); the corrected next-technique label pipeline (Phase 18); the evidence-aware confidence architecture (implemented and unit-tested); a real, trained ML stack (XGBoost, SSL autoencoder, GNN, SSFT) with real artifacts on disk; RAG retrieval over a real ATT&CK corpus; a working dashboard API and React frontend.
@@ -84,8 +86,8 @@ Deliberate dataset expansion (Phase 19 spec: 6-8 attackers, 5+ victims, ≥1 rea
 
 ### Strongest results to show
 1. Live UNKNOWN-path safety proof: 5 real Neo4j records, zero fabricated attribution, zero attack-chain contamination.
-2. 150/150 passing test suite.
-3. Real campaign-reconstruction repair (44 orphaned events → 27 campaigns, idempotent, still 0 orphans today).
+2. 798/798 passing test suite (689 backend + 109 frontend, 2026-09-25).
+3. Real campaign-reconstruction repair (44 orphaned events → 27 campaigns, idempotent, 0 orphans as of the 2026-09-12 check).
 4. The Phase 17→18 self-correction narrative: found a real ground-truth bug (next_technique was the model's own prediction, not reality), fixed it, and it's now demonstrably correct.
 
 ### Strongest architecture diagram

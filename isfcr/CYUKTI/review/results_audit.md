@@ -1,12 +1,14 @@
 # CYUKTI — Results Package Audit
 
-Audits `review/quantitative_results.md`, `review/slide_ready_metrics.md`, and `review/quantitative_results.csv` against actual repository artifacts. Re-verified 2026-09-14: all cited test files, scripts, and the dataset CSV exist and are unchanged (150/150 tests still pass, dataset still 60 rows).
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+
+Audits `review/quantitative_results.md`, `review/slide_ready_metrics.md`, and `review/quantitative_results.csv` against actual repository artifacts. Re-verified 2026-09-14: all cited test files, scripts, and the dataset CSV exist and are unchanged (150/150 tests still pass, dataset still 60 rows). **Re-verified again 2026-09-25**: backend test suite has grown to 689/689 (65 files; frontend adds 109/109 across 17 files, 798 total), and the live Neo4j graph has grown to 111 Campaigns / 212 AttackEvents / 858 Technique / 9 Attacker / 12 Host / 50 Operation (2,539 total nodes, 20,804 total relationships) — see `review/paper_submission_status.md` for the consolidated current-numbers list.
 
 | Metric | Claimed Value | Evidence Artifact | Evidence Strength | Safe to Present? | Required Qualification |
 |---|---|---|---|---|---|
-| Total tests passing | 150/150 | `pytest -q`, backend/ (re-run 2026-09-14, confirmed) | Test-verified | Yes | State "automated tests," not "system reliability" |
+| Total tests passing | 689/689 backend (65 files) + 109/109 frontend (17 files) = 798 | `pytest -q`, backend/ + frontend/ (re-run 2026-09-25; was 150/150 backend-only on 2026-09-14) | Test-verified | Yes | State "automated tests," not "system reliability" |
 | Compile check | clean | `python -m compileall` (Phase 20H run) | Static verification | Yes | Not re-run this session; syntax hasn't changed since (no source edits) |
-| Neo4j: 65 Campaigns / 124 AttackEvents / 858 Technique | live-measured | Direct Cypher queries, 2026-09-12 (Phase 20H) | Live-system measured | Yes, **with date** | Say "as of 2026-09-12" — not re-queried this session (Neo4j access out of scope for this review-prep task) |
+| Neo4j: 111 Campaigns / 212 AttackEvents / 858 Technique / 9 Attacker / 12 Host / 50 Operation | live-measured | Direct Cypher queries, 2026-09-25 (was 65/124/858/5/4/43 on 2026-09-12) | Live-system measured | Yes, **with date** | Say "as of 2026-09-25" — the graph is continuously growing via live ingestion, so any cited count needs its date attached |
 | 0 orphaned AttackEvents | live-measured | Same query set, 2026-09-12 | Live-system measured | Yes, with date | Same caveat — a snapshot, not a standing guarantee |
 | 3 NEXT_TECHNIQUE edges | live-measured | Same, 2026-09-12 | Live-system measured | Yes, with date | — |
 | 44 orphaned events repaired → 27 campaigns | historical, one-time | `campaign_reconstruction.py` + prior-phase repair log; `check_integrity()` test suite | Experimentally measured (one-time real-data repair) | Yes | This is a **historical** repair event, not a recurring metric — say "was repaired," not "is being repaired" |
@@ -16,7 +18,7 @@ Audits `review/quantitative_results.md`, `review/slide_ready_metrics.md`, and `r
 | XGBoost accuracy 0.917 | 2026-08-31 | `evaluate_model.py` run against `xgb_severity.json` on the full 60-row training CSV | Experimentally measured, **in-sample** | Yes, **only with the in-sample caveat attached every single time it's spoken** | Never say "accuracy" alone — always "in-sample accuracy, n=60, no held-out split" |
 | NEXT_TECHNIQUE 4/12 = 33.3% | Phase 18 dataset rebuild | `ml/label_generator.py` pipeline + dataset rebuild logs | Experimentally measured | Yes | Always paired with `INSUFFICIENT_FOR_SUPERVISED_ML` |
 | Dataset: 60 campaigns, 3 attackers, 2 victims, 4 pairs | static file + Phase 17 analysis | `campaign_dataset.csv` (re-confirmed 61 lines = 60 rows + header, 2026-09-14) + `scripts/phase17_dataset_validity_gate.py` output | Static file inspection + offline experiment | Yes | Still current — file unchanged |
-| 858 Technique nodes | live-measured, 2026-09-12 | Cypher query | Live-system measured, dated | Yes | Also true structurally — real vendored STIX import, not fabricated |
+| 858 Technique nodes | live-measured, 2026-09-12, re-confirmed unchanged 2026-09-25 | Cypher query | Live-system measured, dated | Yes | Also true structurally — real vendored STIX import, not fabricated; the only Neo4j count in this table that hasn't grown, since the corpus doesn't change at runtime |
 | >500 RAG-indexed documents | test assertion | `test_rag.py::test_mitre_retriever_indexes_hundreds_of_real_techniques`, `assert len(...) > 500` | Test-verified | Yes | The test asserts `>500`, not an exact count — don't quote a more precise number than the test actually establishes |
 | 5 UNKNOWN events, 0 fabricated attack_id | live Neo4j inspection, 2026-08-31 + re-verified 2026-09-12 | Direct Cypher inspection, two separate sessions | Live-system measured, twice | Yes | Strong — same 5 records checked on two different days across an infrastructure outage in between |
 | Attribution accuracy | — | none found | N/A | N/A | Correctly marked `NOT MEASURED` throughout — no correction needed |

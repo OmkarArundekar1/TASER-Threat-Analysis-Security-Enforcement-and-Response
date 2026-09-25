@@ -1,5 +1,22 @@
 # CYUKTI — Phase 20 MITRE Resolution: Verified Results
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date. The Phase 20 progression/discrepancy narrative below (239→391 alerts) is preserved as a historical record; a newer post-rule-fix, post-reboot coverage snapshot has been added as its own section rather than overwriting the Phase 20 numbers, consistent with this document's own practice of disclosing snapshot-to-snapshot discrepancies rather than silently replacing them.
+
+## Newest snapshot (2026-09-25, post rule-fix + reboot) — see also `journal_ready_data.md` Section 24
+
+`local_rules.xml` was fixed (six duplicate-rule-ID / missing-mapping issues, `journal_ready_data.md` Section 4.9) at 05:09:59 UTC; the environment then rebooted at 14:20:39 UTC and `wazuh-analysisd` restarted at 14:21:31 UTC — after the fix, so the corrected rules are loaded in the live manager. `scripts/mitre_coverage_report.py` was re-run against the current `alerts.json`:
+
+| Provenance | Count | Percentage |
+|---|---|---|
+| Total alerts examined | 120 | 100% |
+| NATIVE_WAZUH | 26 | 21.7% |
+| REVIEWED_RULE_MAPPING | 0 | 0% |
+| DETERMINISTIC_INFERENCE | 0 | 0% |
+| AMBIGUOUS | 0 | 0% |
+| UNKNOWN | 94 | 78.3% |
+
+None of the six specifically-fixed rule IDs (100510, 100511, 100513, 210001, 210011, and the sixth from Section 4.9) appear in this 120-alert window — it's dominated by Suricata APT-repo noise (rule 86601), dpkg housekeeping (2902/2904), and rule 100500 (Nmap reconnaissance, already correctly resolving to T1595 via NATIVE_WAZUH *before* this fix — it was never one of the broken rules). This is **not** evidence the fix failed; the specific attack types the fix targeted (brute force, port-scan variants, DoS) simply haven't been re-triggered against this environment since the reboot. **Status: rules active in the live manager, not yet exercised end-to-end by a matching alert.**
+
 ## Phase progression (verified against repository/logs, not blindly trusted)
 
 | Phase | Claim | Verification result |

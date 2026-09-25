@@ -1,11 +1,13 @@
 # CYUKTI — 8-Slide Technical Review Structure
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+
 ## Slide 1 — CYUKTI: Research Objective
 **Objective**: frame the detection-paradox problem and CYUKTI's response before any architecture detail.
-- Real SOC telemetry mostly arrives without native ATT&CK attribution (measured: only 10.0% of 391 real alerts).
+- Real SOC telemetry mostly arrives without native ATT&CK attribution (currently measured: 21.7% of 120 real alerts, post rule-fix/reboot, 2026-09-25; a larger historical 391-alert snapshot from 2026-08-31 measured 10.0%).
 - Requiring attribution before ingestion discards most real evidence; fabricating attribution corrupts everything downstream that trusts it.
 - CYUKTI's response: separate ingestion from attribution, with an explicit, provenance-tracked UNKNOWN state.
-- Numbers to display: **39/391 (10.0%) native**, **352/391 (90.0%) UNKNOWN**.
+- Numbers to display: **26/120 (21.7%) native**, **94/120 (78.3%) UNKNOWN** (2026-09-25).
 - Figure/table: none — text framing slide.
 - **Say**: "Most real security telemetry doesn't come pre-labeled with an attack technique, and what you do about the other 90% defines the system."
 - **Likely question**: "Isn't this just a data-cleaning problem?" 
@@ -24,10 +26,10 @@
 
 ## Slide 3 — Campaign-Centric Security Graph
 **Objective**: demonstrate real scale and integrity, not synthetic data.
-- 65 Campaigns, 124 AttackEvents, 0 orphaned events (124/124 linked).
+- 111 Campaigns, 212 AttackEvents, 50 Operations (2,539 total nodes, 20,804 total relationships), as of 2026-09-25 (was 65/124/43 on 2026-09-12).
 - 44 real orphaned events (a genuine production defect) were found, root-caused, and repaired — idempotently, evidence-only, never guessing.
-- Repair still holds: 0 orphans as of the last live check.
-- Numbers to display: **65 / 124 / 0 orphans / 44→0 repaired**.
+- Repair held as of the last orphan check (0/124, 2026-09-12); not re-run at the current 212-event scale.
+- Numbers to display: **111 Campaigns / 212 AttackEvents / 2,539 nodes / 20,804 relationships / 44→0 repaired**.
 - Figure/table: simple before/after bar (orphans: 44 → 0).
 - **Say**: "We found and fixed a real data-integrity defect in our own production graph, and proved the fix is stable and idempotent."
 - **Likely question**: "How do you know the 27 reconstructed campaigns are correct, not guessed?"
@@ -36,23 +38,23 @@
 ## Slide 4 — MITRE Resolution + UNKNOWN Safety
 **Objective**: this is the core contribution slide.
 - Four-tier resolver: NATIVE_WAZUH → REVIEWED_RULE_MAPPING → DETERMINISTIC_INFERENCE → UNKNOWN, each with provenance/confidence/reason.
-- 90% UNKNOWN is the *correct*, intended outcome — not a coverage failure.
+- 78.3% UNKNOWN (current, post rule-fix/reboot snapshot) is the *correct*, intended outcome — not a coverage failure.
 - 5 live UNKNOWN events verified twice (across an infrastructure outage): 0 fabricated `attack_id`, 0 Technique links, `NEXT_TECHNIQUE` unchanged.
-- Numbers to display: **39/391 native, 352/391 UNKNOWN, 0/5 fabricated attack_id, 3→3 NEXT_TECHNIQUE edges**.
+- Numbers to display: **26/120 (21.7%) native, 94/120 (78.3%) UNKNOWN (2026-09-25), 0/5 fabricated attack_id, 3→3 NEXT_TECHNIQUE edges**.
 - Figure/table: stacked bar of provenance distribution (native/reviewed/inferred/unknown).
-- **Say**: "Ninety percent unresolved is what correct behavior looks like when you refuse to fabricate an answer — and we can prove, not just claim, that it never contaminates the learned attack chain."
-- **Likely question**: "Isn't a 90% unresolved rate a weak result?"
+- **Say**: "The large majority unresolved is what correct behavior looks like when you refuse to fabricate an answer — and we can prove, not just claim, that it never contaminates the learned attack chain."
+- **Likely question**: "Isn't a ~78% unresolved rate a weak result?"
 - **Defensible answer**: "Only if the goal were maximizing attribution rate. Ours is never attributing something we can't defend — the correct comparison is 0% fabricated, not the unresolved percentage."
 
 ## Slide 5 — Quantitative System Validation
 **Objective**: show test rigor and reproducibility.
-- 150/150 automated tests passing (unit + integration + regression).
-- Coverage spans every major module: resolver (15), realtime integration (8), investigation (25), evidence (13), GNN (11), campaign reconstruction (10).
+- 689/689 backend tests (65 files) + 109/109 frontend tests (17 files) = 798/798 passing (unit + integration + regression), as of 2026-09-25 — was 150/150 backend-only on 2026-09-12.
+- Coverage spans every major module, including a new SOAR/playbook layer (83 tests, 9 files) added since the earlier snapshot.
 - Clean compile check across the full backend.
-- Numbers to display: **150/150**.
+- Numbers to display: **798/798**.
 - Figure/table: simple table of test counts per module (from `quantitative_results.md`).
 - **Say**: "Every regression we've found in this project has become a permanent test, including the ones we found live in production."
-- **Likely question**: "Does 150/150 mean the system is bug-free?"
+- **Likely question**: "Does 798/798 mean the system is bug-free?"
 - **Defensible answer**: "No — we found a real production bug weeks ago that no existing test caught, specifically because it depended on an interaction the test suite hadn't anticipated. We disclose it rather than claim otherwise."
 
 ## Slide 6 — ML / Prediction Results

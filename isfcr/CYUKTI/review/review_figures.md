@@ -1,11 +1,13 @@
 # CYUKTI — Recommended Figures (from existing data only)
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+
 Each figure below uses only numbers already established in `quantitative_results.md`. None require new data collection.
 
 ## Figure 1 — MITRE resolution provenance distribution
-- **Data source**: `mitre_coverage_report.py` output, 2026-08-31 snapshot.
+- **Data source**: `mitre_coverage_report.py` output, 2026-09-25 snapshot (post rule-fix/reboot; was the 2026-08-31 snapshot below).
 - **Chart type**: stacked/horizontal bar, single bar split into segments.
-- **Categories**: NATIVE_WAZUH (39), REVIEWED_RULE_MAPPING (0), DETERMINISTIC_INFERENCE (0), UNKNOWN (352).
+- **Categories (current)**: NATIVE_WAZUH (26), REVIEWED_RULE_MAPPING (0), DETERMINISTIC_INFERENCE (0), UNKNOWN (94), out of 120 total. (Earlier snapshot, 2026-08-31, 391 total: NATIVE_WAZUH 39, UNKNOWN 352 — kept as a secondary bar/footnote to show the split is traffic-dependent, not fixed.)
 - **X-axis**: count (or %). **Y-axis**: N/A (single bar) or "alert" if using a simple 2-bar chart.
 - **Demonstrates**: the real, measured attribution-coverage split.
 - **Must NOT imply**: that 90% UNKNOWN is a failure rate or that CYUKTI "only detects 10% of attacks" — UNKNOWN is an attribution outcome, not a detection outcome, and must be labeled as such directly on the figure.
@@ -19,11 +21,11 @@ Each figure below uses only numbers already established in `quantitative_results
 - **Must NOT imply**: that orphaning can never recur — this is a point-in-time repair result plus a currently-passing integrity check, not a permanent guarantee.
 
 ## Figure 3 — Current graph scale
-- **Data source**: live Neo4j query, 2026-09-12.
+- **Data source**: live Neo4j query, 2026-09-25 (was 2026-09-12).
 - **Chart type**: simple bar chart, 3 bars.
-- **Categories**: Campaigns (65), AttackEvents (124), Technique nodes (858).
+- **Categories**: Campaigns (111), AttackEvents (212), Technique nodes (858).
 - **X-axis**: node type. **Y-axis**: count.
-- **Demonstrates**: real accumulated scale, and that the ATT&CK knowledge base (858) dwarfs the observed campaign data (65) — an honest visual of "we have a large reference corpus, modest real attack data."
+- **Demonstrates**: real accumulated scale, and that the ATT&CK knowledge base (858) dwarfs the observed campaign data (111) — an honest visual of "we have a large reference corpus, modest real attack data."
 - **Must NOT imply**: that 858 techniques were all observed in real attacks — the vast majority are reference metadata from the vendored STIX corpus, not campaign-derived.
 
 ## Figure 4 — Dataset severity distribution (limitation figure, not a strength figure)
@@ -49,9 +51,9 @@ Each figure below uses only numbers already established in `quantitative_results
 - **Must NOT imply**: that a chart of 12 data points represents a validated accuracy rate.
 
 ## Figure 7 (optional) — Test suite composition
-- **Data source**: `pytest -q -v` breakdown by file, 2026-09-14 re-run.
+- **Data source**: `pytest -q -v` breakdown by file, 2026-09-14 re-run (historical — the file-by-file counts below have not been re-tallied since; the current total is 689 backend across 65 files, up from the ~150 these per-file counts summed to).
 - **Chart type**: horizontal bar, one bar per test file, sorted descending.
-- **Categories**: test file names (investigation=25, evidence=13, mitre_resolver=12, gnn=11, next_technique_pipeline=9, etc.).
+- **Categories**: test file names (investigation=25, evidence=13, mitre_resolver=12, gnn=11, next_technique_pipeline=9, etc.) — if redrawing this figure for the paper, re-run `pytest -q -v` for a current per-file breakdown rather than reusing these historical counts as-is.
 - **X-axis**: test count. **Y-axis**: module/test file.
 - **Demonstrates**: test coverage is spread across the real breadth of the system, not concentrated in one trivial module.
 - **Must NOT imply**: that test count is a proxy for correctness or coverage completeness — it demonstrates tested behavior, not absence of undiscovered defects (see Slide 5's defensible answer in `review_slides.md`).

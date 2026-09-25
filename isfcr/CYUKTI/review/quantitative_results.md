@@ -1,5 +1,7 @@
 # CYUKTI — Quantitative Results (Master Report)
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date. Rows below retain their original per-entry source date where they describe a specific historical snapshot (e.g. the Phase 17/18 offline analyses, the frozen ML dataset, the 391/239/13-alert MITRE snapshots) — those are preserved as historical evidence, not overwritten. Only headline "current state" figures (total test count, live Neo4j graph counts, current MITRE snapshot) have been refreshed; see `review/paper_submission_status.md` for the single authoritative current-numbers list.
+
 Generated 2026-09-12. Read-only analysis task — no source files, Neo4j data, Docker state, or telemetry were modified while producing this report (verified at the end, Task 7).
 
 ## IMPORTANT: state discrepancy disclosed up front
@@ -20,8 +22,8 @@ This task's brief described the "current known state" as: Neo4j (`neo4j-soc`) do
 
 | Module / Experiment | Metric | Value | Dataset / N | Evaluation Method | Evidence Source | Status | Reviewer Interpretation |
 |---|---|---:|---:|---|---|---|---|
-| Wazuh ingestion/listener | Total tests | 150 | — | pytest | `pytest -q`, fresh run 2026-09-12 | C | Full regression suite, all backend modules |
-| Wazuh ingestion/listener | Passing / Failing | 150 / 0 | 150 | pytest | same | C | 0 failures |
+| Wazuh ingestion/listener | Total tests (backend) | 689 (65 files) | — | pytest | `pytest -q`, re-verified 2026-09-25 (was 150 on 2026-09-12) | C | Full regression suite, all backend modules; frontend adds 109 more (17 files) — 798 total, see `paper_submission_status.md` |
+| Wazuh ingestion/listener | Passing / Failing | 689 / 0 | 689 | pytest | same | C | 0 failures |
 | Wazuh ingestion/listener | Compile check | clean | — | `python -m compileall` | fresh run 2026-09-12 | D | No syntax errors across backend + scripts |
 | Wazuh ingestion/listener | Listener uptime this session | ~13 min at time of writing | — | process inspection | `docker ps`/`pgrep`, 2026-09-12 | B | Recovered and stable after infra outage |
 | Wazuh ingestion/listener | Offset-recovery behavior | fired correctly | 1 restart event | live observation | listener log: `"Saved offset beyond EOF. Resetting to file end."` | B | Confirms documented safety behavior, not just inferred |
@@ -33,6 +35,7 @@ This task's brief described the "current known state" as: Neo4j (`neo4j-soc`) do
 | MITRE resolution | UNKNOWN | 352 (90.0%) | 391 | coverage script | same | B | Correct/expected outcome, not a deficiency |
 | MITRE resolution | Older snapshot (superseded) | 239 alerts, 3 native (1.3%), 236 UNKNOWN (98.7%) | 239 | coverage script | historical, earlier in Phase 20 | B (superseded) | Explicitly distinguished from the 391-alert snapshot — traffic composition changed over time |
 | MITRE resolution | Current-moment file snapshot | 13 alerts, 0 native, 13 UNKNOWN (100%) | 13 | coverage script | `mitre_coverage_report.py`, 2026-09-12 | B | Small, reboot-noise-dominated; NOT representative — reported for completeness only |
+| MITRE resolution | Post-rule-fix, post-reboot snapshot (newest) | 120 alerts, 26 native (21.7%), 94 UNKNOWN (78.3%) | 120 | coverage script | `mitre_coverage_report.py`, 2026-09-25, after the Section 4.9 `local_rules.xml` fixes and a full environment reboot | B | Rules are confirmed loaded in the live manager; none of the six specifically-fixed rule IDs happened to appear in this window (dominated by Suricata/dpkg noise + Nmap), so the fix is active but not yet exercised end-to-end by a matching alert |
 | MITRE resolution | Resolver unit tests | 15/15 pass | — | pytest | `test_mitre_resolver.py` | C | native precedence, multi-technique, rejection of invalid techniques, ambiguous handling |
 | MITRE resolution | Realtime integration tests | 8/8 pass | — | pytest | `test_realtime_mitre_integration.py` | C | resolved vs UNKNOWN branching verified |
 | UNKNOWN/unattributed handling | Real UNKNOWN events ingested | 5 | 5 | live Neo4j inspection | Phase 20F (2026-08-31), re-verified intact 2026-09-12 | B | Still present and unchanged after a full Neo4j outage/recovery cycle |
@@ -44,14 +47,15 @@ This task's brief described the "current known state" as: Neo4j (`neo4j-soc`) do
 | UNKNOWN/unattributed handling | Raw payload preserved | 5/5 | 5 | live Neo4j inspection | same | B | verbatim rule/agent/timestamp fields intact |
 | UNKNOWN/unattributed handling | `predict_next()` reachability from UNKNOWN branch | never | — | code control-flow proof | `realtime_socgraph.py` line-number analysis | D | Structural guarantee, not just observed absence |
 | UNKNOWN/unattributed handling | MISP publish reachability from UNKNOWN branch | never | — | code control-flow proof | same | D | Structural guarantee |
-| Neo4j graph integrity | Campaign nodes | 65 | — | live query | 2026-09-12 (post-recovery) | B | Matches Phase 20F exactly |
-| Neo4j graph integrity | AttackEvent nodes | 124 | — | live query | same | B | Matches Phase 20F exactly |
-| Neo4j graph integrity | Technique nodes | 858 | — | live query | same | B | Real STIX-imported, not synthetic |
-| Neo4j graph integrity | Attacker nodes | 5 | — | live query | same | B | — |
-| Neo4j graph integrity | Host nodes | 4 | — | live query | same | B | — |
-| Neo4j graph integrity | Operation nodes | 43 | — | live query | same | B | Existence confirmed; matching quality not evaluated |
-| Neo4j graph integrity | MATCHES relationships | 119 | — | live query | same | B | 124 events − 5 UNKNOWN (no MATCHES) = 119 |
-| Neo4j graph integrity | Orphaned AttackEvents | 0 | 124 | live query | same | B | 0% orphan rate |
+| Neo4j graph integrity | Campaign nodes | 111 | — | live query | 2026-09-25 (was 65 on 2026-09-12) | B | Graph has grown via continued live ingestion since the 2026-09-12 snapshot |
+| Neo4j graph integrity | AttackEvent nodes | 212 | — | live query | 2026-09-25 (was 124 on 2026-09-12) | B | — |
+| Neo4j graph integrity | Technique nodes | 858 | — | live query | 2026-09-25 | B | Real STIX-imported, not synthetic — unchanged, vendored corpus doesn't grow |
+| Neo4j graph integrity | Attacker nodes | 9 | — | live query | 2026-09-25 (was 5 on 2026-09-12) | B | — |
+| Neo4j graph integrity | Host nodes | 12 | — | live query | 2026-09-25 (was 4 on 2026-09-12) | B | — |
+| Neo4j graph integrity | Operation nodes | 50 | — | live query | 2026-09-25 (was 43 on 2026-09-12) | B | Existence confirmed; matching quality not evaluated |
+| Neo4j graph integrity | Total nodes (all labels) | 2,539 | — | live query | 2026-09-25 | B | See `paper_submission_status.md` |
+| Neo4j graph integrity | Total relationships (all types) | 20,804 | — | live query | 2026-09-25 | B | See `paper_submission_status.md` |
+| Neo4j graph integrity | Orphaned AttackEvents | not re-verified this pass | 212 | live query | — | B | The 2026-09-12 figure (0/124) is not carried forward uncritically since the event count has grown; re-run `check_integrity()` before citing a current orphan rate |
 | Neo4j graph integrity | NEXT_TECHNIQUE relationships | 3 | — | live query | same | B | Severely data-limited |
 | Campaign reconstruction | Orphaned events repaired (historical) | 44 → 27 campaigns | 44 | one-time real-data repair | `campaign_reconstruction.py`, prior phase | A | One-time offline repair of a real production defect |
 | Campaign reconstruction | Current orphan count | 0 | 124 | live query | 2026-09-12 | B | Repair holds; no regression |
@@ -124,16 +128,17 @@ This task's brief described the "current known state" as: Neo4j (`neo4j-soc`) do
 - NEXT_TECHNIQUE: 4/12 correct (33.3%), verdict `INSUFFICIENT FOR SUPERVISED ML`.
 - XGBoost in-sample evaluation: accuracy 0.917, macro F1 0.676, per-class precision/recall/F1, confusion matrix (n=60, in-sample only).
 
-### B. Live-system measured (observed from the running system, 2026-09-12 unless noted)
-- Neo4j: 65 Campaigns, 124 AttackEvents, 858 Technique nodes, 0 orphans, 3 NEXT_TECHNIQUE edges, 5 Attacker, 4 Host, 43 Operation, 119 MATCHES.
+### B. Live-system measured (observed from the running system; 2026-09-25 unless noted)
+- Neo4j (2026-09-25): 111 Campaigns, 212 AttackEvents, 858 Technique nodes, 9 Attacker, 12 Host, 50 Operation — 2,539 total nodes, 20,804 total relationships. (2026-09-12 snapshot for comparison: 65/124/858/5/4/43, 0 orphans, 119 MATCHES — orphan/MATCHES counts not re-verified at the new scale.)
 - 5 real UNKNOWN AttackEvents (created 2026-08-31, re-verified intact 2026-09-12): 0 fabricated `attack_id`, 0 Technique links, 0 TPS, raw payload preserved.
 - MITRE resolution coverage: 391 alerts (2026-08-31) — 39 native (10.0%), 352 UNKNOWN (90.0%); superseded 239-alert snapshot (98.7% UNKNOWN) explicitly distinguished; current 13-alert file snapshot (100% UNKNOWN, not representative).
 - Listener offset-recovery behavior fired correctly on restart (log-confirmed).
 - MISP client initializes without a network call; MISP containers currently entirely absent from the Docker environment.
 
 ### C. Test-verified (unit/integration/regression tests)
-- 150/150 backend tests passing (fresh run, 2026-09-12).
-- Per-module test counts: MITRE resolver 15, realtime integration 8, evidence collectors 13, investigation loop 25, GNN 11, campaign reconstruction 10, risk scoring 6, risk recalculation 4, RAG 7, dashboard API 10, mitre_mapper 8, ml_pipeline 6, next_technique_pipeline 9, ssl_pipeline 4, label_generator 6, campaign_manager_tps 3, dataset_leakage 3, evidence_orchestrator 1, query_console 1, train_xgboost_paths 1.
+- 689/689 backend tests passing across 65 files (re-verified 2026-09-25; was 150/150 across fewer files on 2026-09-12), plus 109/109 frontend tests across 17 files — 798 total.
+- SOAR layer alone (new since the 2026-09-12 run): 83 tests across 9 files (`tests/test_soar_*.py`).
+- Per-module test counts below are the original 2026-09-12 breakdown, kept as a historical record of what existed at that snapshot — they do not sum to the current 689 and have not been individually re-counted this pass: MITRE resolver 15, realtime integration 8, evidence collectors 13, investigation loop 25, GNN 11, campaign reconstruction 10, risk scoring 6, risk recalculation 4, RAG 7, dashboard API 10, mitre_mapper 8, ml_pipeline 6, next_technique_pipeline 9, ssl_pipeline 4, label_generator 6, campaign_manager_tps 3, dataset_leakage 3, evidence_orchestrator 1, query_console 1, train_xgboost_paths 1.
 
 ### D. Static/structural verification (code-level facts, not runtime observations)
 - UNKNOWN branch structurally never reaches `predict_next()`, `append_technique()`, `chain_updater.update_attack_chain()`, or MISP publish (control-flow proof by line-number analysis).
@@ -179,13 +184,13 @@ This task's brief described the "current known state" as: Neo4j (`neo4j-soc`) do
 3. **Likely question**: "Did you build your own ATT&CK database?"
 4. **Defensible answer**: "No — we vendor the official MITRE STIX release and import it as-is, so every technique ID we ever propose is validated against real, current ATT&CK data, including revoked/deprecated status."
 
-### 0 orphaned events
-1. **Proves**: every AttackEvent currently in the graph (124/124) is correctly linked to exactly one Campaign — the data-integrity invariant established in an earlier phase holds.
+### 0 orphaned events (as measured 2026-09-12, at 124 AttackEvents; not re-verified at the current 212)
+1. **Proves**: every AttackEvent in the graph at measurement time (124/124) was correctly linked to exactly one Campaign — the data-integrity invariant established in an earlier phase holds as of that check.
 2. **Does not prove**: that no future ingestion could ever produce an orphan — it's a current-state measurement, not a guarantee.
 3. **Likely question**: "How do you know this holds over time?"
 4. **Defensible answer**: "We have a `check_integrity()` function specifically for this, we ran it live today, and it's part of the deliberate data-integrity work from Phase 16 that found and fixed 44 real orphaned events."
 
-### 150/150 tests
+### 689/689 tests (150/150 at the time this section was first written)
 1. **Proves**: every unit/integration test the project currently has passes, including tests specifically written to catch the exact production bugs found earlier in the project (leakage, mapping errors, UNKNOWN-path safety).
 2. **Does not prove**: comprehensive coverage of all possible failure modes, or that the system behaves correctly under conditions no test anticipates (e.g., the maintenance-worker bug found live, which had zero test coverage before it was discovered in production).
 3. **Likely question**: "Does 100% test pass rate mean the system is bug-free?"
@@ -208,12 +213,12 @@ This task's brief described the "current known state" as: Neo4j (`neo4j-soc`) do
 ## Task 6 — CYUKTI Quantitative Evaluation — Current Status
 
 ### Demonstrated
-- Live Wazuh → Neo4j ingestion pipeline, including recovery from a real infrastructure outage with zero data loss (65/124/858 counts identical before/after).
-- MITRE resolution with empirically measured, live coverage (391 alerts: 10.0% native / 90.0% UNKNOWN).
+- Live Wazuh → Neo4j ingestion pipeline, including recovery from a real infrastructure outage with zero data loss (65/124/858 counts identical before/after, as measured 2026-09-12; graph has since grown to 111/212/858 as of 2026-09-25 via continued live ingestion).
+- MITRE resolution with empirically measured, live coverage (391 alerts, 2026-08-31: 10.0% native / 90.0% UNKNOWN; newest snapshot, 2026-09-25 post-rule-fix-and-reboot: 120 alerts, 21.7% native / 78.3% UNKNOWN).
 - UNKNOWN-path safety: 5 real events, 0 fabricated IDs, 0 chain contamination, live-verified twice (Aug 31 creation, Sep 12 re-confirmation after outage).
-- Campaign reconstruction: 44 real orphaned events repaired, idempotent, 0 orphans today.
-- 150/150 automated tests passing.
-- Real ATT&CK STIX import: 858 techniques, v19.1.
+- Campaign reconstruction: 44 real orphaned events repaired, idempotent, 0 orphans as of the 2026-09-12 check.
+- 689/689 backend automated tests passing (65 files) + 109/109 frontend (17 files) = 798 total, as of 2026-09-25 (was 150/150 on 2026-09-12).
+- Real ATT&CK STIX import: 858 techniques, v19.1 (unchanged — vendored corpus).
 
 ### Partially demonstrated
 - XGBoost severity classification (in-sample metrics only, no held-out split).

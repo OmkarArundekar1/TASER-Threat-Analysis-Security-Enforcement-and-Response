@@ -1,7 +1,9 @@
 # CYUKTI — 20 Likely Reviewer Questions and Defensible Answers
 
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+
 **1. Why Neo4j?**
-Campaigns, attack events, techniques, attackers, and hosts are naturally graph-structured (an attacker launches a campaign that targets a host and has events matching techniques that transition to other techniques). Cypher's pattern matching maps directly onto attack-chain and campaign-correlation queries that would require repeated joins in a relational model. We use it as the single source of truth for 65 Campaign nodes, 124 AttackEvents, and 858 real ATT&CK Technique nodes.
+Campaigns, attack events, techniques, attackers, and hosts are naturally graph-structured (an attacker launches a campaign that targets a host and has events matching techniques that transition to other techniques). Cypher's pattern matching maps directly onto attack-chain and campaign-correlation queries that would require repeated joins in a relational model. We use it as the single source of truth for 111 Campaign nodes, 212 AttackEvents, and 858 real ATT&CK Technique nodes (2,539 total nodes, 20,804 total relationships, as of 2026-09-25).
 
 **2. Why Wazuh?**
 It's a real, open-source, widely-deployed HIDS/SIEM with native MITRE ATT&CK tagging on a subset of its ruleset, giving us genuine (not synthetic) native attribution to validate against — and a real gap (most rules untagged) that motivated Phase 20's design.

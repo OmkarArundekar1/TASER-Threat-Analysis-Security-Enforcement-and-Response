@@ -1,10 +1,12 @@
 # CYUKTI — Reviewer Cross-Examination (25 questions)
 
-## 1. Why is 90% UNKNOWN acceptable?
+> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+
+## 1. Why is ~78% UNKNOWN acceptable?
 **20-second answer**: Because it measures Wazuh's own native ATT&CK coverage gap, not CYUKTI's capability — and the alternative (fabricating attribution to lower that number) would corrupt every downstream learning component.
 **If they push further**: "The right question isn't 'how do we raise this number' — it's 'does anything downstream ever get contaminated by it,' and we can show live evidence that it doesn't."
-**Evidence you can show**: 391-alert coverage table; 5 live UNKNOWN events with 0 fabricated `attack_id`.
-**What NOT to claim**: That 90% is a target or a good score — it's a measured, expected consequence of the design choice.
+**Evidence you can show**: current 120-alert coverage table (26 native/21.7%, 94 UNKNOWN/78.3%, 2026-09-25, post rule-fix/reboot); an earlier 391-alert snapshot (10.0% native, 2026-08-31); 5 live UNKNOWN events with 0 fabricated `attack_id`.
+**What NOT to claim**: That either number is a target or a good score — both are measured, expected consequences of the design choice, and vary with whatever traffic actually arrives.
 
 ## 2. Does UNKNOWN mean CYUKTI failed?
 **20-second answer**: No — UNKNOWN means Wazuh's rule engine detected something, but CYUKTI could not defensibly name the ATT&CK technique. Detection and attribution are separate questions.
@@ -12,8 +14,8 @@
 **Evidence you can show**: the resolver's 4-tier precedence and the structural proof UNKNOWN never contaminates learning.
 **What NOT to claim**: That UNKNOWN events are irrelevant — they're preserved specifically because they aren't.
 
-## 3. Why only 10% MITRE coverage?
-**20-second answer**: That's the real, measured native-mapping rate of Wazuh's own out-of-the-box ruleset against the telemetry we observed — most of that telemetry (systemd failures, package-manager activity, disk warnings) isn't attacker behavior at all.
+## 3. Why only ~10-22% MITRE coverage?
+**20-second answer**: That's the real, measured native-mapping rate of Wazuh's own out-of-the-box ruleset against the telemetry we observed (10.0% in an August snapshot, 21.7% in the current September one — it moves with whatever traffic mix actually arrives) — most of that telemetry (systemd failures, package-manager activity, disk warnings) isn't attacker behavior at all.
 **If they push further**: Point out that Wazuh's own rule authors didn't tag rules like 40704/52002/2904 with ATT&CK either — this isn't a CYUKTI gap, it's inherited.
 **Evidence you can show**: the rule-level breakdown table (which specific rules are native vs. unknown).
 **What NOT to claim**: That this will necessarily improve — it depends on what telemetry arrives, not on CYUKTI's resolver logic.
@@ -114,7 +116,7 @@
 **Evidence you can show**: `test_gnn.py`'s 11 tests.
 **What NOT to claim**: Any real-campaign GNN performance number — none exists.
 
-## 20. What does 150/150 tests actually prove?
+## 20. What does 798/798 tests actually prove?
 **20-second answer**: That every currently-known behavior the project has tests for behaves as expected — it does not prove the absence of undiscovered bugs, including production issues found live that no prior test anticipated.
 **If they push further**: cite the maintenance-worker exception found live, which had zero test coverage before it was discovered in production, as a concrete counter-example to "100% pass rate means bug-free."
 **Evidence you can show**: the disclosed, unfixed maintenance-worker issue.
