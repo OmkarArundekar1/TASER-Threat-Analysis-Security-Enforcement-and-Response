@@ -7,6 +7,7 @@ import datetime
 import json
 import os
 import logging
+import types
 
 from neo4j.exceptions import Neo4jError, ServiceUnavailable
 from werkzeug.exceptions import HTTPException
@@ -1665,6 +1666,107 @@ def audit_logs():
             entries.append({"timestamp": None, "level": None, "message": line})
 
     return jsonify({"entries": entries, "total_lines": total_lines, "log_path": log_path})
+
+
+@app.route('/api/threat-qualification/<campaign_id>')
+def threat_qualification_view(campaign_id):
+    """Explainable NOT_THREAT/SUSPICIOUS/QUALIFIED_THREAT classification
+    and MISP publication-readiness checklist for an already-resolved
+    campaign (THREAT_QUALIFICATION.md). Reconstructs from real,
+    persisted per-campaign state (Campaign.cti_score/cti_publish,
+    written by neo4j_client.store_cti_confidence during live alert
+    processing) rather than requiring a live IncidentContext, which
+    only exists transiently during realtime_socgraph.py's own
+    processing and is never itself persisted as a queryable object.
+    Honestly reports "no CTI confidence computed yet" (200, not an
+    error) for a campaign that hasn't gone through that path.
+    """
+    context, error_response = _try_load_campaign_context(campaign_id)
+    if error_response:
+        return error_response
+    if context is None:
+        return jsonify({"error": f"Campaign {campaign_id} not found"}), 404
+
+    try:
+        with driver.session() as session:
+            row = session.run(
+                "MATCH (c:Campaign {campaign_id: $id}) RETURN c.cti_score AS score, c.cti_publish AS publish",
+                id=campaign_id,
+            ).single()
+    except (ServiceUnavailable, Neo4jError) as e:
+        return jsonify({"error": f"Database unavailable: {e}"}), 503
+
+    from cti_confidence_engine import NOT_THREAT_THRESHOLD, PUBLISH_THRESHOLD
+    from threat_qualification import (
+        engine as qualification_engine,
+        NOT_THREAT, SUSPICIOUS, QUALIFIED_THREAT,
+    )
+
+    incident_like = types.SimpleNamespace(
+        campaign_id=campaign_id,
+        attacker_ip=context.attacker_ip,
+        technique=context.last_technique,
+        timestamp=context.last_seen.isoformat() if context.last_seen else None,
+        cti=None,
+    )
+    score = row["score"] if row else None
+    if score is not None:
+        if score >= PUBLISH_THRESHOLD:
+            classification = QUALIFIED_THREAT
+        elif score >= NOT_THREAT_THRESHOLD:
+            classification = SUSPICIOUS
+        else:
+            classification = NOT_THREAT
+        incident_like.cti = types.SimpleNamespace(threat_classification=classification, score=score)
+
+    result = qualification_engine.qualify(incident_like)
+    return jsonify(result.to_dict())
+
+
+@app.route('/api/campaign-selection/<campaign_id>')
+def campaign_selection_view(campaign_id):
+    """BestCampaignSelector (CAMPAIGN_SELECTION.md): ranks historical
+    campaigns sharing at least one MITRE technique or the same
+    attacker IP with the current campaign, using five independently-
+    reported signals (never GNN topology alone -- rule 6). Candidate
+    discovery here is a real, always-available Cypher query
+    (technique/attacker overlap) -- NOT dependent on GNN being enabled,
+    since GNN is only one of the five signals scored per candidate.
+    """
+    context, error_response = _try_load_campaign_context(campaign_id)
+    if error_response:
+        return error_response
+    if context is None:
+        return jsonify({"error": f"Campaign {campaign_id} not found"}), 404
+
+    from campaign_selection import selector, build_candidates_from_campaigns
+
+    try:
+        with driver.session() as session:
+            rows = session.run(
+                """
+                MATCH (c1:Campaign {campaign_id: $campaign_id})
+                MATCH (c2:Campaign) WHERE c1 <> c2
+                OPTIONAL MATCH (c1)-[:HAS_EVENT]->(:AttackEvent)-[:MATCHES]->(t1:Technique)
+                OPTIONAL MATCH (c2)-[:HAS_EVENT]->(:AttackEvent)-[:MATCHES]->(t2:Technique)
+                OPTIONAL MATCH (a1:Attacker)-[:LAUNCHED]->(c1)
+                OPTIONAL MATCH (a2:Attacker)-[:LAUNCHED]->(c2)
+                WITH c2, collect(DISTINCT t1.attack_id) AS t1s, collect(DISTINCT t2.attack_id) AS t2s,
+                     collect(DISTINCT a1.ip) AS a1s, collect(DISTINCT a2.ip) AS a2s
+                WHERE any(t IN t1s WHERE t IN t2s) OR any(a IN a1s WHERE a IN a2s)
+                RETURN DISTINCT c2.campaign_id AS campaign_id LIMIT 10
+                """,
+                campaign_id=campaign_id,
+            )
+            candidate_ids = [r["campaign_id"] for r in rows]
+
+            from soar.memory import memory_store
+            candidates = build_candidates_from_campaigns(context, candidate_ids, session, memory_store=memory_store)
+    except (ServiceUnavailable, Neo4jError) as e:
+        return jsonify({"error": f"Database unavailable: {e}"}), 503
+
+    result = selector.select(candidates)
+    return jsonify({"campaign_id": campaign_id, **result.to_dict()})
 
 
 @app.route('/api/ml/predict/severity', methods=['POST'])

@@ -458,6 +458,34 @@ export interface SoarStatus {
   stored_executions: number;
 }
 
+/* ── Campaign Selection (backend/campaign_selection.py) ── */
+
+export interface CandidateSignals {
+  topology_similarity: number | null;
+  technique_similarity: number | null;
+  temporal_similarity: number | null;
+  attacker_similarity: number | null;
+  host_similarity: number | null;
+}
+
+export interface CampaignCandidate {
+  campaign_id: string;
+  signals: CandidateSignals;
+  composite_score: number;
+  historical_playbook_success_rate: number | null;
+  historical_playbook_executions: number;
+}
+
+export interface CampaignSelectionResponse {
+  campaign_id: string;
+  ranked_candidates: CampaignCandidate[];
+  selected: CampaignCandidate | null;
+  alternatives: CampaignCandidate[];
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
+  score_gap: number | null;
+  explanation: string;
+}
+
 export interface SoarRecommendationsResponse {
   campaign_id: string;
   historical_matches: HistoricalPlaybookMatch[];

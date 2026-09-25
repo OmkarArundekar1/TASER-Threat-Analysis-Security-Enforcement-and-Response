@@ -215,3 +215,56 @@ def resolve_mitre(alert: dict) -> MitreResolution:
         return inferred
 
     return _unknown("No native, reviewed, or deterministically-inferred ATT&CK mapping")
+
+
+def _tactic_labels_from_kill_chain_phases(phases: list[str] | None) -> list[str]:
+    """STIX kill-chain-phase names are lowercase-kebab-case ATT&CK
+    tactic short names (e.g. "credential-access"), optionally prefixed
+    with a kill-chain-name ("mitre-attack:credential-access") depending
+    on how the importer stored them. A mechanical reformatting of
+    MITRE's own data, not an inferred or fabricated label."""
+    labels = []
+    for phase in phases or []:
+        name = phase.split(":")[-1]
+        labels.append(name.replace("-", " ").title())
+    return labels
+
+
+def enrich_technique_metadata(resolution: MitreResolution) -> list[dict]:
+    """Per-technique_id records exposing the data model requested in
+    MITRE_MAPPING.md: mitre_id, technique_name, tactic, mapping_source,
+    mapping_confidence, mapping_reason. `technique_name`/`tactic` come
+    from the real imported ATT&CK STIX corpus (Neo4j Technique nodes) --
+    None (not a fabricated placeholder) if the technique can't be
+    looked up for any reason (Neo4j unavailable, technique not in the
+    corpus). Never raises -- this is a display/evaluation enrichment,
+    never a gate on whether resolve_mitre()'s own result is trusted.
+    """
+    if not resolution.technique_ids:
+        return []
+
+    records = []
+    for technique_id in resolution.technique_ids:
+        technique_name = None
+        tactics: list[str] = []
+        try:
+            with driver.session() as session:
+                row = session.run(
+                    "MATCH (t:Technique {attack_id: $id}) RETURN t.name AS name, t.kill_chain_phases AS phases",
+                    id=technique_id,
+                ).single()
+            if row is not None:
+                technique_name = row["name"]
+                tactics = _tactic_labels_from_kill_chain_phases(row["phases"])
+        except Exception:
+            pass  # display enrichment only -- never fails the caller
+
+        records.append({
+            "mitre_id": technique_id,
+            "technique_name": technique_name,
+            "tactic": tactics,
+            "mapping_source": resolution.provenance,
+            "mapping_confidence": resolution.confidence,
+            "mapping_reason": resolution.reason,
+        })
+    return records

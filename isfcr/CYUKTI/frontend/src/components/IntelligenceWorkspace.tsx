@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Network, Activity, ShieldAlert, AlertTriangle, FileSearch, GitBranch, ShieldCheck } from 'lucide-react';
+import { Network, Activity, ShieldAlert, AlertTriangle, FileSearch, GitBranch, ShieldCheck, GitCompareArrows } from 'lucide-react';
 import { PanelWrapper } from './PanelWrapper';
 import { ThreatCorrelation } from './ThreatCorrelation';
 import { AttackPathAnalytics } from './AttackPathAnalytics';
@@ -8,9 +8,10 @@ import { RiskPropagation } from './RiskPropagation';
 import { EvidenceInvestigation } from './EvidenceInvestigation';
 import { TopologyIntelligence } from './TopologyIntelligence';
 import { RecommendationEngine } from './RecommendationEngine';
+import { CampaignSelectionPanel } from './CampaignSelectionPanel';
 import { useDashboard } from '../context/DashboardContext';
 
-type WorkspaceTab = 'correlation' | 'paths' | 'attribution' | 'risk' | 'topology' | 'playbook' | 'investigation';
+type WorkspaceTab = 'correlation' | 'paths' | 'attribution' | 'risk' | 'topology' | 'selection' | 'playbook' | 'investigation';
 
 export function IntelligenceWorkspace() {
   const { resetKey } = useDashboard();
@@ -39,6 +40,14 @@ export function IntelligenceWorkspace() {
           }`}
         >
           <GitBranch className="w-3 h-3" /> Topology
+        </button>
+        <button
+          onClick={() => setActiveTab('selection')}
+          className={`flex-1 min-w-[64px] py-2 text-[10px] font-bold uppercase tracking-wider border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
+            activeTab === 'selection' ? 'border-fuchsia-500 text-fuchsia-400' : 'border-transparent text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <GitCompareArrows className="w-3 h-3" /> Selection
         </button>
         <button
           onClick={() => setActiveTab('paths')}
@@ -86,6 +95,7 @@ export function IntelligenceWorkspace() {
       <div className="flex-1 min-h-0 overflow-hidden relative">
         {activeTab === 'correlation' && <ThreatCorrelation />}
         {activeTab === 'topology' && <TopologyIntelligence />}
+        {activeTab === 'selection' && <CampaignSelectionPanel />}
         {activeTab === 'paths' && <AttackPathAnalytics />}
         {activeTab === 'attribution' && <ThreatActorAttribution />}
         {activeTab === 'risk' && <RiskPropagation />}

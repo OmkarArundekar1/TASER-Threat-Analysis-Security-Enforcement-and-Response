@@ -1,0 +1,187 @@
+<!--local rules -->
+
+<!-- Modify it at your will -->
+<!-- Copyright (C) 2015, Wazuh Inc. -->
+<!-- /var/ossec/etc/rules/local_rules.xml -->
+
+<group name="suricata_custom,">
+
+  <rule id="100500" level="12">
+    <if_sid>86601</if_sid>
+    <match>ET SCAN Possible Nmap User-Agent Observed</match>
+    <description>HIGH SEVERITY: Nmap Reconnaissance Detected</description>
+    <mitre>
+      <id>T1595</id>
+    </mitre>
+  </rule>
+  <rule id="100501" level="10">
+    <if_sid>2832</if_sid>
+    <description>HIGH SEVERITY: Boot or Logon AutostartExecution Detected</description>
+    <mitre>
+      <id>T1053.003</id>
+    </mitre>
+  </rule>
+</group>
+<group name="local,">
+
+  <rule id="100001" level="0">
+    <if_sid>510</if_sid>
+    <description>Ignore rootcheck</description>
+  </rule>
+
+  <rule id="100002" level="0">
+    <if_sid>533</if_sid>
+    <description>Ignore netstat changes</description>
+  </rule>
+
+  <rule id="100003" level="0">
+    <if_sid>5402</if_sid>
+    <description>Ignore successful sudo</description>
+  </rule>
+
+  <rule id="100004" level="0">
+    <if_sid>550</if_sid>
+    <description>Ignore checksum changes</description>
+  </rule>
+
+  <rule id="100005" level="0">
+    <if_sid>553</if_sid>
+    <description>Ignore file deletions</description>
+  </rule>
+
+  <rule id="100006" level="0">
+    <if_sid>554</if_sid>
+    <description>Ignore file additions</description>
+  </rule>
+  <rule id="10501" level="0">
+    <if_sid>5501</if_sid>
+    <description>Ignore PAM login session opened</description>
+  </rule>
+  <rule id="10502" level="0">
+    <if_sid>5502</if_sid>
+    <description>Ignore PAM login session closed</description>
+  </rule>
+</group>
+<group name="soc_project">
+  <rule id="210001" level="12">
+    <match>BOT_ATTACK</match>
+    <description>HTTP Flood / Bot Attack</description>
+  </rule>
+  <!-- LOGIN ATTACK -->
+  <rule id="210011" level="14">
+    <match>LOGIN_ATTACK</match>
+    <description>Brute Force Login Attack</description>
+  </rule>
+
+  <!-- LOGIN FAIL -->
+  <rule id="210010" level="10">
+    <match>LOGIN_FAIL</match>
+    <description>Multiple Login Failures</description>
+  </rule>
+
+  <!-- INVENTORY ABUSE -->
+  <rule id="210012" level="10">
+    <match>INVENTORY_ABUSE</match>
+    <description>Inventory Abuse Attack</description>
+  </rule>
+
+  <!-- DOS -->
+  <rule id="210013" level="13">
+    <match>SLOW endpoint</match>
+    <description>DoS Attack (Slow Endpoint)</description>
+  </rule>
+
+  <!-- PRIVILEGE -->
+  <rule id="210020" level="15">
+    <match>sudo</match>
+    <description>Privilege Escalation Attempt</description>
+  </rule>
+
+</group>
+<!-- RULE 1 : Multiple Failed Login Attempts (Ubuntu SSH log) -->
+<group name="local,syslog,sshd">
+
+  <rule id="100001" level="10">
+
+    <if_sid>5716</if_sid>
+
+    <description>Multiple Failed Login Attempts detected (SSH brute force)</description>
+
+  </rule>
+
+</group>
+
+
+
+<!-- RULE 2 : Abnormal Network Activity
+
+<group name="local,syslog,network">
+
+  <rule id="100002" level="6">
+
+    <match>connection</match>
+
+    <description>Abnormal Network Activity detected</description>
+
+  </rule>
+
+</group>
+
+-->
+
+<!-- RULE 3 : Suspicious Process Execution -->
+
+<group name="local,syslog,process">
+
+  <rule id="100003" level="12">
+
+    <match>wget|curl</match>
+
+    <description>Suspicious Process with External Connection detected</description>
+
+  </rule>
+
+</group>
+<group name="custom_attacks">
+
+  <rule id="100100" level="10">
+    <match>LOGIN_FAIL</match>
+    <description>Login failure detected</description>
+  </rule>
+
+  <rule id="100200" level="12">
+    <match>\[LOGIN_ATTACK\]</match>
+    <description>Brute Force Attack Detected</description>
+  </rule>
+
+  <rule id="100300" level="10">
+    <match>INVENTORY accessed</match>
+    <description>Inventory Access</description>
+  </rule>
+
+  <rule id="100004" level="12">
+    <match>\[INVENTORY_ABUSE\]</match>
+    <description>Inventory Abuse Attack</description>
+  </rule>
+
+  <rule id="100005" level="13">
+    <match>SLOW endpoint</match>
+    <description>Possible DoS Behavior</description>
+  </rule>
+
+</group>
+<!-- /var/ossec/etc/rules/local_rules.xml -->
+
+<group name="local,ignore,">
+
+  <rule id="100500" level="0">
+      <if_sid>2902</if_sid>
+      <description>Ignore dpkg installed events</description>
+  </rule>
+
+  <rule id="100501" level="0">
+      <if_sid>2904</if_sid>
+      <description>Ignore dpkg configuration events</description>
+  </rule>
+
+</group>

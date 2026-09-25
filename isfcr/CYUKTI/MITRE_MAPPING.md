@@ -1,0 +1,65 @@
+# CYUKTI MITRE ATT&CK Mapping
+
+## Precedence (unchanged from Phase 20, `mitre_resolver.py`)
+
+1. `NATIVE_WAZUH` — `rule.mitre.id`, exactly as Wazuh (or a custom rule) supplies it. Confidence `CONFIRMED`.
+2. `REVIEWED_RULE_MAPPING` — `mitre_rule_registry.REVIEWED_RULE_MAPPINGS`, keyed by Wazuh rule ID. Confidence `REVIEWED`.
+3. `DETERMINISTIC_INFERENCE` — explicit structural rules only, no fuzzy/semantic matching. Confidence `CANDIDATE`. Ships empty; add a rule only when independently defensible.
+4. `AMBIGUOUS` — a deterministic-inference rule matched multiple equally-plausible techniques; never arbitrarily resolved to one.
+5. `UNKNOWN` — no defensible mapping. `technique_ids=()`. This is a first-class, valid, and *preferred* outcome over a fabricated guess.
+
+`REVIEWED_RULE_MAPPING` and `DETERMINISTIC_INFERENCE` results are validated against the real imported ATT&CK STIX corpus in Neo4j (a technique that's revoked/deprecated/nonexistent downgrades the whole result to `UNKNOWN`). `NATIVE_WAZUH` is never second-guessed this way — a native Wazuh mapping is authoritative.
+
+## Data model (added this phase)
+
+`mitre_resolver.enrich_technique_metadata(resolution)` returns, per technique_id:
+
+```json
+{
+  "mitre_id": "T1110.001",
+  "technique_name": "Password Guessing",
+  "tactic": ["Credential Access"],
+  "mapping_source": "NATIVE_WAZUH",
+  "mapping_confidence": "CONFIRMED",
+  "mapping_reason": "Wazuh rule.mitre.id"
+}
+```
+
+`technique_name`/`tactic` come from the real Neo4j `Technique` node (`name`, `kill_chain_phases`) — `None`/`[]` if the technique can't be looked up (Neo4j down, not in the corpus), never a fabricated placeholder. Purely a display/evaluation enrichment; it never gates or reinterprets `resolve_mitre()`'s own result.
+
+## Local Wazuh rule audit and fix (live-verified, 2026-09-25)
+
+Auditing `/var/ossec/etc/rules/local_rules.xml` (this environment's actual, live custom rule file — a real Wazuh manager is installed and running here) found a genuine, pre-existing configuration bug: **six rule IDs were each defined twice** (`100001`, `100003`, `100004`, `100005`, `100500`, `100501`). Wazuh only honors the first definition of a duplicated ID and silently discards the rest — confirmed live via `wazuh-logtest`'s explicit `Rule ID '...' is duplicated` warnings. This meant six rules the operator clearly intended to be active had never fired:
+
+| Original ID | New ID | Rule | Fix |
+|---|---|---|---|
+| 100001 (2nd) | 100510 | SSH "Multiple Failed Login Attempts" (if_sid 5716) | Renumbered + added `<mitre><id>T1110</id></mitre>` |
+| 100003 (2nd) | 100511 | "Suspicious Process" (wget\|curl) | Renumbered + added T1105 (Ingress Tool Transfer) |
+| 100004 (2nd) | 100512 | `[INVENTORY_ABUSE]` | Renumbered only — deliberately left unmapped (see below) |
+| 100005 (2nd) | 100513 | "SLOW endpoint" DoS | Renumbered + added T1499.002 (Service Exhaustion Flood) |
+| 100500 (2nd) | 100514 | Ignore dpkg installed (if_sid 2902) | Renumbered only (suppression rule, no MITRE needed) |
+| 100501 (2nd) | 100515 | Ignore dpkg configured (if_sid 2904) | Renumbered only |
+
+The last two are notable: they were meant to suppress dpkg noise, but being dead meant dpkg install/config events have been reaching the pipeline unfiltered this whole time — which is exactly why rule IDs 2902/2904 appear in `mitre_rule_registry.py`'s own docstring as "currently-unmapped lab rules." Fixing the collision (not adding a mapping — these are legitimately not attacker behavior) resolves that.
+
+Also added `<mitre>` blocks to already-unique, already-firing rules where defensible: `210001` (BOT_ATTACK → T1498.001, Direct Network Flood), `210010`/`210011`/`100100`/`100200` (LOGIN_FAIL/LOGIN_ATTACK → T1110), `210013` (SLOW endpoint → T1499.002, duplicate content of 100513).
+
+**Deliberately left unmapped** (documented, not silently skipped):
+- `210020` / bare `sudo` match — already flagged in `mitre_rule_registry.py`'s own docstring as needing independent review; matching the literal word "sudo" is extremely overbroad (fires on any invocation, legitimate or not) with no behavioral specificity.
+- `210012` / `100300` / `100512` (`INVENTORY_ABUSE`, "INVENTORY accessed") — synthetic labels from this lab's traffic generator with no independently verifiable behavioral definition. Forcing a technique onto them would fabricate ground truth.
+
+**Live verification** (via `wazuh-logtest`, no manager restart required for this tool since it re-reads the rule file fresh each run):
+- wget/curl line → rule `100511`, `mitre.id: ['T1105']`, `mitre.tactic: ['Command and Control']` ✓ (Wazuh's own bundled ATT&CK reference data independently confirms the technique is real and correctly categorized)
+- SSH failure (non-invalid-user) → rule `100510`, `mitre.id: ['T1110']` ✓
+- "SLOW endpoint" → rule `210013`, `mitre.id: ['T1499.002']`, tactic `Impact` ✓
+- "BOT_ATTACK" → rule `210001`, `mitre.id: ['T1498.001']`, tactic `Impact` ✓
+- "LOGIN_ATTACK" → rule `210011`, `mitre.id: ['T1110']` ✓
+- "INVENTORY_ABUSE" → rule `210012`, no mitre tag (as intended) ✓
+- bare `sudo` line → actually resolved to a *more specific native* Wazuh rule (`5403`, already carrying `T1548.003`) before ever reaching `210020` — a real, useful finding: `210020`'s bare-"sudo" match rarely fires in practice for realistic log lines, since native rules with narrower, more specific match conditions win first.
+- No collision warnings remain after the fix (previously six).
+
+**Not verified**: the dpkg-suppression fix's live effect (my synthetic test log line didn't match Wazuh's real dpkg decoder format — a test-input problem, not a rule-logic problem; the underlying mechanism, a level=0 rule matching an `if_sid`, is standard Wazuh behavior). **Also not done**: fixing rule `100510`'s description ("Multiple Failed Login Attempts") not matching its actual match logic (it has no `frequency`/`timeframe` repetition threshold — fires on any single `if_sid=5716` event) — out of scope for a MITRE-mapping pass; flagged here rather than silently rewritten, since changing detection thresholds is a different kind of change with different risk.
+
+**A manager restart (`sudo /var/ossec/bin/wazuh-control restart`) is required for the live alert-processing pipeline to load these changes** — `wazuh-logtest` re-reads the file fresh per invocation and was used for validation, but the running `wazuh-analysisd` daemon caches its ruleset in memory until restarted. This was not done by the agent (requires an interactive sudo password); the operator needs to run it themselves for real alerts to reflect these fixes.
+
+A backup of the pre-fix file and the curated new version are both committed at `backend/wazuh_rules/` for review/history (the live file itself, at `/var/ossec/etc/rules/`, is outside this git repository).

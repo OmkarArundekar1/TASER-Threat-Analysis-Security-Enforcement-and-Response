@@ -10,6 +10,16 @@ HIGH_THRESHOLD = 85.0
 MEDIUM_THRESHOLD = 65.0
 
 PUBLISH_THRESHOLD = 40.0
+# Below this, the blended score reflects essentially no corroborating
+# signal at all -- distinct from SUSPICIOUS (some real signal, just not
+# enough to qualify for automatic MISP publication). See
+# THREAT_QUALIFICATION.md. Purely a labeling threshold: it does not
+# change `publish`, which is unchanged from its original definition.
+NOT_THREAT_THRESHOLD = 20.0
+
+THREAT_CLASSIFICATION_NOT_THREAT = "NOT_THREAT"
+THREAT_CLASSIFICATION_SUSPICIOUS = "SUSPICIOUS"
+THREAT_CLASSIFICATION_QUALIFIED_THREAT = "QUALIFIED_THREAT"
 
 
 @dataclass
@@ -18,6 +28,13 @@ class CTIConfidence:
     level: str
     publish: bool
     breakdown: dict
+    # Added this phase (THREAT_QUALIFICATION.md) -- a three-tier label
+    # over the same score `publish` already thresholds, purely additive:
+    # publish's own value/condition is unchanged (score >= PUBLISH_THRESHOLD),
+    # this just also names the sub-threshold range as SUSPICIOUS instead
+    # of collapsing it into the same "False" as a genuinely uncorrelated
+    # NOT_THREAT event.
+    threat_classification: str = THREAT_CLASSIFICATION_NOT_THREAT
 
 
 # ==========================================================
@@ -69,6 +86,13 @@ class CTIConfidenceEngine:
             level = "LOW"
 
         publish = score >= PUBLISH_THRESHOLD
+
+        if score >= PUBLISH_THRESHOLD:
+            threat_classification = THREAT_CLASSIFICATION_QUALIFIED_THREAT
+        elif score >= NOT_THREAT_THRESHOLD:
+            threat_classification = THREAT_CLASSIFICATION_SUSPICIOUS
+        else:
+            threat_classification = THREAT_CLASSIFICATION_NOT_THREAT
 
         breakdown = {
 
@@ -123,6 +147,7 @@ class CTIConfidenceEngine:
             level=level,
             publish=publish,
             breakdown=breakdown,
+            threat_classification=threat_classification,
         )
 
 

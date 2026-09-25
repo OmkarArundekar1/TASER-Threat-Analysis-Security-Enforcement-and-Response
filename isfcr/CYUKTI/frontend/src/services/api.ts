@@ -231,4 +231,9 @@ export const api = {
 
   soarEffectiveness: () =>
     fetchApi<{ effectiveness: import('../types').PlaybookEffectiveness[] }>('/soar/effectiveness'),
+
+  campaignSelection: (campaignId: string) =>
+    fetchApi<import('../types').CampaignSelectionResponse>(
+      `/campaign-selection/${encodeURIComponent(campaignId)}`
+    ),
 };

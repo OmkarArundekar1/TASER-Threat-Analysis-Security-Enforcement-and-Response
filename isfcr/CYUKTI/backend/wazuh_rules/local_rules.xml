@@ -1,0 +1,279 @@
+<!--local rules -->
+
+<!-- Modify it at your will -->
+<!-- Copyright (C) 2015, Wazuh Inc. -->
+<!-- /var/ossec/etc/rules/local_rules.xml -->
+
+<!--
+  CYUKTI MITRE mapping pass (2026-09-25, MITRE_MAPPING.md):
+
+  Six rule IDs in this file collided with an earlier rule of the same ID
+  (100001, 100003, 100004, 100005, 100500, 100501, each defined twice).
+  Wazuh only honors the FIRST definition of a duplicated ID and silently
+  discards the rest (confirmed live via `wazuh-logtest`, which emits an
+  explicit "Rule ID '...' is duplicated" warning for each one) -- so six
+  rules the operator clearly intended to be active
+  (the SSH-brute-force/wget-curl/inventory-abuse/slow-endpoint detectors,
+  and the two dpkg noise-suppression rules) were dead code, never firing.
+  This pass renumbers the six shadowed duplicates into the unused
+  100510-100515 range so they actually take effect, and adds <mitre>
+  blocks to the ones with a defensible technique per
+  mitre_resolver.py's own bar ("could you defend this specific
+  technique_id to a reviewer who knows ATT&CK"). See MITRE_MAPPING.md
+  for the per-rule rationale; rules with no independently-verifiable
+  behavioral specificity (INVENTORY_ABUSE, the bare "sudo" match) are
+  deliberately left unmapped, matching mitre_rule_registry.py's existing
+  documented caution against forcing techniques onto ambiguous rules.
+-->
+
+<group name="suricata_custom,">
+
+  <rule id="100500" level="12">
+    <if_sid>86601</if_sid>
+    <match>ET SCAN Possible Nmap User-Agent Observed</match>
+    <description>HIGH SEVERITY: Nmap Reconnaissance Detected</description>
+    <mitre>
+      <id>T1595</id>
+    </mitre>
+  </rule>
+  <rule id="100501" level="10">
+    <if_sid>2832</if_sid>
+    <description>HIGH SEVERITY: Boot or Logon AutostartExecution Detected</description>
+    <mitre>
+      <id>T1053.003</id>
+    </mitre>
+  </rule>
+</group>
+<group name="local,">
+
+  <rule id="100001" level="0">
+    <if_sid>510</if_sid>
+    <description>Ignore rootcheck</description>
+  </rule>
+
+  <rule id="100002" level="0">
+    <if_sid>533</if_sid>
+    <description>Ignore netstat changes</description>
+  </rule>
+
+  <rule id="100003" level="0">
+    <if_sid>5402</if_sid>
+    <description>Ignore successful sudo</description>
+  </rule>
+
+  <rule id="100004" level="0">
+    <if_sid>550</if_sid>
+    <description>Ignore checksum changes</description>
+  </rule>
+
+  <rule id="100005" level="0">
+    <if_sid>553</if_sid>
+    <description>Ignore file deletions</description>
+  </rule>
+
+  <rule id="100006" level="0">
+    <if_sid>554</if_sid>
+    <description>Ignore file additions</description>
+  </rule>
+  <rule id="10501" level="0">
+    <if_sid>5501</if_sid>
+    <description>Ignore PAM login session opened</description>
+  </rule>
+  <rule id="10502" level="0">
+    <if_sid>5502</if_sid>
+    <description>Ignore PAM login session closed</description>
+  </rule>
+</group>
+<group name="soc_project">
+  <rule id="210001" level="12">
+    <match>BOT_ATTACK</match>
+    <description>HTTP Flood / Bot Attack</description>
+    <mitre>
+      <id>T1498.001</id>
+    </mitre>
+  </rule>
+  <!-- LOGIN ATTACK -->
+  <rule id="210011" level="14">
+    <match>LOGIN_ATTACK</match>
+    <description>Brute Force Login Attack</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+  </rule>
+
+  <!-- LOGIN FAIL -->
+  <rule id="210010" level="10">
+    <match>LOGIN_FAIL</match>
+    <description>Multiple Login Failures</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+  </rule>
+
+  <!-- INVENTORY ABUSE -- deliberately unmapped: "INVENTORY_ABUSE" is a
+       synthetic label from this lab's traffic generator with no
+       independently verifiable behavioral definition (does it mean
+       enumeration, scraping, unauthorized access, something else?) --
+       forcing a technique_id onto it would fabricate ground truth. -->
+  <rule id="210012" level="10">
+    <match>INVENTORY_ABUSE</match>
+    <description>Inventory Abuse Attack</description>
+  </rule>
+
+  <!-- DOS -->
+  <rule id="210013" level="13">
+    <match>SLOW endpoint</match>
+    <description>DoS Attack (Slow Endpoint)</description>
+    <mitre>
+      <id>T1499.002</id>
+    </mitre>
+  </rule>
+
+  <!-- PRIVILEGE -- deliberately unmapped, per mitre_rule_registry.py's
+       own existing caution: matching the bare word "sudo" is extremely
+       overbroad (fires on any sudo invocation, legitimate or not) and
+       has no behavioral specificity that distinguishes an actual
+       privilege-escalation attempt from routine administration. -->
+  <rule id="210020" level="15">
+    <match>sudo</match>
+    <description>Privilege Escalation Attempt</description>
+  </rule>
+
+</group>
+<!-- RULE 1 : Multiple Failed Login Attempts (Ubuntu SSH log) -->
+<!-- Renumbered 100001 -> 100510: this rule's original ID collided with
+     "local," group's "Ignore rootcheck" rule (also 100001, defined
+     earlier in this file); Wazuh only honors the first definition, so
+     this rule never fired until this fix. Mitre T1110 (not the
+     T1110.001 sub-technique): this rule matches unconditionally on
+     if_sid 5716 (Wazuh's own "sshd: authentication failed", which
+     itself declares only general T1110) with no added frequency/
+     repetition threshold of its own despite the "Multiple Failed
+     Login Attempts" description -- see MITRE_MAPPING.md's noted gap
+     between this rule's description and what it actually verifies. -->
+<group name="local,syslog,sshd">
+
+  <rule id="100510" level="10">
+
+    <if_sid>5716</if_sid>
+
+    <description>Multiple Failed Login Attempts detected (SSH brute force)</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+
+  </rule>
+
+</group>
+
+
+
+<!-- RULE 2 : Abnormal Network Activity
+
+<group name="local,syslog,network">
+
+  <rule id="100002" level="6">
+
+    <match>connection</match>
+
+    <description>Abnormal Network Activity detected</description>
+
+  </rule>
+
+</group>
+
+-->
+
+<!-- RULE 3 : Suspicious Process Execution -->
+<!-- Renumbered 100003 -> 100511: original ID collided with "local,"
+     group's "Ignore successful sudo" rule; never fired until this fix.
+     Mitre T1105 (Ingress Tool Transfer): wget/curl are canonical
+     tooling for pulling a payload onto a host post-compromise. Caveat
+     (see MITRE_MAPPING.md): matching bare "wget|curl" is a legitimate-
+     use-heavy pattern -- the technique label describes the literal
+     behavior, it does not by itself mean this specific invocation was
+     malicious (threat qualification, not MITRE mapping, decides that). -->
+<group name="local,syslog,process">
+
+  <rule id="100511" level="12">
+
+    <match>wget|curl</match>
+
+    <description>Suspicious Process with External Connection detected</description>
+    <mitre>
+      <id>T1105</id>
+    </mitre>
+
+  </rule>
+
+</group>
+<group name="custom_attacks">
+
+  <rule id="100100" level="10">
+    <match>LOGIN_FAIL</match>
+    <description>Login failure detected</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+  </rule>
+
+  <rule id="100200" level="12">
+    <match>\[LOGIN_ATTACK\]</match>
+    <description>Brute Force Attack Detected</description>
+    <mitre>
+      <id>T1110</id>
+    </mitre>
+  </rule>
+
+  <!-- Deliberately unmapped -- see 210012 above; same synthetic,
+       behaviorally-unspecified "INVENTORY" label. -->
+  <rule id="100300" level="10">
+    <match>INVENTORY accessed</match>
+    <description>Inventory Access</description>
+  </rule>
+
+  <!-- Renumbered 100004 -> 100512: original ID collided with "local,"
+       group's "Ignore checksum changes" rule; never fired until this
+       fix. Deliberately left unmapped -- see 210012 above. -->
+  <rule id="100512" level="12">
+    <match>\[INVENTORY_ABUSE\]</match>
+    <description>Inventory Abuse Attack</description>
+  </rule>
+
+  <!-- Renumbered 100005 -> 100513: original ID collided with "local,"
+       group's "Ignore file deletions" rule; never fired until this
+       fix. Mitre T1499.002, same rationale as 210013 above (this is
+       the same detection pattern, duplicated content, distinct ID). -->
+  <rule id="100513" level="13">
+    <match>SLOW endpoint</match>
+    <description>Possible DoS Behavior</description>
+    <mitre>
+      <id>T1499.002</id>
+    </mitre>
+  </rule>
+
+</group>
+<!-- /var/ossec/etc/rules/local_rules.xml -->
+
+<!-- Renumbered 100500 -> 100514 and 100501 -> 100515: both collided
+     with "suricata_custom,"'s nmap/autostart rules (defined earlier in
+     this file, also 100500/100501) -- meaning these two noise-
+     suppression rules were NEVER active, and dpkg install/configure
+     events (if_sid 2902/2904) have been reaching the pipeline as
+     unsuppressed noise this entire time despite the operator's
+     evident intent to filter them (this is exactly why 2902/2904
+     appear in mitre_rule_registry.py's list of currently-unmapped lab
+     rule IDs -- they were never actually being ignored). -->
+<group name="local,ignore,">
+
+  <rule id="100514" level="0">
+      <if_sid>2902</if_sid>
+      <description>Ignore dpkg installed events</description>
+  </rule>
+
+  <rule id="100515" level="0">
+      <if_sid>2904</if_sid>
+      <description>Ignore dpkg configuration events</description>
+  </rule>
+
+</group>
