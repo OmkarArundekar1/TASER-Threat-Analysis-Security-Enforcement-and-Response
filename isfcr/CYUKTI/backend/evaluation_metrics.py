@@ -50,6 +50,21 @@ def precision_recall_f1(y_true: list, y_pred: list, label) -> dict:
     return {"precision": precision, "recall": recall, "f1": f1, "support": tp + fn}
 
 
+def confusion_matrix(y_true: list, y_pred: list, labels: list | None = None) -> dict:
+    """Full N x N confusion matrix as a dict of dicts:
+    matrix[actual_label][predicted_label] -> count. `labels` fixes the
+    row/column order (and can include a label with zero support, e.g.
+    a MITRE technique that never appeared); defaults to every distinct
+    value seen in y_true or y_pred."""
+    if labels is None:
+        labels = sorted(set(y_true) | set(y_pred), key=str)
+    matrix = {actual: {predicted: 0 for predicted in labels} for actual in labels}
+    for actual, predicted in zip(y_true, y_pred):
+        if actual in matrix and predicted in matrix[actual]:
+            matrix[actual][predicted] += 1
+    return {"labels": labels, "matrix": matrix}
+
+
 def classification_report(y_true: list, y_pred: list) -> dict:
     """Per-label precision/recall/F1/support, plus macro-F1, micro-F1,
     weighted-F1, balanced accuracy, and exact-match accuracy. Labels
@@ -184,6 +199,19 @@ def recall_at_k(relevant_ids: set, ranked_ids: list, k: int) -> float:
         return 0.0
     retrieved_top_k = set(ranked_ids[:k])
     return len(retrieved_top_k & relevant_ids) / len(relevant_ids)
+
+
+def precision_at_k(relevant_ids: set, ranked_ids: list, k: int) -> float:
+    """For playbook recommendation: of the top-K recommended
+    playbooks/actions, what fraction were actually relevant (e.g.
+    actually used/approved by an analyst, or actually successful)?
+    0.0 if k <= 0 rather than dividing by zero."""
+    if k <= 0:
+        return 0.0
+    retrieved_top_k = ranked_ids[:k]
+    if not retrieved_top_k:
+        return 0.0
+    return sum(1 for item in retrieved_top_k if item in relevant_ids) / len(retrieved_top_k)
 
 
 def mean_reciprocal_rank(relevant_ids_per_query: list[set], ranked_ids_per_query: list[list]) -> float:

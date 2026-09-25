@@ -236,4 +236,15 @@ export const api = {
     fetchApi<import('../types').CampaignSelectionResponse>(
       `/campaign-selection/${encodeURIComponent(campaignId)}`
     ),
+
+  threatQualification: (campaignId: string) =>
+    fetchApi<import('../types').IncidentOverview['threat_qualification']>(
+      `/threat-qualification/${encodeURIComponent(campaignId)}`
+    ),
+
+  incidentOverview: (campaignId: string) =>
+    fetchApi<import('../types').IncidentOverview>(`/incidents/${encodeURIComponent(campaignId)}/overview`),
+
+  incidentResponsePlan: (campaignId: string) =>
+    fetchApi<import('../types').IncidentResponsePlan>(`/incidents/${encodeURIComponent(campaignId)}/response-plan`),
 };

@@ -16,6 +16,7 @@ import { ThreatIntelligencePage } from './components/ThreatIntelligencePage';
 import { SystemHealthPage } from './components/SystemHealthPage';
 import { AuditLogPage } from './components/AuditLogPage';
 import { SOARPage } from './components/SOARPage';
+import { IncidentView } from './components/IncidentView';
 
 function DashboardLayout() {
   const { isPathExplorerOpen } = useDashboard();
@@ -25,7 +26,9 @@ function DashboardLayout() {
     <div className="h-screen flex flex-col bg-[#060a13] text-slate-200 overflow-hidden">
       <TopNavBar activeView={activeView} onChangeView={setActiveView} />
 
-      {activeView === 'gnn' ? (
+      {activeView === 'incident' ? (
+        <IncidentView />
+      ) : activeView === 'gnn' ? (
         <GNNIntelligencePage />
       ) : activeView === 'prediction' ? (
         <PredictionIntelligencePage />

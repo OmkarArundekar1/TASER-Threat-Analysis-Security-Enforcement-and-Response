@@ -36,6 +36,12 @@ Added this phase, purely additively:
 
 **Known limitation**: a campaign that never went through live CTI-confidence computation (e.g. seeded directly into Neo4j, or processed before this field existed) has no stored `cti_score` — the endpoint honestly reports `NOT_THREAT` / "no CTI confidence computed yet" rather than fabricating a score.
 
+## Dashboard (added this phase)
+
+`IncidentView.tsx`'s "Threat Qualification" section renders all six checks with an explicit PASS/FAIL/UNKNOWN state per check (not just true/false) — `UNKNOWN` is shown specifically for `threat_classification_qualified` when `cti_score` is `null` (no CTI confidence computed yet), distinguishing "we checked and it failed" from "we don't know yet," per the explicit "do not hide uncertainty" requirement. Every other check remains a real PASS/FAIL since it's checking presence of a concrete field, not a probabilistic judgment.
+
+Also composed into `GET /api/incidents/<id>/overview` and `GET /api/incidents/<id>/response-plan` via a shared `_build_threat_qualification()` helper (one implementation, reused by the standalone route and both aggregate endpoints).
+
 ## Tests
 
-`test_cti_confidence_classification.py` (4), `test_threat_qualification.py` (10), `test_dashboard_api_threat_and_selection_routes.py`'s threat-qualification cases (4).
+`test_cti_confidence_classification.py` (4), `test_threat_qualification.py` (10), `test_dashboard_api_threat_and_selection_routes.py`'s threat-qualification cases (4), `test_dashboard_api_incident_views.py` (7, covering the aggregate endpoints).

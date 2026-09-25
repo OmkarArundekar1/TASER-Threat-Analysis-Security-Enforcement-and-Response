@@ -36,11 +36,12 @@ The conceptual workflow shape (`CYUKTI webhook → validate → enrich IOC → C
 
 `soar.execution_service.PlaybookExecutionService` (built in the prior phase) already enforces: a playbook with any destructive action can never execute under `AUTOMATIC` policy — it's silently downgraded to `ANALYST_APPROVAL`, server-side, not just hidden in the UI. This phase's `ResponsePlan` surfaces exactly which actions are safe vs. approval-required vs. destructive so the analyst sees the "what requires approval" answer before clicking anything.
 
-## What's not built this phase
+## Built this phase: the unified Incident View
 
-- A dedicated dashboard page rendering `ResponsePlan` end-to-end as the mockup in the original spec shows (threat summary → why → evidence → recommended response → MISP status → Shuffle status, all in one incident view). The underlying data is fully available via `soar.response_plan.ResponsePlanGenerator` and the existing `/api/soar/*` + `/api/threat-qualification/*` + `/api/campaign-selection/*` endpoints; assembling one unified page from them is a reasonable next step given the remaining scope this phase.
-- A dashboard API route that calls `ResponsePlanGenerator` directly (it's currently a library function, exercised by `test_soar_response_plan.py`, not yet exposed as its own endpoint — the pieces it composes are each independently exposed already).
+`GET /api/incidents/<campaign_id>/response-plan` now exposes `ResponsePlanGenerator` directly (reuses any already-stored playbook for the campaign, or generates a fresh candidate; composes real threat qualification + campaign selection via the same shared helpers `/api/incidents/<id>/overview` uses). `IncidentView.tsx`'s "Response Plan" section renders it end-to-end: threat summary → why → selected historical campaign + explanation → MISP readiness badge → per-action SAFE/DESTRUCTIVE and AUTO/APPROVAL badges — exactly the incident-view mockup from the original spec, assembled from real, already-tested pieces rather than duplicated logic.
+
+Live-verified against real data: `GET /api/incidents/CAMP_4FDA1A87/response-plan` returned a real generated playbook with real per-action reasons, correctly reported `misp_status: BLOCKED` (this campaign's real CTI score of 29.15 is SUSPICIOUS, not QUALIFIED_THREAT).
 
 ## Tests
 
-`test_soar_response_plan.py` (7).
+`test_soar_response_plan.py` (7), `test_dashboard_api_incident_views.py`'s response-plan cases (3), `IncidentView.test.tsx` (5).

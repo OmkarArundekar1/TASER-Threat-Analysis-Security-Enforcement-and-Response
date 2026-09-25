@@ -2,6 +2,7 @@ import pytest
 
 from evaluation_metrics import (
     confusion_counts,
+    confusion_matrix,
     precision_recall_f1,
     classification_report,
     false_positive_negative_rates,
@@ -10,6 +11,7 @@ from evaluation_metrics import (
     cluster_purity,
     campaign_fragmentation,
     recall_at_k,
+    precision_at_k,
     mean_reciprocal_rank,
 )
 
@@ -136,3 +138,34 @@ def test_mean_reciprocal_rank_no_hit_scores_zero_for_that_query():
     relevant = [{"camp_9"}]
     ranked = [["camp_1", "camp_2"]]
     assert mean_reciprocal_rank(relevant, ranked) == 0.0
+
+
+def test_confusion_matrix_counts_each_actual_predicted_pair():
+    y_true = ["A", "A", "B", "B"]
+    y_pred = ["A", "B", "B", "B"]
+    result = confusion_matrix(y_true, y_pred)
+    assert result["labels"] == ["A", "B"]
+    assert result["matrix"]["A"]["A"] == 1
+    assert result["matrix"]["A"]["B"] == 1
+    assert result["matrix"]["B"]["B"] == 2
+    assert result["matrix"]["B"]["A"] == 0
+
+
+def test_confusion_matrix_respects_explicit_label_order_including_zero_support():
+    y_true = ["A", "A"]
+    y_pred = ["A", "A"]
+    result = confusion_matrix(y_true, y_pred, labels=["A", "B", "C"])
+    assert result["labels"] == ["A", "B", "C"]
+    assert result["matrix"]["B"]["B"] == 0
+    assert result["matrix"]["C"]["A"] == 0
+
+
+def test_precision_at_k_basic():
+    relevant = {"pb_1", "pb_3"}
+    ranked = ["pb_1", "pb_2", "pb_3", "pb_4"]
+    assert precision_at_k(relevant, ranked, k=2) == 0.5
+    assert precision_at_k(relevant, ranked, k=4) == 0.5
+
+
+def test_precision_at_k_zero_k_is_zero_not_crash():
+    assert precision_at_k({"pb_1"}, ["pb_1"], k=0) == 0.0

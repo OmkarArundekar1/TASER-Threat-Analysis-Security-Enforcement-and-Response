@@ -486,6 +486,65 @@ export interface CampaignSelectionResponse {
   explanation: string;
 }
 
+/* ── Incident View aggregate (backend dashboard_api.py incident_overview/response_plan) ── */
+
+export interface MitreEnrichedTechnique {
+  mitre_id: string;
+  technique_name: string | null;
+  tactic: string[];
+  mapping_source: string;
+  mapping_confidence: string;
+  mapping_reason: string;
+}
+
+export interface IncidentOverview {
+  campaign: {
+    campaign_id: string;
+    attacker_ip: string;
+    victim_ip: string;
+    status: string;
+    first_seen: string | null;
+    last_seen: string | null;
+    last_technique: string | null;
+    techniques: string[];
+    risk_score: number;
+    predicted_next: string | null;
+    prediction_confidence: number | null;
+  };
+  operation_id: string | null;
+  mitre: MitreEnrichedTechnique[];
+  severity: { label: string; risk_score: number };
+  threat_qualification: {
+    classification: 'NOT_THREAT' | 'SUSPICIOUS' | 'QUALIFIED_THREAT';
+    cti_score: number | null;
+    checks: { name: string; passed: boolean; detail: string }[];
+    may_publish_to_misp: boolean;
+    reason: string;
+  };
+  campaign_selection: CampaignSelectionResponse;
+  gnn: { gnn_available: boolean; gnn_model_version: string | null };
+  soar: { playbooks: Playbook[]; executions: PlaybookExecution[] };
+  investigation_available: boolean;
+  rag_available: boolean;
+}
+
+export interface IncidentResponsePlan {
+  campaign_id: string;
+  threat_summary: string;
+  why_threat: string[];
+  mitre_techniques: string[];
+  severity: string;
+  risk_score: number;
+  selected_historical_campaign: string | null;
+  why_selected: string | null;
+  selection_confidence: string | null;
+  playbook: Playbook | null;
+  historical_playbook_success_rate: number | null;
+  historical_playbook_executions: number;
+  misp_status: 'READY' | 'BLOCKED' | 'NOT_APPLICABLE';
+  misp_reason: string;
+}
+
 export interface SoarRecommendationsResponse {
   campaign_id: string;
   historical_matches: HistoricalPlaybookMatch[];

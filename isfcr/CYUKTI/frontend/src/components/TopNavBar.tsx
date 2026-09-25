@@ -1,11 +1,12 @@
-import { Shield, Clock, LayoutDashboard, GitBranch, Zap, Radio, Activity, ScrollText, Bot } from 'lucide-react';
+import { Shield, Clock, LayoutDashboard, GitBranch, Zap, Radio, Activity, ScrollText, Bot, ShieldAlert } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { useEffect, useState } from 'react';
 
-export type TopLevelView = 'dashboard' | 'gnn' | 'prediction' | 'threat-intel' | 'system' | 'audit' | 'soar';
+export type TopLevelView = 'dashboard' | 'incident' | 'gnn' | 'prediction' | 'threat-intel' | 'system' | 'audit' | 'soar';
 
 const VIEWS: { id: TopLevelView; label: string; icon: typeof LayoutDashboard; activeClass: string }[] = [
   { id: 'dashboard', label: 'SOC Dashboard', icon: LayoutDashboard, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
+  { id: 'incident', label: 'Incident View', icon: ShieldAlert, activeClass: 'bg-red-500/20 text-red-300 border-red-500/40' },
   { id: 'gnn', label: 'GNN Intelligence', icon: GitBranch, activeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' },
   { id: 'prediction', label: 'Prediction', icon: Zap, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
   { id: 'soar', label: 'SOAR', icon: Bot, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },

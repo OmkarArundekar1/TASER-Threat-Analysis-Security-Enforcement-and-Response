@@ -38,9 +38,15 @@ Candidates are found via a real, **always-available** Cypher query — campaigns
 
 `CampaignSelectionPanel.tsx`, a new sub-tab ("Selection") in the Intelligence Workspace: shows the confidence badge, the plain-language explanation, and every ranked candidate with its full five-signal breakdown and historical response success rate, the selected one visually marked.
 
-## Not built this phase
+## Selection tree visualization (added this phase)
 
-The literal "selection graph" node-diagram visualization described in the original spec (`CURRENT CAMPAIGN → candidates → SELECTED`, drawn as a tree) — the same ranking/signal data is fully exposed via the panel above and the API, just as a ranked list rather than a rendered graph. A dedicated diagram is a reasonable follow-up given the data is already there.
+`IncidentView.tsx`'s "Campaign Selection" section now renders the literal `CURRENT INCIDENT → candidates → SELECTED` relationship as a visual tree (top 4 ranked candidates as sibling nodes below the current incident, connecting lines, the selected one visually marked with an award icon and its full five-signal breakdown shown beneath), not just a ranked list. `CampaignSelectionPanel.tsx` (the earlier, more compact in-workspace version) is unchanged and still available as its own Intelligence Workspace tab for quick reference without opening the full Incident View.
+
+Live-verified against real data (Neo4j running, 100 real campaigns): `GET /api/incidents/CAMP_4FDA1A87/overview` correctly ranked 10 real historical candidates, selected the top one, and produced a real, non-fabricated explanation string from actual signal values.
+
+## Composed into the Incident View aggregate endpoint
+
+`GET /api/incidents/<id>/overview` (`INCIDENT_VIEW.md`) calls the same `_build_campaign_selection()` helper the standalone `/api/campaign-selection/<id>` route uses — one implementation, not duplicated.
 
 ## Tests
 

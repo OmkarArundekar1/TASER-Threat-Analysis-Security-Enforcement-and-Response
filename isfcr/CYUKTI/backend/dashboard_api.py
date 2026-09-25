@@ -1668,33 +1668,14 @@ def audit_logs():
     return jsonify({"entries": entries, "total_lines": total_lines, "log_path": log_path})
 
 
-@app.route('/api/threat-qualification/<campaign_id>')
-def threat_qualification_view(campaign_id):
-    """Explainable NOT_THREAT/SUSPICIOUS/QUALIFIED_THREAT classification
-    and MISP publication-readiness checklist for an already-resolved
-    campaign (THREAT_QUALIFICATION.md). Reconstructs from real,
-    persisted per-campaign state (Campaign.cti_score/cti_publish,
-    written by neo4j_client.store_cti_confidence during live alert
-    processing) rather than requiring a live IncidentContext, which
-    only exists transiently during realtime_socgraph.py's own
-    processing and is never itself persisted as a queryable object.
-    Honestly reports "no CTI confidence computed yet" (200, not an
-    error) for a campaign that hasn't gone through that path.
-    """
-    context, error_response = _try_load_campaign_context(campaign_id)
-    if error_response:
-        return error_response
-    if context is None:
-        return jsonify({"error": f"Campaign {campaign_id} not found"}), 404
-
-    try:
-        with driver.session() as session:
-            row = session.run(
-                "MATCH (c:Campaign {campaign_id: $id}) RETURN c.cti_score AS score, c.cti_publish AS publish",
-                id=campaign_id,
-            ).single()
-    except (ServiceUnavailable, Neo4jError) as e:
-        return jsonify({"error": f"Database unavailable: {e}"}), 503
+def _build_threat_qualification(campaign_id, context, session):
+    """Shared by /api/threat-qualification/<id> and the
+    /api/incidents/<id>/overview aggregate route -- one implementation,
+    not duplicated. See THREAT_QUALIFICATION.md."""
+    row = session.run(
+        "MATCH (c:Campaign {campaign_id: $id}) RETURN c.cti_score AS score, c.cti_publish AS publish",
+        id=campaign_id,
+    ).single()
 
     from cti_confidence_engine import NOT_THREAT_THRESHOLD, PUBLISH_THRESHOLD
     from threat_qualification import (
@@ -1719,19 +1700,21 @@ def threat_qualification_view(campaign_id):
             classification = NOT_THREAT
         incident_like.cti = types.SimpleNamespace(threat_classification=classification, score=score)
 
-    result = qualification_engine.qualify(incident_like)
-    return jsonify(result.to_dict())
+    return qualification_engine.qualify(incident_like)
 
 
-@app.route('/api/campaign-selection/<campaign_id>')
-def campaign_selection_view(campaign_id):
-    """BestCampaignSelector (CAMPAIGN_SELECTION.md): ranks historical
-    campaigns sharing at least one MITRE technique or the same
-    attacker IP with the current campaign, using five independently-
-    reported signals (never GNN topology alone -- rule 6). Candidate
-    discovery here is a real, always-available Cypher query
-    (technique/attacker overlap) -- NOT dependent on GNN being enabled,
-    since GNN is only one of the five signals scored per candidate.
+@app.route('/api/threat-qualification/<campaign_id>')
+def threat_qualification_view(campaign_id):
+    """Explainable NOT_THREAT/SUSPICIOUS/QUALIFIED_THREAT classification
+    and MISP publication-readiness checklist for an already-resolved
+    campaign (THREAT_QUALIFICATION.md). Reconstructs from real,
+    persisted per-campaign state (Campaign.cti_score/cti_publish,
+    written by neo4j_client.store_cti_confidence during live alert
+    processing) rather than requiring a live IncidentContext, which
+    only exists transiently during realtime_socgraph.py's own
+    processing and is never itself persisted as a queryable object.
+    Honestly reports "no CTI confidence computed yet" (200, not an
+    error) for a campaign that hasn't gone through that path.
     """
     context, error_response = _try_load_campaign_context(campaign_id)
     if error_response:
@@ -1739,34 +1722,195 @@ def campaign_selection_view(campaign_id):
     if context is None:
         return jsonify({"error": f"Campaign {campaign_id} not found"}), 404
 
-    from campaign_selection import selector, build_candidates_from_campaigns
-
     try:
         with driver.session() as session:
-            rows = session.run(
-                """
-                MATCH (c1:Campaign {campaign_id: $campaign_id})
-                MATCH (c2:Campaign) WHERE c1 <> c2
-                OPTIONAL MATCH (c1)-[:HAS_EVENT]->(:AttackEvent)-[:MATCHES]->(t1:Technique)
-                OPTIONAL MATCH (c2)-[:HAS_EVENT]->(:AttackEvent)-[:MATCHES]->(t2:Technique)
-                OPTIONAL MATCH (a1:Attacker)-[:LAUNCHED]->(c1)
-                OPTIONAL MATCH (a2:Attacker)-[:LAUNCHED]->(c2)
-                WITH c2, collect(DISTINCT t1.attack_id) AS t1s, collect(DISTINCT t2.attack_id) AS t2s,
-                     collect(DISTINCT a1.ip) AS a1s, collect(DISTINCT a2.ip) AS a2s
-                WHERE any(t IN t1s WHERE t IN t2s) OR any(a IN a1s WHERE a IN a2s)
-                RETURN DISTINCT c2.campaign_id AS campaign_id LIMIT 10
-                """,
-                campaign_id=campaign_id,
-            )
-            candidate_ids = [r["campaign_id"] for r in rows]
-
-            from soar.memory import memory_store
-            candidates = build_candidates_from_campaigns(context, candidate_ids, session, memory_store=memory_store)
+            result = _build_threat_qualification(campaign_id, context, session)
     except (ServiceUnavailable, Neo4jError) as e:
         return jsonify({"error": f"Database unavailable: {e}"}), 503
 
-    result = selector.select(candidates)
+    return jsonify(result.to_dict())
+
+
+def _discover_campaign_selection_candidates(campaign_id, session):
+    rows = session.run(
+        """
+        MATCH (c1:Campaign {campaign_id: $campaign_id})
+        MATCH (c2:Campaign) WHERE c1 <> c2
+        OPTIONAL MATCH (c1)-[:HAS_EVENT]->(:AttackEvent)-[:MATCHES]->(t1:Technique)
+        OPTIONAL MATCH (c2)-[:HAS_EVENT]->(:AttackEvent)-[:MATCHES]->(t2:Technique)
+        OPTIONAL MATCH (a1:Attacker)-[:LAUNCHED]->(c1)
+        OPTIONAL MATCH (a2:Attacker)-[:LAUNCHED]->(c2)
+        WITH c2, collect(DISTINCT t1.attack_id) AS t1s, collect(DISTINCT t2.attack_id) AS t2s,
+             collect(DISTINCT a1.ip) AS a1s, collect(DISTINCT a2.ip) AS a2s
+        WHERE any(t IN t1s WHERE t IN t2s) OR any(a IN a1s WHERE a IN a2s)
+        RETURN DISTINCT c2.campaign_id AS campaign_id LIMIT 10
+        """,
+        campaign_id=campaign_id,
+    )
+    return [r["campaign_id"] for r in rows]
+
+
+def _build_campaign_selection(campaign_id, context, session):
+    """Shared by /api/campaign-selection/<id> and the
+    /api/incidents/<id>/overview aggregate route. See
+    CAMPAIGN_SELECTION.md. Candidate discovery is a real,
+    always-available Cypher query (technique/attacker overlap) -- NOT
+    GNN-gated, since GNN topology is only one of five signals scored
+    per candidate (rule 6: GNN is never the sole basis)."""
+    from campaign_selection import selector, build_candidates_from_campaigns
+    from soar.memory import memory_store
+
+    candidate_ids = _discover_campaign_selection_candidates(campaign_id, session)
+    candidates = build_candidates_from_campaigns(context, candidate_ids, session, memory_store=memory_store)
+    return selector.select(candidates)
+
+
+@app.route('/api/campaign-selection/<campaign_id>')
+def campaign_selection_view(campaign_id):
+    """BestCampaignSelector (CAMPAIGN_SELECTION.md): ranks historical
+    campaigns sharing at least one MITRE technique or the same
+    attacker IP with the current campaign, using five independently-
+    reported signals (never GNN topology alone -- rule 6)."""
+    context, error_response = _try_load_campaign_context(campaign_id)
+    if error_response:
+        return error_response
+    if context is None:
+        return jsonify({"error": f"Campaign {campaign_id} not found"}), 404
+
+    try:
+        with driver.session() as session:
+            result = _build_campaign_selection(campaign_id, context, session)
+    except (ServiceUnavailable, Neo4jError) as e:
+        return jsonify({"error": f"Database unavailable: {e}"}), 503
+
     return jsonify({"campaign_id": campaign_id, **result.to_dict()})
+
+
+@app.route('/api/incidents/<campaign_id>/overview')
+def incident_overview(campaign_id):
+    """Aggregate, read-only composition of everything the Incident View
+    (INCIDENT_VIEW.md) needs in one call -- composes existing subsystem
+    outputs (campaign context, MITRE enrichment, threat qualification,
+    campaign selection, SOAR playbook/execution state, GNN status) via
+    their own real functions, never reimplementing their logic here.
+
+    Deliberately does NOT run a fresh evidence-aware investigation
+    (POST /api/investigate/<id>) or a Multi-RAG query inline -- both
+    are real, non-trivial operations with their own cost (and
+    investigation has documented, non-idempotent side effects on
+    campaign prediction state, see DASHBOARD_API.md), so triggering
+    them as a side effect of a page load would be a regression, not an
+    aggregation. The frontend calls those endpoints separately, exactly
+    as it already does today -- this endpoint tells it whether doing so
+    is meaningful (`investigation_available`/`rag_available`).
+    """
+    context, error_response = _try_load_campaign_context(campaign_id)
+    if error_response:
+        return error_response
+    if context is None:
+        return jsonify({"error": f"Campaign {campaign_id} not found"}), 404
+
+    from risk_scoring import severity_from_tps
+    from mitre_resolver import enrich_technique_metadata, MitreResolution
+
+    try:
+        with driver.session() as session:
+            operation_row = session.run(
+                "MATCH (o:Operation)-[:HAS_CAMPAIGN]->(c:Campaign {campaign_id: $id}) RETURN o.operation_id AS operation_id",
+                id=campaign_id,
+            ).single()
+            threat_qualification = _build_threat_qualification(campaign_id, context, session)
+            campaign_selection = _build_campaign_selection(campaign_id, context, session)
+    except (ServiceUnavailable, Neo4jError) as e:
+        return jsonify({"error": f"Database unavailable: {e}"}), 503
+
+    techniques = sorted(context.techniques) if context.techniques else (
+        [context.last_technique] if context.last_technique else []
+    )
+    # This campaign-level technique set is an AGGREGATE of whatever
+    # resolve_mitre() decided per alert during live processing -- the
+    # per-alert provenance/confidence isn't preserved at the campaign
+    # level, so mapping_source is honestly reported as an aggregate
+    # label, never a fabricated per-alert provenance.
+    mitre_resolution = MitreResolution(
+        technique_ids=tuple(techniques), provenance="AGGREGATED_FROM_CAMPAIGN_RECORD",
+        confidence="N/A", reason="Techniques observed across this campaign's real, already-resolved events.",
+    )
+    mitre = enrich_technique_metadata(mitre_resolution) if techniques else []
+
+    from soar.memory import memory_store
+    playbooks = [p.to_dict() for p in memory_store.list_playbooks() if p.source_campaign_id == campaign_id]
+    executions = [e.to_dict() for e in memory_store.executions_for_campaign(campaign_id)]
+
+    try:
+        from ml.gnn.inference import gnn_inference_service
+        gnn_status = {
+            "gnn_available": gnn_inference_service.available,
+            "gnn_model_version": gnn_inference_service.metadata.model_version if gnn_inference_service.available else None,
+        }
+    except Exception:
+        gnn_status = {"gnn_available": False, "gnn_model_version": None}
+
+    return jsonify({
+        "campaign": {
+            "campaign_id": context.campaign_id,
+            "attacker_ip": context.attacker_ip,
+            "victim_ip": context.victim_ip,
+            "status": context.status,
+            "first_seen": context.first_seen.isoformat() if context.first_seen else None,
+            "last_seen": context.last_seen.isoformat() if context.last_seen else None,
+            "last_technique": context.last_technique,
+            "techniques": techniques,
+            "risk_score": context.risk_score,
+            "predicted_next": context.predicted_next,
+            "prediction_confidence": context.prediction_confidence,
+        },
+        "operation_id": operation_row["operation_id"] if operation_row else None,
+        "mitre": mitre,
+        "severity": {
+            "label": severity_from_tps(context.risk_score),
+            "risk_score": context.risk_score,
+        },
+        "threat_qualification": threat_qualification.to_dict(),
+        "campaign_selection": campaign_selection.to_dict(),
+        "gnn": gnn_status,
+        "soar": {"playbooks": playbooks, "executions": executions},
+        "investigation_available": True,
+        "rag_available": True,
+    })
+
+
+@app.route('/api/incidents/<campaign_id>/response-plan')
+def incident_response_plan(campaign_id):
+    """GET, not POST: this composes the ResponsePlan narrative
+    (SHUFFLE_RESPONSE_MODEL.md) from data that's either already
+    persisted (any existing playbook for this campaign) or cheap to
+    compute (a fresh candidate playbook, threat qualification, campaign
+    selection) -- it does not run a fresh multi-step investigation
+    (that stays POST /api/investigate/<id>, explicitly triggered).
+    """
+    context, error_response = _try_load_campaign_context(campaign_id)
+    if error_response:
+        return error_response
+    if context is None:
+        return jsonify({"error": f"Campaign {campaign_id} not found"}), 404
+
+    from soar.generator import PlaybookGenerator
+    from soar.memory import memory_store
+    from soar.response_plan import response_plan_generator
+
+    try:
+        with driver.session() as session:
+            qualification = _build_threat_qualification(campaign_id, context, session)
+            selection = _build_campaign_selection(campaign_id, context, session)
+    except (ServiceUnavailable, Neo4jError) as e:
+        return jsonify({"error": f"Database unavailable: {e}"}), 503
+
+    existing = [p for p in memory_store.list_playbooks() if p.source_campaign_id == campaign_id]
+    playbook = existing[0] if existing else PlaybookGenerator().generate(context)
+
+    plan = response_plan_generator.generate(context, playbook=playbook, qualification=qualification, selection=selection)
+    return jsonify(plan.to_dict())
 
 
 @app.route('/api/ml/predict/severity', methods=['POST'])

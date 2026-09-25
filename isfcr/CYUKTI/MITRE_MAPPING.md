@@ -1,5 +1,17 @@
 # CYUKTI MITRE ATT&CK Mapping
 
+## Live activation status (this phase)
+
+Neo4j was found down at the start of this phase and was started (`docker start neo4j-soc`, no privileged access needed — the account is in the `docker` group). With Neo4j and the CYUKTI backend/listener running live, the Wazuh manager itself was confirmed **already running** (started 04:58 UTC), producing real alerts. The rule fixes below (committed to `backend/wazuh_rules/local_rules.xml` in a prior phase and copied to the live `/var/ossec/etc/rules/local_rules.xml`) predate that manager start, so **they are still not active in the live manager's in-memory ruleset** — confirmed by comparing the rule file's mtime (05:09:59) against the manager's `ActiveEnterTimestamp` (04:58:44). Activating them requires `sudo /var/ossec/bin/wazuh-control restart`, which requires an interactive password this environment does not provide non-interactively (`sudo -n`/`sudo -ln` both refused). **Not attempted further; not claimed as done.**
+
+## New finding this phase: a real STIX corpus data-quality issue
+
+While building `enrich_technique_metadata()`'s live `/api/incidents/<id>/overview` integration, spot-checking real technique data revealed that **268 of 858** imported ATT&CK techniques have a non-standard `kill_chain_phases` value — e.g. T1562.001 ("Disable or Modify Tools", genuinely a Defense Evasion technique) and T1055 ("Process Injection", genuinely Defense Evasion + Privilege Escalation) both carry `"stealth"` instead of `"defense-evasion"` in their stored `kill_chain_phases`. Other technique carry `"defense-impairment"`, also not a real ATT&CK Enterprise tactic.
+
+Traced to the **root**: this is not an import bug in `mitre_import/mapper.py` (which correctly extracts every `phase_name` under `kill_chain_name: "mitre-attack"`, with no filtering logic that could be at fault) — the *raw, vendored* `backend/mitredata/attack-stix-data/enterprise-attack/enterprise-attack.json` file itself genuinely contains `{"kill_chain_name": "mitre-attack", "phase_name": "stealth"}` for T1562.001. That file is gitignored ("vendored external reference data — re-fetch, don't commit") and was not re-verified against MITRE's own GitHub source (`mitre-attack/attack-stix-data`) this phase.
+
+**Not silently corrected** — guessing a mapping from `"stealth"` → `"defense-evasion"` for 268 techniques without confirming the full scope/pattern of the discrepancy would itself be a fabrication. Flagged for the user: re-fetch the official bundle and diff, or confirm whether this vendored copy was intentionally customized for this lab. Until then, any `tactic` field surfaced via `enrich_technique_metadata()` (the Incident View header, `/api/incidents/<id>/overview`) should be read with this caveat — `mitre_id` and `technique_name` are unaffected and were spot-checked as correct throughout.
+
 ## Precedence (unchanged from Phase 20, `mitre_resolver.py`)
 
 1. `NATIVE_WAZUH` — `rule.mitre.id`, exactly as Wazuh (or a custom rule) supplies it. Confidence `CONFIRMED`.
