@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CYUKTI Experiment Record",
+  "description": "One reproducible record of a real (or explicitly-marked synthetic) scenario run through CYUKTI, from raw Wazuh alert through the MISP publication decision. See experiments/README.md.",
+  "type": "object",
+  "required": ["experiment_id", "timestamp", "scenario", "input", "expected_behavior", "actual_behavior"],
+  "properties": {
+    "experiment_id": { "type": "string", "description": "Unique, human-readable ID, e.g. EXP-2026-09-25-nmap-scan-01." },
+    "timestamp": { "type": "string", "format": "date-time", "description": "When the scenario was actually run, ISO 8601, real wall-clock time -- never backfilled." },
+    "data_provenance": {
+      "type": "string",
+      "enum": ["real_live_environment", "synthetic_reconstruction", "unit_test_fixture"],
+      "description": "real_live_environment: every field below was observed from a real running system. synthetic_reconstruction: inputs are real but some downstream fields were reconstructed/estimated rather than freshly re-observed live -- must say which fields and why. unit_test_fixture: entirely synthetic, for testing the recording mechanism itself only -- must never be cited as evidence of system behavior."
+    },
+    "attacker": { "type": "string", "description": "Real attacker IP/host, or null if the scenario has none (e.g. a benign informational alert)." },
+    "victim": { "type": "string" },
+    "scenario": { "type": "string", "description": "One-line description of what was actually done (e.g. 'nmap -sV -O scan against target')." },
+    "input": {
+      "type": "object",
+      "description": "The real raw input(s) to the pipeline -- at minimum the actual Wazuh alert JSON(s), verbatim.",
+      "properties": {
+        "wazuh_alerts": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "expected_behavior": { "type": "string", "description": "What the experimenter predicted CYUKTI would do, written BEFORE observing actual_behavior." },
+    "actual_behavior": { "type": "string", "description": "What CYUKTI actually did, written from direct observation (log lines, API responses, DB queries) -- never inferred or assumed." },
+    "mitre": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "mitre_id": { "type": "string" },
+          "technique_name": { "type": ["string", "null"] },
+          "tactic": { "type": "array", "items": { "type": "string" } },
+          "mapping_source": { "type": "string" },
+          "mapping_confidence": { "type": "string" }
+        }
+      }
+    },
+    "campaign": {
+      "type": "object",
+      "properties": {
+        "campaign_id": { "type": "string" },
+        "risk_score": { "type": "number" },
+        "status": { "type": "string" }
+      }
+    },
+    "operation_id": { "type": ["string", "null"] },
+    "severity": {
+      "type": "object",
+      "properties": { "label": { "type": "string" }, "risk_score": { "type": "number" } }
+    },
+    "threat_qualification": {
+      "type": "object",
+      "properties": {
+        "classification": { "type": "string", "enum": ["NOT_THREAT", "SUSPICIOUS", "QUALIFIED_THREAT"] },
+        "cti_score": { "type": ["number", "null"] },
+        "checks": { "type": "array", "items": { "type": "object" } },
+        "may_publish_to_misp": { "type": "boolean" }
+      }
+    },
+    "campaign_selection": {
+      "type": "object",
+      "properties": {
+        "selected_campaign_id": { "type": ["string", "null"] },
+        "confidence": { "type": "string" },
+        "explanation": { "type": "string" }
+      }
+    },
+    "evidence": { "type": ["array", "null"], "items": { "type": "object" }, "description": "Real Evidence.to_dict() records, if an investigation was run for this scenario. null if no investigation was run." },
+    "next_best_evidence": { "type": ["object", "null"] },
+    "multi_rag": { "type": ["object", "null"], "description": "Real /api/rag/search response, per-source, if queried." },
+    "response_plan": { "type": ["object", "null"], "description": "Real ResponsePlan.to_dict()." },
+    "shuffle": {
+      "type": "object",
+      "properties": {
+        "execution_id": { "type": ["string", "null"] },
+        "status": { "type": "string" },
+        "note": { "type": "string", "description": "e.g. 'Execution unavailable -- SHUFFLE_WEBHOOK not configured' when no real execution occurred." }
+      }
+    },
+    "misp": {
+      "type": "object",
+      "properties": {
+        "publication_status": { "type": "string", "enum": ["READY", "BLOCKED", "NOT_APPLICABLE", "PUBLISHED"] },
+        "reason": { "type": "string" },
+        "event_id": { "type": ["string", "null"] }
+      }
+    },
+    "latency": { "type": ["object", "null"], "description": "Real measured latencies for this specific run, in ms, per stage -- not a benchmark-harness average. null if not measured for this run." },
+    "errors": { "type": "array", "items": { "type": "string" }, "description": "Any errors/exceptions/degraded states actually observed during this run -- empty array if genuinely none, never omitted." }
+  }
+}

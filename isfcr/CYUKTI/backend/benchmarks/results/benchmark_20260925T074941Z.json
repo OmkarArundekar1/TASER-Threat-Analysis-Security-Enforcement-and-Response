@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-09-25T07:49:41.266331+00:00",
+  "iterations": 20,
+  "results": {
+    "mitre_resolution": {
+      "status": "measured",
+      "iterations": 20,
+      "p50_ms": 0.001,
+      "p95_ms": 0.002,
+      "p99_ms": 0.002,
+      "mean_ms": 0.001,
+      "throughput_per_sec": 1155401.64
+    },
+    "ioc_extraction": {
+      "status": "measured",
+      "iterations": 20,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.001,
+      "mean_ms": 0.0,
+      "throughput_per_sec": 4766442.98
+    },
+    "deduplication": {
+      "status": "measured",
+      "iterations": 20,
+      "p50_ms": 0.001,
+      "p95_ms": 0.001,
+      "p99_ms": 0.003,
+      "mean_ms": 0.001,
+      "throughput_per_sec": 1065530.27
+    },
+    "neo4j_simple_query": {
+      "status": "measured",
+      "iterations": 20,
+      "p50_ms": 1.527,
+      "p95_ms": 8.322,
+      "p99_ms": 87.85,
+      "mean_ms": 6.888,
+      "throughput_per_sec": 145.18
+    },
+    "campaign_selection_scoring_in_memory": {
+      "status": "measured",
+      "iterations": 20,
+      "p50_ms": 0.032,
+      "p95_ms": 0.037,
+      "p99_ms": 0.04,
+      "mean_ms": 0.033,
+      "throughput_per_sec": 30081.34
+    },
+    "campaign_selection_live_candidate_discovery": {
+      "status": "measured",
+      "iterations": 20,
+      "p50_ms": 36.785,
+      "p95_ms": 70.613,
+      "p99_ms": 435.727,
+      "mean_ms": 61.908,
+      "throughput_per_sec": 16.15
+    },
+    "severity_prediction": {
+      "status": "skipped",
+      "reason": "TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'NoneType'"
+    },
+    "gnn_embedding": {
+      "status": "measured",
+      "iterations": 20,
+      "p50_ms": 3.637,
+      "p95_ms": 5.09,
+      "p99_ms": 5.306,
+      "mean_ms": 3.733,
+      "throughput_per_sec": 267.88
+    },
+    "response_plan_generation": {
+      "status": "measured",
+      "iterations": 20,
+      "p50_ms": 0.001,
+      "p95_ms": 0.002,
+      "p99_ms": 0.003,
+      "mean_ms": 0.002,
+      "throughput_per_sec": 652720.21
+    },
+    "incident_overview_end_to_end_http": {
+      "status": "measured",
+      "iterations": 20,
+      "p50_ms": 33.851,
+      "p95_ms": 51.098,
+      "p99_ms": 53.366,
+      "mean_ms": 39.733,
+      "throughput_per_sec": 25.17
+    }
+  }
+}

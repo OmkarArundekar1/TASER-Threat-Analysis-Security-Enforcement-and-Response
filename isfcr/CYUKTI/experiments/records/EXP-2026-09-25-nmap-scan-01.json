@@ -1,0 +1,126 @@
+{
+  "experiment_id": "EXP-2026-09-25-nmap-scan-01",
+  "timestamp": "2026-09-25T07:55:00+00:00",
+  "data_provenance": "real_live_environment",
+  "attacker": "192.168.56.106",
+  "victim": "192.168.56.105",
+  "scenario": "Live nmap scan (service/version detection against a web server) from a Kali host against a target on the same lab subnet, captured by the real running Wazuh manager via Suricata.",
+  "input": {
+    "wazuh_alerts": [
+      {
+        "rule": {
+          "level": 12,
+          "description": "HIGH SEVERITY: Nmap Reconnaissance Detected",
+          "id": "100500",
+          "mitre": {
+            "id": [
+              "T1595"
+            ],
+            "tactic": [
+              "Reconnaissance"
+            ],
+            "technique": [
+              "Active Scanning"
+            ]
+          },
+          "groups": [
+            "suricata_custom"
+          ]
+        },
+        "agent": {
+          "id": "001",
+          "name": "pes1ug23cs411-VirtualBox",
+          "ip": "10.0.2.15"
+        },
+        "data": {
+          "src_ip": "192.168.56.106",
+          "dest_ip": "192.168.56.105",
+          "http": {
+            "http_user_agent": "Mozilla/5.0 (compatible; Nmap Scripting Engine; https://nmap.org/book/nse.html)"
+          }
+        }
+      }
+    ]
+  },
+  "expected_behavior": "Wazuh's Suricata-based custom rule (100500) should tag this Nmap-Scripting-Engine HTTP User-Agent with T1595 (Active Scanning); CYUKTI should ingest it and correlate it into a campaign. Prediction made before checking backend state: severity would likely be LOW (single reconnaissance technique, no follow-on exploitation observed), and it was initially assumed threat qualification would NOT reach QUALIFIED_THREAT for a recon-only event.",
+  "actual_behavior": "Confirmed via GET /api/incidents/CAMP_1B8E9033/overview against the live backend: severity IS LOW as predicted, but threat_qualification.classification IS QUALIFIED_THREAT (CTI confidence score 49.08) -- the initial prediction about qualification was wrong. Both fields are independently correct: this is genuinely low-damage-potential reconnaissance that CYUKTI is nonetheless confidently classifying as real (not merely suspicious) threat activity. See INCIDENT_VIEW.md's 'Real-world validation' section for the full narrative and the root-cause explanation for why this was initially assumed otherwise (the pre-redesign dashboard never surfaced threat_qualification.classification alongside severity).",
+  "mitre": [
+    {
+      "mitre_id": "T1595",
+      "technique_name": "Active Scanning",
+      "tactic": [
+        "Reconnaissance"
+      ],
+      "mapping_source": "NATIVE_WAZUH (aggregated to AGGREGATED_FROM_CAMPAIGN_RECORD at the campaign level)",
+      "mapping_confidence": "CONFIRMED at the per-alert level (Wazuh rule 100500, pre-existing, not created this session)"
+    }
+  ],
+  "campaign": {
+    "campaign_id": "CAMP_1B8E9033",
+    "risk_score": 250.0,
+    "status": "ACTIVE"
+  },
+  "operation_id": "OP_6844EECE",
+  "severity": {
+    "label": "LOW",
+    "risk_score": 250.0
+  },
+  "threat_qualification": {
+    "classification": "QUALIFIED_THREAT",
+    "cti_score": 49.08,
+    "checks": [
+      {
+        "name": "threat_classification_qualified",
+        "passed": true,
+        "detail": "CTI confidence score 49.08 -> QUALIFIED_THREAT (cti_confidence_engine.py)."
+      },
+      {
+        "name": "has_ioc",
+        "passed": true,
+        "detail": "Attacker IP: 192.168.56.106"
+      },
+      {
+        "name": "valid_mitre_provenance",
+        "passed": true,
+        "detail": "MITRE technique: T1595"
+      },
+      {
+        "name": "valid_timestamp",
+        "passed": true,
+        "detail": "Timestamp: 2026-09-25T06:41:57.411739+00:00"
+      },
+      {
+        "name": "has_campaign_context",
+        "passed": true,
+        "detail": "Campaign: CAMP_1B8E9033"
+      },
+      {
+        "name": "not_already_published",
+        "passed": true,
+        "detail": "Not previously published."
+      }
+    ],
+    "may_publish_to_misp": true
+  },
+  "campaign_selection": {
+    "selected_campaign_id": "CAMP_67FCB361",
+    "confidence": "LOW",
+    "explanation": "CAMP_67FCB361 ranked highest (composite score 0.78) because its technique similarity (100%) matched the current campaign most closely, despite comparatively weaker temporal similarity (0%)."
+  },
+  "evidence": null,
+  "next_best_evidence": null,
+  "multi_rag": null,
+  "response_plan": null,
+  "shuffle": {
+    "execution_id": null,
+    "status": "not_started",
+    "note": "Execution unavailable -- SHUFFLE_WEBHOOK not configured in this environment (SHUFFLE_INFRASTRUCTURE_BLOCKED, see SOAR_PLAYBOOK_INTEGRATION.md)."
+  },
+  "misp": {
+    "publication_status": "READY",
+    "reason": "All publication-readiness checks passed.",
+    "event_id": null
+  },
+  "latency": null,
+  "errors": []
+}

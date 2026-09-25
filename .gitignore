@@ -19,6 +19,14 @@ datasets/
 !tsconfig.json
 !tsconfig.*.json
 
+# ...nor CYUKTI's experiment-recording schema/example and benchmark
+# reference results (real, intentionally-committed source/reference
+# data, not generated telemetry) -- see isfcr/CYUKTI/experiments/README.md
+!isfcr/CYUKTI/experiments/schema.json
+!isfcr/CYUKTI/experiments/examples/*.json
+!isfcr/CYUKTI/experiments/records/*.json
+!isfcr/CYUKTI/backend/benchmarks/results/*.json
+
 # Models
 *.pkl
 *.pt

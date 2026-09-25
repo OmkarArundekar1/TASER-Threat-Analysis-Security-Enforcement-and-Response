@@ -1634,6 +1634,17 @@ def system_health():
     })
 
 
+@app.route('/api/system/config-snapshot')
+def system_config_snapshot():
+    """CONFIGURATION_SNAPSHOT.md: the configuration relevant to
+    reproducing an experiment or benchmark run, with every field drawn
+    from an explicit allowlist (config_snapshot.py) -- never an API
+    key, password, token, or credential.
+    """
+    from config_snapshot import get_safe_config_snapshot
+    return jsonify(get_safe_config_snapshot())
+
+
 @app.route('/api/audit/logs')
 def audit_logs():
     """Tails the real Wazuh-listener log (logs/prerana_listener.log --
