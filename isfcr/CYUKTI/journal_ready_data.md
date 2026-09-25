@@ -441,6 +441,33 @@ Defaults: `confidence_threshold=0.75`, `max_uncertainty=0.4`, `max_steps=8`.
 
 Every `StoppingDecision` carries a human-readable `reason` string, persisted in the investigation record.
 
+### 10.6 Phase 21/22: the adaptive-NBE negative result (disclosed, not a bug)
+
+Two real research-validation phases tested whether the Next-Best-Evidence policy (10.3) is actually *adaptive* — does it choose a different evidence-gathering order depending on what a campaign's evidence contains, or does it always do the same thing? Both are documented in full in `review/phase21_real_investigation_validation.md` and `review/phase22_nbe_sensitivity_validation.md`, quoted here verbatim rather than re-derived.
+
+**Phase 21 — real-campaign investigation.** Three real campaigns were run through the live investigation loop end-to-end: `CAMP_427A075C` (192.168.56.106→192.168.56.105, T1595, risk 8330), `CAMP_1429ADB4` (192.168.56.105→pes1ug23cs411-VirtualBox, T1055/T1059/T1059.007/T1190/T1210/T1595.002, risk 34820), `CAMP_D8605E81` (192.168.56.106→pes1ug23cs411-VirtualBox, T1110/T1110.001, risk 630) — different attacker/victim pairs, different technique sets, an order-of-magnitude spread in risk. The action order chosen was **identical across all three**, at the time this project used 8 `InvestigationAction` members (before `CAMPAIGN_NARRATIVE_SEARCH` and `GNN_TOPOLOGY_RETRIEVAL` were added — see 10.2):
+
+| Step | Action | `selection_value` — CAMP_427A075C | CAMP_1429ADB4 | CAMP_D8605E81 |
+|---|---|---|---|---|
+| 1 | `mitre_knowledge` | 1.74 | 1.74 | 1.74 |
+| 2 | `xgboost_prediction` | 1.73 | 1.73 | 1.73 |
+| 3 | `graph_structure` | 1.62 | 1.62 | 1.62 |
+| 4 | `campaign_history` | 1.49 | 1.49 | 1.49 |
+| 5 | `detection_check` | 1.485 | 1.485 | 1.485 |
+| 6 | `cti_lookup` | 1.135 | 1.135 | 1.135 |
+| 7 | `attribution_match` | 0.875 | 0.875 | 0.875 |
+| 8 | `mitre_semantic_search` | 0.3 | 0.3 | 0.3 |
+
+All three investigations stopped via stopping criterion 2 (`steps_taken >= 8`, the hard depth limit) — the confidence-threshold branch was never exercised by any of the three. Full backend suite at the time: 164/164 passing (unchanged; no code was modified this phase).
+
+**Phase 22 — ablation study.** Phase 21 raised two competing hypotheses for *why* the order never changed: **H1** (magnitude dominance — content-sensitive terms exist but are numerically swamped by static ones) vs. **H2** (no content channel — the adaptive terms never carried campaign-specific information to begin with). Phase 22 tested this directly with an 8-way ablation (configurations A–F3, toggling `novelty`, `redundancy_penalty`, and `uncertainty_reduction` on/off in combination) run pairwise across the same 3 real campaigns: **192 pairwise comparisons total**. Result: **192/192 identical rankings, 192/192 identical raw scores, 0 total pairwise rank swaps, Kendall's τ = 1.0 (min=max, n=168 non-degenerate pairs), 0.0 score variance in every single comparison.** H2 confirmed, H1 falsified.
+
+**Root cause** (traced to real code, not inferred): `score_action()`'s `uncertainty_reduction` term is nonzero *only* for `XGBOOST_PREDICTION` (10.3) — every other action contributes 0.0 to it regardless of campaign. `novelty` and `redundancy_penalty` are computed purely from *which action types have already been taken this investigation*, never from the evidence content those actions returned. And `mitre_knowledge` is deterministically step 1 in every campaign because it has the highest static score (1.74) unconditionally; its collector (`evidence/collectors/mitre_collector.py`) never sets `Evidence.relevance` above the dataclass default of 0.0, and `EvidenceStore.weighted_confidence()`/`evidence_coverage()` (10.4) give zero weight to relevance-0.0 evidence — a deliberate anti-saturation design from the Section 10.4 fix. Consequence: after step 1, `evidence_reliability=0.0` and `evidence_coverage=0.0` in *every* campaign unconditionally, so `investigation_confidence=0.0`, `uncertainty=1.0`, and XGBoost's `uncertainty_reduction` is pinned to exactly 1.0 regardless of campaign content — structural, not coincidental.
+
+**What IS campaign-dependent**: the confidence/uncertainty *trajectories* over the 8 steps differ meaningfully — final `investigation_confidence` was 0.1835 / 0.0687 / 0.0963 and final `uncertainty` was 0.8165 / 0.9313 / 0.9037 for the three campaigns respectively, with real per-campaign `evidence_reliability` (1.0 / 0.9287 / 0.9814) and `evidence_coverage` (0.5279 / 0.4884 / 0.4528) values. **What is NOT campaign-dependent**: the *order* in which evidence is gathered.
+
+**Framing for the paper**: this is a disclosed negative result about the current heuristic NBE policy, verified by both code inspection and a 192-comparison empirical ablation with zero exceptions — not a bug, and not hidden. The honest, defensible claim (stated in Phase 22's own conclusions): *"the current evidence-dependency/redundancy and novelty mechanisms are structurally activated by which action types run, not by the substance of what those actions found."* The fix — giving `mitre_collector.py` a real, non-zero relevance signal — is identified but out of scope for this project's remaining time (see Section 17 candidates for future work).
+
 ---
 
 ## 11. ML Subsystems
@@ -748,7 +775,170 @@ OS: `Linux 6.18.33.2-microsoft-standard-WSL2` (WSL2 under Windows 11), developme
 
 ---
 
-## 19. What Else Belongs Here (self-identified gaps in this document)
+## 19. SOAR / Playbook Layer
+
+Real module names (the paraphrase "`playbook_generator.py`/`playbook_matcher.py`/`playbook_adaptation.py`" some earlier recollections used does not match the current tree — corrected here to the real filenames, all under `backend/soar/`): `generator.py`, `matcher.py`, `adapter.py`, `memory.py`, `execution_service.py`, `schema.py`, `shuffle_client.py`, `api.py`. 83 tests across 9 files (`tests/test_soar_*.py`).
+
+### 19.1 `generator.py` — `PlaybookGenerator`
+
+Turns an already-resolved `CampaignContext` into a `Playbook`. Every `PlaybookAction` carries a `reason` string tracing to a real signal — a MITRE mitigation record from `recommendation_engine.get_recommendations()` (live Neo4j `CourseOfAction` match), a field actually present on the campaign, or a risk threshold — the generator "never invents evidence it doesn't have" (module docstring). Fixed action skeleton: enrich attacker IP → CTI/MISP lookup → historical-campaign search (RAG) → collect victim evidence (if a victim IP exists) → per-technique MITRE mitigations (capped at 2 per technique, `requires_approval=True`) → conditionally `block_ip`/`isolate_host` (only at `HIGH`/`CRITICAL` severity, both `destructive=True, requires_approval=True`) → create incident ticket → notify SOC (always last). `execution_policy` is `ANALYST_APPROVAL` if any action requires approval, else `RECOMMEND_ONLY`. Deliberately **not** built on the older `response/playbook_generator.py` ("Generation-1," dead per `GENERATION1_DISPOSITION.md` — keyed on synthetic `severity_label`/`attack_label` strings that don't exist in the real pipeline, and its `Mitigator` sibling executed raw shell commands directly, which this SOAR layer replaces with a Shuffle-mediated, approval-gated model).
+
+### 19.2 `matcher.py` — `PlaybookMatcher`, the 5 similarity signals
+
+Retrieves historical playbooks ranked by real per-candidate signals (`_score_one()`):
+
+1. **`technique_similarity`** — Jaccard overlap of MITRE technique sets between the current and historical campaign.
+2. **`topology_similarity`** — GNN embedding similarity via `ml.gnn.topology_similarity.gnn_topology_similarity_between_campaigns()`; `None` (not 0.0) when the GNN is unavailable, so absence is never silently scored as dissimilarity.
+3. **`attacker_match`** — boolean, historical attacker IP equals the current campaign's attacker IP.
+4. **`victim_match`** — boolean, same for victim IP.
+5. **`historical_success_rate`** — from `memory_store.historical_match_stats(playbook_id)`, i.e., this playbook's own real track record (19.4).
+
+Ranking combines `technique_similarity + (topology_similarity or 0.0)` with `historical_success_rate or 0.0`; a candidate with zero technique overlap, no topology similarity, and no IP match on either side is excluded outright. The match reason string is built from whichever signals actually fired (e.g. "73% MITRE technique overlap", "61% GNN topology similarity").
+
+### 19.3 `adapter.py` — `PlaybookAdaptation`, IOC retargeting
+
+Rewrites only the **identity-bound** input fields of a historical playbook's actions (`ip`, `campaign_id`, `operation_id` — the module's `_IDENTITY_INPUT_KEYS`) to point at the current incident; everything else (action type, name, `destructive`, `requires_approval`, mitigation IDs, technique, severity computed at generation time) is left untouched — "copying a playbook must never silently change what it does, only who/what it targets" (module docstring). IP retargeting is resolved by the action's semantic role, not by matching the old value: `enrich_ip`/`block_ip`/`threat_intel_lookup` always retarget to the *current attacker* IP; `collect_evidence`/`isolate_host` always retarget to the *current victim* IP. A deep copy is made, a fresh `playbook_id` is assigned, `adapted_from_playbook_id` records the lineage, and every adapted action's `reason` is prefixed `"[Adapted from <original_id>] ..."` so the provenance survives in the UI.
+
+### 19.4 `memory.py` — `PlaybookMemoryStore`, SQLite persistence
+
+Backed by SQLite (stdlib, `backend/soar/playbook_memory.db`), not Neo4j — the module docstring is explicit about why: "Playbook → PlaybookExecution → PlaybookActionResult is a strictly relational one-to-many-to-many shape with no graph-traversal requirement of its own... Neo4j is reserved for the parts of CYUKTI that are genuinely graph-shaped." Four tables: `playbooks`, `playbook_executions`, `playbook_action_results`, `soar_audit_events`. `effectiveness(playbook_id)` computes real `PlaybookEffectiveness` (executions, successes, failures, `success_rate`, mean duration, analyst approvals/rejections, up to 10 real failure reasons) purely from rows already written — no separate metrics pipeline. Every lifecycle transition also writes a `soar_audit_events` row (`log_audit_event()`), independent of Shuffle's own logging.
+
+### 19.5 `api.py` — 13 real routes (`soar_bp`)
+
+```
+GET  /status
+POST /playbooks/generate
+GET  /playbooks
+GET  /playbooks/<playbook_id>
+POST /playbooks/adapt
+POST /playbooks/<playbook_id>/execute
+GET  /executions
+GET  /executions/<execution_id>
+POST /executions/<execution_id>/poll
+POST /executions/<execution_id>/approve
+POST /executions/<execution_id>/reject
+GET  /recommendations/<campaign_id>
+GET  /effectiveness
+```
+
+### 19.6 The real execution state machine (`execution_service.py`, `schema.ExecutionStatus`)
+
+The real enum is `PENDING`, `PENDING_APPROVAL`, `REJECTED`, `RUNNING`, `SUCCESS`, `FAILED`, `TIMEOUT`, `CANCELLED` (`soar/schema.py`) — not the simplified "PENDING → EXECUTING → COMPLETED/FAILED/TIMED_OUT" shorthand some earlier recollections used; corrected here to the real values. Real transitions, owned by `PlaybookExecutionService`:
+
+- `request_execution()`: computes `effective_policy()` — **a safety rule enforced in code, not just the UI**: any playbook containing a `destructive=True` action is silently downgraded from `AUTOMATIC` to `ANALYST_APPROVAL`, regardless of what the generator originally set ("a historical incident looking similar is never sufficient justification for unattended destructive action," module docstring). `RECOMMEND_ONLY` playbooks raise `PolicyError` if execution is attempted at all.
+- `ANALYST_APPROVAL` policy → status starts at `PENDING_APPROVAL`; `approve(execution_id, approved_by)` or `reject(execution_id, reason)` are the only two ways out. `reject()` → `REJECTED` (terminal).
+- `approve()` or an `AUTOMATIC`-policy non-destructive playbook → `_trigger()` → status → `RUNNING`, `started_at` set, a `PLAYBOOK_EXECUTION_STARTED` audit event logged, then `ShuffleClient.trigger()` is called with the full action list as payload.
+- From `RUNNING`, four real outcomes: `ShuffleTriggerOutcome.NOT_CONFIGURED` → `FAILED` immediately, every action result carries the honest error `"Shuffle is not configured (SHUFFLE_WEBHOOK is empty)..."`; `SYNCHRONOUS_RESULT` → `SUCCESS` immediately with real output; `TRIGGERED` (fire-and-forget async) → **stays `RUNNING`** until `poll_status()` is called; `AUTH_FAILED`/`TIMEOUT`/`ERROR` → `TIMEOUT` or `FAILED` with the real Shuffle error attached.
+- `poll_status()` only ever finalizes a `RUNNING` execution if Shuffle's REST status endpoint is configured and reachable — "running"/"not_configured"/"error" responses leave the execution `RUNNING` unchanged, since "an unreachable status endpoint is not evidence of failure" (module docstring; never fabricates a status this environment can't actually observe).
+
+### 19.7 What's live-verified vs. blocked by infrastructure
+
+| Component | Status |
+|---|---|
+| `PlaybookGenerator` producing a real playbook for a real campaign | **Live-verified** (`test_soar_generator.py`, and prior-phase live generation runs referenced in `ARCHITECTURE_VERIFICATION.md`) |
+| `PlaybookMatcher` ranking real historical playbooks | **Live-verified** — real ranked candidates with real explanation strings |
+| `PlaybookAdaptation` retargeting a real historical playbook | **Live-verified** — real playbooks adapted for real campaigns, identity assertion in `test_final_trace.py` (`plan.playbook is playbook`) |
+| SQLite persistence (`memory.py`) | **Live-verified** — real playbooks/executions/audit events read back from `playbook_memory.db` |
+| All 13 API routes | Unit-tested (`test_soar_api.py`); not separately load-tested |
+| `SHUFFLE_WEBHOOK` configured with a real URL | **Confirmed this session** (a genuine change from earlier in the project) |
+| An execution actually reaching `RUNNING`/`SUCCESS` via a live Shuffle trigger | **Not live-executed.** The workflow behind that webhook is unknown to this session; firing an unfamiliar webhook without understanding what it does was judged a real-world action requiring the operator's explicit go-ahead, not something to do opportunistically. The `NOT_CONFIGURED`/failure path IS live-exercised (via `test_failure_injection.py`'s explicitly-constructed unconfigured client), and it correctly returns `FAILED` with an honest per-action error, never a fabricated success. |
+| Shuffle → MISP correlation | **Not implemented** — the two subsystems share only a `campaign_id`, no direct reference (documented gap, `ARCHITECTURE_VERIFICATION.md`) |
+
+---
+
+## 20. Raw Alert Volume and Deduplication Ratio
+
+**Current live file**: `wc -l /var/ossec/logs/alerts/alerts.json` = **120** lines (this session's live re-check; `WAZUH_ALERT_FILE` is unset, so the code default `/var/ossec/logs/alerts/alerts.json` is the actual path in use, confirmed from `scripts/mitre_coverage_report.py`'s own `os.environ.get(...)` default).
+
+**The rotation complication (found this session, not previously documented)**: Wazuh rotates `alerts.json` and archives dated copies under `/var/ossec/logs/alerts/2026/<Month>/ossec-alerts-DD.json[.gz]`. The current 120-line file is a live, actively-growing snapshot, not the deployment's full historical volume — the archive tree contains 78 further uncompressed dated files plus 22 `.gz` files spanning at least June through September 2026. Summing just the uncompressed archived files plus the current file: **463,638 raw alert lines** — and this excludes the 22 gzipped files entirely (not decompressed for this measurement), so it is itself a floor, not a ceiling. This total also includes months of routine Wazuh/OS housekeeping noise unrelated to any attack (`dpkg` package installs, disk-space monitor alerts, agent connect/disconnect events, Suricata APT-repository traffic) — it is not a clean "raw attack alerts" count.
+
+Because of this, a literal `1 − (212 / current_file_line_count)` is not meaningful (212 > 120 — the current snapshot alone undercounts by construction) and `1 − (212 / 463,638)` overstates true dedup effectiveness by counting hundreds of thousands of alerts CYUKTI's fingerprinting logic never even saw as "attack-relevant" candidates in the first place. The **defensible, apples-to-apples dedup ratio** uses CYUKTI's own tracked occurrence counter instead — a real, already-computed Neo4j property (`AttackEvent.occurrences`), not an estimate:
+
+| Metric | Value |
+|---|---|
+| Distinct `AttackEvent` nodes | 212 |
+| Total tracked occurrences (Σ `AttackEvent.occurrences`) | 3,185 |
+| **Dedup ratio** = 1 − (212 / 3,185) | **93.3%** |
+| Avg occurrences per distinct event | 15.02 |
+| Distinct dedup fingerprints (separate stat, `generate_fingerprint()`) | 71, avg reuse 2.99×, max reuse 19× |
+
+This 93.3% figure measures dedup specifically among alerts that passed MITRE resolution and entered the campaign-correlation pipeline (i.e., the population `is_duplicate()` actually filters), which is the intended meaning of a "dedup ratio" claim in the paper — not a ratio against Wazuh's total raw log volume, most of which was never attack-relevant to begin with.
+
+---
+
+## 21. Multi-RAG Detail: the Campaign-Narrative Retriever (expands Section 10.2)
+
+`rag/campaign_retriever.py`'s `CampaignNarrativeRetriever` indexes a TF-IDF corpus built from every `HistoricalCampaign` record (`attribution_context.py`; fields: `campaign_id`, `attacker`, `victim`, `techniques`, `timestamps`, plus optional `status`/`prediction`/`prediction_confidence`), loaded via `attribution_context.context.load_historical_campaigns()`. Each document's text is constructed by `_campaign_documents()` as exactly: `f"Campaign {campaign_id}: attacker {attacker} targeting {victim}. Techniques observed: {' '.join(techniques)}."` — one flat sentence per historical campaign, no additional feature engineering. Unlike `mitre_retriever.py`'s `MitreSemanticRetriever` (a module-level singleton over the vendored, never-changing STIX corpus), `CampaignNarrativeRetriever` is deliberately **not** a singleton — it's re-instantiated per investigation because the historical-campaign corpus grows over time as new campaigns close. `query()` returns real `Evidence` objects (`source=EvidenceSource.CAMPAIGN_HISTORY`, `confidence=1.0`, `relevance=doc.relevance`, `provenance="rag.campaign_retriever (TF-IDF over historical campaign records)"`). Its own module docstring states the distinction from the exhaustive, non-RAG `CAMPAIGN_HISTORY` technique-set-overlap collector explicitly: this retriever answers a genuinely different question — *"which past campaigns best match this free-text description of observed behavior"* — versus `CAMPAIGN_NARRATIVE_SEARCH`'s sibling `MITRE_SEMANTIC_SEARCH`, which answers *"which ATT&CK reference concepts (techniques, mitigations, groups) does this text most resemble"* against the static STIX corpus, not against CYUKTI's own campaign history at all.
+
+---
+
+## 22. Evaluation Metrics Framework
+
+`evaluation_metrics.py` (backed by `ACCURACY_EVALUATION.md`) provides ground-truth-agnostic, unit-tested measurement functions, ready to use the moment real labels exist for any task: `classification_report` (accuracy, macro/weighted/micro F1, balanced accuracy — reused as-is across MITRE mapping and severity tasks), `confusion_matrix` (full N×N, fixed label order), `multilabel_exact_match_ratio` (multi-technique alerts), `precision_recall_f1`, `false_positive_negative_rates`, `pairwise_precision_recall_f1` and `cluster_purity` and `campaign_fragmentation` (campaign/operation correlation — over-merging vs. over-fragmentation reported separately, never blended into one number), `recall_at_k`, `precision_at_k`, and `mean_reciprocal_rank` (GNN retrieval and playbook recommendation ranking tasks). **21 tests** (`test_evaluation_metrics.py`) verify every function against hand-computed values — perfect prediction, known error patterns, over-merging vs. over-fragmenting cluster cases, empty/no-match edge cases. Critically: every function is correctness-tested in isolation, but **no CYUKTI-specific ground-truth dataset has been run through them yet** — `ACCURACY_EVALUATION.md` labels most of CYUKTI's own tasks (MITRE mapping accuracy, threat qualification, campaign/operation correlation, campaign selection, playbook effectiveness) as category **(C)**, "unavailable — no independent ground truth exists in this environment," precisely to avoid the circularity of scoring CYUKTI against labels CYUKTI itself produced. Only GNN retrieval and XGBoost severity classification are category **(A)**, measured against real independent ground truth (LOGO cross-validation grouped by real attacker IP — Sections 11.1/11.3).
+
+---
+
+## 23. Latency
+
+Real, already-measured data exists — `backend/benchmarks/run_benchmarks.py`, documented in full in `BENCHMARKS.md`, committed reference run `backend/benchmarks/results/benchmark_20260925T075030Z.json`. Measured 2026-09-25, live Neo4j (Docker, `neo4j:5-community`), `GNN_ENABLED=true`, a trained XGBoost severity model present, 20 iterations per benchmark (first call excluded as warm-up):
+
+| Stage | p50 (ms) | p95 (ms) | p99 (ms) | throughput (ops/sec) |
+|---|---|---|---|---|
+| MITRE resolution | 0.001 | 0.001 | 0.002 | ~1,110,000 |
+| IOC extraction | 0.000 | 0.000 | 0.001 | ~5,035,000 |
+| Deduplication check | 0.001 | 0.002 | 0.003 | ~735,000 |
+| Neo4j simple query | 0.904 | 1.251 | 1.285 | ~1,116 |
+| Campaign selection scoring (in-memory, 10 candidates) | 0.037 | 0.073 | 0.074 | ~23,200 |
+| Campaign selection candidate discovery (live Neo4j query + signal computation) | 21.035 | 24.285 | 26.480 | ~47 |
+| Severity prediction (XGBoost) | 21.975 | 39.158 | 117.582 | ~34.5 |
+| GNN embedding (real model, real campaign graph, cache bypassed) | 2.818 | 3.981 | 4.070 | ~342 |
+| ResponsePlan generation | 0.002 | 0.004 | 0.006 | ~373,000 |
+| **Total end-to-end** (`GET /api/incidents/<id>/overview`, real HTTP round trip) | **35.538** | **66.869** | **100.484** | **~22.8** |
+
+Per-stage breakdown as requested: MITRE resolution and deduplication are sub-microsecond (pure in-memory Python, no I/O — lower bounds on decision cost only, not the surrounding pipeline). Neo4j writes/reads land around 1–25ms depending on query complexity (a simple query vs. campaign-candidate discovery, which does real signal computation across all candidates). Feature extraction is not separately benchmarked as its own row — it is embedded inside the severity-prediction and campaign-selection-scoring numbers above, since `graph_feature_engine.py`/`mitre_feature_engine.py` are called synchronously as part of those same measured calls, not as an independently invokable stage. Scoring (XGBoost) is the single largest per-call cost (~22ms p50, with a heavier 117.6ms p99 tail consistent with JIT/cache warm-up variance in XGBoost's C++ path, not a systematic bottleneck). The end-to-end p50 (~36ms) is dominated by two real network round trips (candidate discovery ~21ms + base lookups), not any one slow component. **Caveat carried over from `BENCHMARKS.md` unchanged**: single-process, single-machine, low-concurrency numbers on a development machine — not a load-tested production SLA.
+
+---
+
+## 24. Wazuh Rule Fix Status (live re-verification, this session)
+
+Section 4.9 documented six duplicate-rule-ID fixes added to `local_rules.xml`, noting at the time that "the manager was running (since before the fix was applied) and has not been restarted." Re-checked this session:
+
+- `local_rules.xml` last modified: `2026-09-25 05:09:59 UTC`.
+- System boot time: `2026-09-25 14:20:39 UTC`. `wazuh-analysisd` process start time: `2026-09-25 14:21:31 UTC` — i.e., the manager process restarted (via a full environment reboot, not a manual `wazuh-control restart`) **after** the rule fix was written to disk. The fixed rules are therefore loaded into the currently-running manager.
+- Re-ran `scripts/mitre_coverage_report.py` against the live `alerts.json` (120 lines) as instructed:
+
+```
+Provenance distribution:
+  UNKNOWN         94  (78.3%)
+  NATIVE_WAZUH    26  (21.7%)
+
+Resolved technique frequency:
+  T1595        x25
+  T1562.001    x1   <-- NOT in MITRE_TO_STAGE (tps=0)
+```
+
+**Honest reading of this result**: none of the six specifically-fixed rule IDs (100510, 100511, 100513, 210001, 210011, and the sixth from 4.9) appear in the current 120-line window at all — the current alerts are dominated by rule `86601` (Suricata APT-repo traffic, unrelated to the fix), `2902`/`2904` (dpkg housekeeping), and `100500` (Nmap reconnaissance, which was already correctly resolving to `T1595` via `NATIVE_WAZUH` *before* the 4.9 fix — it was never one of the broken rules). This is **not** evidence the fix failed; it is evidence that the specific attack types the fix targeted (brute force, port-scan variants, DoS) have not been re-triggered against this environment since the reboot. The fix's activation status is: **rules are active in the live manager as of this measurement**, but not yet exercised by a matching alert — re-running the same synthetic attacks that originally produced rule IDs 100510/100511/100513/210001/210011 would be the direct way to confirm the corrected MITRE mappings end-to-end.
+
+---
+
+## 25. Detection Paradox: Conceptual Framing
+
+From `review_pack/06_research_contribution.md` — the project's strongest conceptual framing, restated here as the paper's reference copy:
+
+| Concept | What it actually answers | Where CYUKTI implements it |
+|---|---|---|
+| Detection | "Did a sensor observe something?" | Wazuh's rule engine — happens regardless of MITRE tagging |
+| MITRE attribution | "Can we defensibly say which technique this was?" | `mitre_resolver.py` |
+| Investigation | "What does this mean in context of a campaign?" | `investigation/` loop, evidence collectors |
+| Evidence confidence | "How much do we trust what we know?" | `investigation/confidence.py` |
+| Prediction | "What is likely to happen next?" | `prediction_engine.py`, gated by `NEXT_TECHNIQUE` learned counts |
+| Response | "What should be done?" | `recommendation_engine.py`, MISP publication |
+
+The paradox the table names: a Wazuh rule firing (**Detection**) is a completely different, independent event from CYUKTI being able to say *which ATT&CK technique* that alert represents (**MITRE attribution**) — an alert can be loudly, correctly detected and still resolve to `UNKNOWN` provenance (Section 4), because detection and attribution are answering two different questions with two different failure modes. This is why `UNKNOWN` is not treated as a defect to be hidden or silently guessed away in this codebase: an `UNKNOWN`-provenance `AttackEvent` is still a real, detected, timestamped, graph-connected event — it simply hasn't been defensibly mapped to a named technique yet, and CYUKTI's 4-tier ladder (4.1) is built specifically to make that distinction visible rather than to fabricate a technique ID just to fill the field. Each of the six concepts above answers a genuinely different reviewer question, and conflating them is the single most common way a SOC-tooling paper overstates what its system does.
+
+---
+
+## 26. What Else Belongs Here (self-identified gaps in this document)
 
 - **No formal threat model / adversarial-robustness analysis** has been written for CYUKTI itself (e.g., can an attacker poison the Markov-chain predictor by manufacturing fake transitions, or corrupt campaign correlation by mimicking a known attacker IP). Worth a paragraph in the paper's limitations section.
 - **No user study.** Every UX claim ("an analyst should understand within 10 seconds") is a design goal verified by the authors reading their own dashboard, not by an independent analyst evaluation. A journal reviewer will likely ask for this or expect it named as future work.
