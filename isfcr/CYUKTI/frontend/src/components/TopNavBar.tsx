@@ -1,23 +1,79 @@
-import { Shield, Clock, LayoutDashboard, GitBranch, Zap, Radio, Activity, ScrollText, Bot, ShieldAlert } from 'lucide-react';
+import { Shield, Clock, LayoutDashboard, GitBranch, Zap, Radio, Activity, ScrollText, Bot, ShieldAlert, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export type TopLevelView = 'dashboard' | 'incident' | 'gnn' | 'prediction' | 'threat-intel' | 'system' | 'audit' | 'soar';
 
-const VIEWS: { id: TopLevelView; label: string; icon: typeof LayoutDashboard; activeClass: string }[] = [
-  { id: 'dashboard', label: 'SOC Dashboard', icon: LayoutDashboard, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
-  { id: 'incident', label: 'Incident View', icon: ShieldAlert, activeClass: 'bg-red-500/20 text-red-300 border-red-500/40' },
-  { id: 'gnn', label: 'GNN Intelligence', icon: GitBranch, activeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' },
-  { id: 'prediction', label: 'Prediction', icon: Zap, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
-  { id: 'soar', label: 'SOAR', icon: Bot, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
+// Primary navigation: the small set of views an analyst actually works
+// from day to day. Everything else (research/engineering surfaces) is
+// one click away under "More" rather than competing for top-level
+// attention -- see the UX-redesign phase's explicit instruction not to
+// expose every backend subsystem as a top-level nav item.
+const PRIMARY_VIEWS: { id: TopLevelView; label: string; icon: typeof LayoutDashboard; activeClass: string }[] = [
+  { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
+  { id: 'incident', label: 'Incidents', icon: ShieldAlert, activeClass: 'bg-red-500/20 text-red-300 border-red-500/40' },
+  { id: 'soar', label: 'Response', icon: Bot, activeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
   { id: 'threat-intel', label: 'Threat Intel', icon: Radio, activeClass: 'bg-orange-500/20 text-orange-300 border-orange-500/40' },
-  { id: 'system', label: 'System Health', icon: Activity, activeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' },
-  { id: 'audit', label: 'Audit Log', icon: ScrollText, activeClass: 'bg-slate-500/20 text-slate-300 border-slate-500/40' },
+];
+
+const MORE_VIEWS: { id: TopLevelView; label: string; icon: typeof LayoutDashboard }[] = [
+  { id: 'gnn', label: 'GNN Intelligence', icon: GitBranch },
+  { id: 'prediction', label: 'Prediction', icon: Zap },
+  { id: 'system', label: 'System Health', icon: Activity },
+  { id: 'audit', label: 'Audit Log', icon: ScrollText },
 ];
 
 interface TopNavBarProps {
   activeView: TopLevelView;
   onChangeView: (view: TopLevelView) => void;
+}
+
+function MoreMenu({ activeView, onChangeView }: TopNavBarProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isActive = MORE_VIEWS.some((v) => v.id === activeView);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-semibold transition-colors whitespace-nowrap ${
+          isActive ? 'bg-slate-500/20 text-slate-200 border border-slate-500/40' : 'text-slate-400 hover:text-slate-200 border border-transparent'
+        }`}
+      >
+        <MoreHorizontal className="w-3.5 h-3.5" /> More <ChevronDown className="w-3 h-3" />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-0 top-full mt-1 w-48 bg-[#0c1220] border border-[#1e2d4a] rounded-md shadow-xl py-1 z-50"
+        >
+          {MORE_VIEWS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              role="menuitem"
+              onClick={() => { onChangeView(id); setOpen(false); }}
+              className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors ${
+                activeView === id ? 'text-cyan-300 bg-cyan-500/10' : 'text-slate-300 hover:bg-white/5'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" /> {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function TopNavBar({ activeView, onChangeView }: TopNavBarProps) {
@@ -50,8 +106,8 @@ export function TopNavBar({ activeView, onChangeView }: TopNavBarProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-[#131c2e] border border-[#1e2d4a] rounded-md p-0.5 ml-2 overflow-x-auto max-w-[52vw]">
-          {VIEWS.map(({ id, label, icon: Icon, activeClass }) => (
+        <div className="flex items-center gap-1 bg-[#131c2e] border border-[#1e2d4a] rounded-md p-0.5 ml-2">
+          {PRIMARY_VIEWS.map(({ id, label, icon: Icon, activeClass }) => (
             <button
               key={id}
               onClick={() => onChangeView(id)}
@@ -62,6 +118,7 @@ export function TopNavBar({ activeView, onChangeView }: TopNavBarProps) {
               <Icon className="w-3.5 h-3.5" /> {label}
             </button>
           ))}
+          <MoreMenu activeView={activeView} onChangeView={onChangeView} />
         </div>
       </div>
 
@@ -70,8 +127,8 @@ export function TopNavBar({ activeView, onChangeView }: TopNavBarProps) {
           onClick={resetDashboard}
           disabled={!hasActiveFilters}
           className={`text-xs font-semibold px-3 py-1 rounded-md transition-colors border ${
-            hasActiveFilters 
-              ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30' 
+            hasActiveFilters
+              ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30'
               : 'bg-slate-800/50 text-slate-500 border-slate-700 cursor-not-allowed'
           }`}
         >
@@ -79,7 +136,7 @@ export function TopNavBar({ activeView, onChangeView }: TopNavBarProps) {
         </button>
 
         <div className="flex items-center gap-2">
-          <select 
+          <select
             value={globalTimeRange}
             onChange={(e) => setGlobalTimeRange(e.target.value)}
             className="bg-[#131c2e] text-xs text-slate-300 font-mono border border-[#1e2d4a] rounded px-2 py-1 outline-none focus:border-indigo-500"

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { expect, it, vi, beforeEach } from 'vitest';
 import { IncidentView } from './IncidentView';
 import { api } from '../services/api';
@@ -86,19 +86,46 @@ it('prompts for an incident selection when none is selected', () => {
   expect(screen.getByText(/Select an incident above/)).toBeInTheDocument();
 });
 
-it('renders the incident header with severity and threat classification badges', async () => {
+it('renders the compact incident header with severity and threat classification badges', async () => {
   setDashboard('CAMP_1');
   mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
 
   render(<IncidentView />);
 
-  await waitFor(() => expect(screen.getByText('CRITICAL')).toBeInTheDocument());
-  expect(screen.getByText('QUALIFIED THREAT')).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText('CRITICAL SEVERITY')).toBeInTheDocument());
+  expect(screen.getAllByText('QUALIFIED THREAT').length).toBeGreaterThan(0);
   expect(screen.getByText('1.2.3.4')).toBeInTheDocument();
-  expect(screen.getByText('OP_1', { exact: false })).toBeInTheDocument();
+  expect(screen.getByText(/OP_1/)).toBeInTheDocument();
 });
 
-it('renders the campaign selection tree with the selected candidate marked', async () => {
+it('renders the Current Assessment panel generated from real qualification checks, not hardcoded', async () => {
+  setDashboard('CAMP_1');
+  mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
+
+  render(<IncidentView />);
+
+  await waitFor(() => expect(screen.getByText('Attacker IP: 1.2.3.4')).toBeInTheDocument());
+  expect(screen.getByText('PASS')).toBeInTheDocument();
+  expect(screen.getByText('Current evidence is sufficient to treat this as a qualified threat.')).toBeInTheDocument();
+});
+
+it('shows an UNKNOWN state instead of a hard FAIL when no CTI score has been computed yet', async () => {
+  setDashboard('CAMP_1');
+  mockApi.incidentOverview.mockResolvedValue({
+    ...sampleOverview,
+    threat_qualification: {
+      classification: 'NOT_THREAT', cti_score: null,
+      checks: [{ name: 'threat_classification_qualified', passed: false, detail: 'No CTI confidence has been computed for this incident yet.' }],
+      may_publish_to_misp: false, reason: 'Blocked on: threat_classification_qualified.',
+    },
+  } as any);
+
+  render(<IncidentView />);
+
+  await waitFor(() => expect(screen.getByText('UNKNOWN')).toBeInTheDocument());
+});
+
+it('renders the campaign selection tree and opens a comparison panel on click', async () => {
   setDashboard('CAMP_1');
   mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
 
@@ -107,16 +134,32 @@ it('renders the campaign selection tree with the selected candidate marked', asy
   await waitFor(() => expect(screen.getByText('CAMP_OLD')).toBeInTheDocument());
   expect(screen.getByText('Selected')).toBeInTheDocument();
   expect(screen.getByText(/CAMP_OLD ranked highest/)).toBeInTheDocument();
+
+  fireEvent.click(screen.getByText('CAMP_OLD'));
+  await waitFor(() => expect(screen.getByText('Values are similarity signals, not probabilities.')).toBeInTheDocument());
 });
 
-it('renders the threat qualification checklist with PASS/FAIL labels', async () => {
+it('opens the investigation drawer when "Open Investigation" is clicked', async () => {
   setDashboard('CAMP_1');
   mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
 
   render(<IncidentView />);
+  await waitFor(() => expect(screen.getByText('Open Investigation')).toBeInTheDocument());
 
-  await waitFor(() => expect(screen.getByText('has ioc')).toBeInTheDocument());
-  expect(screen.getByText('PASS')).toBeInTheDocument();
+  fireEvent.click(screen.getByText('Open Investigation'));
+  const dialog = await screen.findByRole('dialog');
+  expect(within(dialog).getByText(/Investigation — CAMP_1/)).toBeInTheDocument();
+});
+
+it('expands an attack-story step to show real detail on click', async () => {
+  setDashboard('CAMP_1');
+  mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
+
+  render(<IncidentView />);
+  await waitFor(() => expect(screen.getByText('MITRE')).toBeInTheDocument());
+
+  fireEvent.click(screen.getByText('MITRE'));
+  await waitFor(() => expect(screen.getByText(/tactic unknown|Credential Access/)).toBeInTheDocument());
 });
 
 it('shows an error state when the overview request fails', async () => {

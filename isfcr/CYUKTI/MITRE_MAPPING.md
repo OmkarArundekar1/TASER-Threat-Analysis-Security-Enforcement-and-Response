@@ -1,5 +1,9 @@
 # CYUKTI MITRE ATT&CK Mapping
 
+## Real-world validation: a live Nmap scan (UX-redesign phase)
+
+A real `nmap` scan from Kali (`192.168.56.106`) against `192.168.56.105` was inspected end-to-end this phase. Wazuh's custom rule `100500` (existing since before this session, correctly configured, native-tier) tagged the Nmap Scripting Engine's distinctive HTTP User-Agent with `T1595` (Active Scanning / Reconnaissance) — a real, defensible, non-fabricated mapping, confirmed flowing all the way through to a real Neo4j `AttackEvent` and campaign. Full narrative, including a correction to an initial assumption about how CYUKTI classified it, is in `INCIDENT_VIEW.md`'s "Real-world validation" section.
+
 ## Live activation status (this phase)
 
 Neo4j was found down at the start of this phase and was started (`docker start neo4j-soc`, no privileged access needed — the account is in the `docker` group). With Neo4j and the CYUKTI backend/listener running live, the Wazuh manager itself was confirmed **already running** (started 04:58 UTC), producing real alerts. The rule fixes below (committed to `backend/wazuh_rules/local_rules.xml` in a prior phase and copied to the live `/var/ossec/etc/rules/local_rules.xml`) predate that manager start, so **they are still not active in the live manager's in-memory ruleset** — confirmed by comparing the rule file's mtime (05:09:59) against the manager's `ActiveEnterTimestamp` (04:58:44). Activating them requires `sudo /var/ossec/bin/wazuh-control restart`, which requires an interactive password this environment does not provide non-interactively (`sudo -n`/`sudo -ln` both refused). **Not attempted further; not claimed as done.**
