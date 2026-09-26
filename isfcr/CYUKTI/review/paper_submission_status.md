@@ -22,7 +22,7 @@
 - Prediction accuracy: UNMEASURABLE for new data (live NEXT_TECHNIQUE graph unchanged at 3 edges); historical Phase 18 result reused: 4/12 = 33.3%, `INSUFFICIENT_FOR_SUPERVISED_ML`
 - Attribution accuracy: **PARTIALLY MEASURED** (preliminary) — 74.4% [59.8%, 85.1% 95% CI], n=43, AI-assisted AUTO_PROPOSED ground truth against real attacker_ip, not yet human-reviewed — see `review/paper_metrics_source_of_truth.md`
 - MITRE mapping accuracy: **PARTIALLY MEASURED** (preliminary) — P=1.00/R=0.667/F1=0.80, n=100
-- Threat qualification accuracy: **PARTIALLY MEASURED** (preliminary) — accuracy=0.083, n=24 (large real disagreement, disclosed as an open question — see `review/evaluation_results.md`)
+- Threat qualification accuracy: **PARTIALLY MEASURED** (preliminary AUTO_PROPOSED: accuracy=0.083; re-examined MEASURED_ASSISTANT_ADJUDICATED, per-campaign: accuracy=0.292, but the real finding is 100% recall / 0% precision on QUALIFIED_THREAT — see `review/evaluation_threat_qualification_adjudication.md`). Neither number is human-reviewed.
 - Campaign correlation (pairwise/ARI): **PARTIALLY MEASURED** (preliminary) — pairwise F1=0.0, ARI=0.0, n=46 real campaigns (severe fragmentation found: one real session split across up to 25 CYUKTI campaigns)
 - RAG retrieval precision/recall: NOT MEASURED (evaluator built + tested; review queue exported, needs human relevance judgments)
 - Investigation confidence P/R: NOT MEASURED (evaluator built + tested; review queue exported, needs human verdicts)

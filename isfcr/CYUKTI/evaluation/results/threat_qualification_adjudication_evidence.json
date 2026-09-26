@@ -1,0 +1,938 @@
+{
+  "CAMP_1627943B": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-06T14:40:50.557000000+00:00",
+      "last_seen": "2026-08-09T18:54:48.116238000+00:00",
+      "last_technique": "T1110.001",
+      "risk_score": 590,
+      "cti_score": 53.38,
+      "status": "INACTIVE",
+      "reopened_count": 3,
+      "operation_id": "OP_D856F358"
+    },
+    "events": [
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-06T14:40:50.579000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110",
+        "first_seen": "2026-08-06T14:40:59.598000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110"
+      },
+      {
+        "attack_id": "T1078",
+        "first_seen": "2026-08-08T16:12:41.900000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1078"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-09T18:54:40.914000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-09T18:54:43.464000000+00:00",
+        "occurrences": 4,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      }
+    ]
+  },
+  "CAMP_BB9A0F28": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-08T16:01:20.604000000+00:00",
+      "last_seen": "2026-08-08T16:01:49.294815000+00:00",
+      "last_technique": "T1110.001",
+      "risk_score": 180,
+      "cti_score": 56.07,
+      "status": "INACTIVE",
+      "reopened_count": 1,
+      "operation_id": "OP_A89B0658"
+    },
+    "events": [
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-08T16:01:26.069000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-08T16:01:48.153000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      }
+    ]
+  },
+  "CAMP_0E9C0284": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-09T19:53:39.635000000+00:00",
+      "last_seen": "2026-08-10T08:38:44.241184000+00:00",
+      "last_technique": "T1110.001",
+      "risk_score": 590,
+      "cti_score": 53.63,
+      "status": "INACTIVE",
+      "reopened_count": 3,
+      "operation_id": "OP_D856F358"
+    },
+    "events": [
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-09T19:53:39.650000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-09T19:53:41.718000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110",
+        "first_seen": "2026-08-09T19:54:12.928000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110"
+      },
+      {
+        "attack_id": "T1078",
+        "first_seen": "2026-08-09T19:54:26.112000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1078"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-10T08:38:35.644000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-10T08:38:42.752000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      }
+    ]
+  },
+  "CAMP_C6E494CF": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-10T08:43:24.897000000+00:00",
+      "last_seen": "2026-08-10T08:43:28.346950000+00:00",
+      "last_technique": "T1110.001",
+      "risk_score": 180,
+      "cti_score": 52.63,
+      "status": "INACTIVE",
+      "reopened_count": 1,
+      "operation_id": "OP_E76AEB64"
+    },
+    "events": [
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-10T08:43:24.917000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-10T08:43:26.686000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      }
+    ]
+  },
+  "CAMP_75FBEEBC": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-10T12:13:46.626000000+00:00",
+      "last_seen": "2026-08-17T10:21:17.840000000+00:00",
+      "last_technique": "T1110.001",
+      "risk_score": 3275,
+      "cti_score": 54.13,
+      "status": "INACTIVE",
+      "reopened_count": 5,
+      "operation_id": "OP_0EEBF42C"
+    },
+    "events": [
+      {
+        "attack_id": "T1078",
+        "first_seen": "2026-08-10T12:13:46.742000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1078"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-10T16:18:33.057000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110",
+        "first_seen": "2026-08-10T16:18:42.153000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110"
+      },
+      {
+        "attack_id": "T1078",
+        "first_seen": "2026-08-10T16:18:46.873000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1078"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-11T16:12:26.841000000+00:00",
+        "occurrences": 59,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110",
+        "first_seen": "2026-08-11T16:12:34.807000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110"
+      },
+      {
+        "attack_id": "T1078",
+        "first_seen": "2026-08-11T16:18:57.430000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1078"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-17T10:21:17.840000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      }
+    ]
+  },
+  "CAMP_DDBFC6D9": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-10T16:15:07.725000000+00:00",
+      "last_seen": "2026-08-10T16:18:28.966967000+00:00",
+      "last_technique": "T1110.001",
+      "risk_score": 230,
+      "cti_score": 49.1,
+      "status": "INACTIVE",
+      "reopened_count": 1,
+      "operation_id": "OP_236E9AE4"
+    },
+    "events": [
+      {
+        "attack_id": "T1078",
+        "first_seen": "2026-08-10T16:15:08.112000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1078"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-10T16:18:19.561000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      }
+    ]
+  },
+  "CAMP_10407C1A": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-11T16:06:52.318000000+00:00",
+      "last_seen": "2026-08-11T16:07:11.693692000+00:00",
+      "last_technique": "T1190",
+      "risk_score": 5010,
+      "cti_score": 40.07,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_873B4C8A"
+    },
+    "events": [
+      {
+        "attack_id": "T1055",
+        "first_seen": "2026-08-11T16:06:52.343000000+00:00",
+        "occurrences": 30,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1055"
+      },
+      {
+        "attack_id": "T1210",
+        "first_seen": "2026-08-11T16:06:55.841000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1210"
+      },
+      {
+        "attack_id": "T1595.002",
+        "first_seen": "2026-08-11T16:06:59.896000000+00:00",
+        "occurrences": 152,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1595.002"
+      },
+      {
+        "attack_id": "T1055",
+        "first_seen": "2026-08-11T16:07:01.055000000+00:00",
+        "occurrences": 3,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1055"
+      },
+      {
+        "attack_id": "T1055",
+        "first_seen": "2026-08-11T16:07:08.138000000+00:00",
+        "occurrences": 3,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1055"
+      },
+      {
+        "attack_id": "T1190",
+        "first_seen": "2026-08-11T16:07:09.800000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1190"
+      }
+    ]
+  },
+  "CAMP_D8605E81": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-11T16:12:29.649000000+00:00",
+      "last_seen": "2026-08-11T16:12:36.295547000+00:00",
+      "last_technique": "T1110",
+      "risk_score": 630,
+      "cti_score": 65.81,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_236E9AE4"
+    },
+    "events": [
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-11T16:12:29.660000000+00:00",
+        "occurrences": 13,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110",
+        "first_seen": "2026-08-11T16:12:32.877000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110"
+      }
+    ]
+  },
+  "CAMP_DAE35509": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-11T16:18:52.388000000+00:00",
+      "last_seen": "2026-08-11T16:18:55.601000000+00:00",
+      "last_technique": "T1110.001",
+      "risk_score": 90,
+      "cti_score": 52.63,
+      "status": "INACTIVE",
+      "reopened_count": 1,
+      "operation_id": "OP_236E9AE4"
+    },
+    "events": [
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-11T16:18:52.430000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-11T16:18:55.601000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      }
+    ]
+  },
+  "CAMP_E449E81D": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-17T10:21:30.431000000+00:00",
+      "last_seen": "2026-08-17T10:21:30.469000000+00:00",
+      "last_technique": "T1110.001",
+      "risk_score": 45,
+      "cti_score": 52.38,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_0EEBF42C"
+    },
+    "events": [
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-17T10:21:30.469000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      }
+    ]
+  },
+  "CAMP_BB680773": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-09-24T06:10:58.816000000+00:00",
+      "last_seen": "2026-09-24T15:55:21.777000000+00:00",
+      "last_technique": "T1110.001",
+      "risk_score": 115.0,
+      "cti_score": 49.18,
+      "status": "INACTIVE",
+      "reopened_count": 1,
+      "operation_id": "OP_7AF36DEF"
+    },
+    "events": [
+      {
+        "attack_id": null,
+        "first_seen": "2026-09-24T06:10:58.823000000+00:00",
+        "occurrences": 7,
+        "provenance": "UNKNOWN",
+        "confidence": "NONE",
+        "technique": null
+      },
+      {
+        "attack_id": null,
+        "first_seen": "2026-09-24T06:11:02.062000000+00:00",
+        "occurrences": 1,
+        "provenance": "UNKNOWN",
+        "confidence": "NONE",
+        "technique": null
+      },
+      {
+        "attack_id": "T1078",
+        "first_seen": "2026-09-24T06:11:02.971000000+00:00",
+        "occurrences": 1,
+        "provenance": "NATIVE_WAZUH",
+        "confidence": "CONFIRMED",
+        "technique": "T1078"
+      },
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-09-24T15:55:21.777000000+00:00",
+        "occurrences": 1,
+        "provenance": "NATIVE_WAZUH",
+        "confidence": "CONFIRMED",
+        "technique": "T1110.001"
+      }
+    ]
+  },
+  "CAMP_E8E9F042": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-09-24T15:55:26.614000000+00:00",
+      "last_seen": "2026-09-24T15:55:29.499000000+00:00",
+      "last_technique": "T1110",
+      "risk_score": 90.0,
+      "cti_score": 65.81,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_7AF36DEF"
+    },
+    "events": [
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-09-24T15:55:26.634000000+00:00",
+        "occurrences": 1,
+        "provenance": "NATIVE_WAZUH",
+        "confidence": "CONFIRMED",
+        "technique": "T1110.001"
+      },
+      {
+        "attack_id": "T1110",
+        "first_seen": "2026-09-24T15:55:29.499000000+00:00",
+        "occurrences": 1,
+        "provenance": "NATIVE_WAZUH",
+        "confidence": "CONFIRMED",
+        "technique": "T1110"
+      }
+    ]
+  },
+  "CAMP_23FB320A": {
+    "campaign": {
+      "attacker_ip": "192.168.56.105",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-11T16:22:16.669000000+00:00",
+      "last_seen": "2026-08-11T16:22:26.527814000+00:00",
+      "last_technique": "T1114",
+      "risk_score": 0,
+      "cti_score": 39.53,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_624B5186"
+    },
+    "events": [
+      {
+        "attack_id": "T1114",
+        "first_seen": "2026-08-11T16:22:16.703000000+00:00",
+        "occurrences": 10,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1114"
+      }
+    ]
+  },
+  "CAMP_1429ADB4": {
+    "campaign": {
+      "attacker_ip": "192.168.56.105",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-11T16:27:20.188000000+00:00",
+      "last_seen": "2026-08-11T16:27:42.177756000+00:00",
+      "last_technique": "T1210",
+      "risk_score": 34820,
+      "cti_score": 42.83,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_2195D475"
+    },
+    "events": [
+      {
+        "attack_id": "T1595.002",
+        "first_seen": "2026-08-11T16:27:20.206000000+00:00",
+        "occurrences": 448,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1595.002"
+      },
+      {
+        "attack_id": "T1055",
+        "first_seen": "2026-08-11T16:27:22.498000000+00:00",
+        "occurrences": 13,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1055"
+      },
+      {
+        "attack_id": "T1055",
+        "first_seen": "2026-08-11T16:27:23.957000000+00:00",
+        "occurrences": 279,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1055"
+      },
+      {
+        "attack_id": "T1055",
+        "first_seen": "2026-08-11T16:27:27.901000000+00:00",
+        "occurrences": 36,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1055"
+      },
+      {
+        "attack_id": "T1059.007",
+        "first_seen": "2026-08-11T16:27:29.625000000+00:00",
+        "occurrences": 206,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1059.007"
+      },
+      {
+        "attack_id": "T1059",
+        "first_seen": "2026-08-11T16:27:31.050000000+00:00",
+        "occurrences": 29,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1059"
+      },
+      {
+        "attack_id": "T1190",
+        "first_seen": "2026-08-11T16:27:32.430000000+00:00",
+        "occurrences": 4,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1190"
+      },
+      {
+        "attack_id": "T1190",
+        "first_seen": "2026-08-11T16:27:34.332000000+00:00",
+        "occurrences": 2,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1190"
+      },
+      {
+        "attack_id": "T1190",
+        "first_seen": "2026-08-11T16:27:37.161000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1190"
+      },
+      {
+        "attack_id": "T1210",
+        "first_seen": "2026-08-11T16:27:38.511000000+00:00",
+        "occurrences": 3,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1210"
+      }
+    ]
+  },
+  "CAMP_F91A7652": {
+    "campaign": {
+      "attacker_ip": "192.168.56.105",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-11T17:38:36.400000000+00:00",
+      "last_seen": "2026-08-11T17:38:36.414000000+00:00",
+      "last_technique": "T1110.001",
+      "risk_score": 45,
+      "cti_score": 52.38,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_E815CF71"
+    },
+    "events": [
+      {
+        "attack_id": "T1110.001",
+        "first_seen": "2026-08-11T17:38:36.414000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1110.001"
+      }
+    ]
+  },
+  "CAMP_066240B7": {
+    "campaign": {
+      "attacker_ip": "192.168.56.105",
+      "victim_ip": "pes1ug23cs411-VirtualBox",
+      "first_seen": "2026-08-11T17:38:59.571000000+00:00",
+      "last_seen": "2026-08-11T17:38:59.594000000+00:00",
+      "last_technique": "T1078",
+      "risk_score": 70,
+      "cti_score": 33.56,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_C205ADFD"
+    },
+    "events": [
+      {
+        "attack_id": "T1078",
+        "first_seen": "2026-08-11T17:38:59.594000000+00:00",
+        "occurrences": 1,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1078"
+      }
+    ]
+  },
+  "CAMP_947A7084": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "192.168.56.105",
+      "first_seen": "2026-08-09T17:36:22.754000000+00:00",
+      "last_seen": "2026-08-09T17:36:27.182101000+00:00",
+      "last_technique": "T1595",
+      "risk_score": 460,
+      "cti_score": 49.08,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": null
+    },
+    "events": [
+      {
+        "attack_id": "T1595",
+        "first_seen": "2026-08-09T17:36:24.265000000+00:00",
+        "occurrences": 46,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1595"
+      }
+    ]
+  },
+  "CAMP_67FCB361": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "192.168.56.105",
+      "first_seen": "2026-08-09T19:50:56.217000000+00:00",
+      "last_seen": "2026-08-09T19:50:56.674482000+00:00",
+      "last_technique": "T1595",
+      "risk_score": 500,
+      "cti_score": 49.08,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": null
+    },
+    "events": [
+      {
+        "attack_id": "T1595",
+        "first_seen": "2026-08-09T19:50:56.336000000+00:00",
+        "occurrences": 50,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1595"
+      }
+    ]
+  },
+  "CAMP_427A075C": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "192.168.56.105",
+      "first_seen": "2026-08-11T16:04:28.228000000+00:00",
+      "last_seen": "2026-08-11T16:07:15.157703000+00:00",
+      "last_technique": "T1595",
+      "risk_score": 8330,
+      "cti_score": 45.58,
+      "status": "INACTIVE",
+      "reopened_count": 1,
+      "operation_id": "OP_40098D45"
+    },
+    "events": [
+      {
+        "attack_id": "T1595",
+        "first_seen": "2026-08-11T16:04:28.963000000+00:00",
+        "occurrences": 26,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1595"
+      },
+      {
+        "attack_id": "T1595",
+        "first_seen": "2026-08-11T16:06:54.228000000+00:00",
+        "occurrences": 807,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1595"
+      }
+    ]
+  },
+  "CAMP_99EE7A64": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "192.168.56.105",
+      "first_seen": "2026-08-17T10:16:44.340000000+00:00",
+      "last_seen": "2026-08-17T10:17:13.741977000+00:00",
+      "last_technique": "T1595",
+      "risk_score": 250,
+      "cti_score": 49.08,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_0252FE25"
+    },
+    "events": [
+      {
+        "attack_id": "T1595",
+        "first_seen": "2026-08-17T10:16:44.806000000+00:00",
+        "occurrences": 25,
+        "provenance": null,
+        "confidence": null,
+        "technique": "T1595"
+      }
+    ]
+  },
+  "CAMP_86D5837D": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "192.168.56.105",
+      "first_seen": "2026-09-24T06:10:59.880000000+00:00",
+      "last_seen": "2026-09-24T06:11:02.113178000+00:00",
+      "last_technique": "T1595",
+      "risk_score": 250.0,
+      "cti_score": 49.08,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_3970E3F5"
+    },
+    "events": [
+      {
+        "attack_id": "T1595",
+        "first_seen": "2026-09-24T06:10:59.893000000+00:00",
+        "occurrences": 25,
+        "provenance": "NATIVE_WAZUH",
+        "confidence": "CONFIRMED",
+        "technique": "T1595"
+      },
+      {
+        "attack_id": null,
+        "first_seen": "2026-09-24T06:11:02.084000000+00:00",
+        "occurrences": 1,
+        "provenance": "UNKNOWN",
+        "confidence": "NONE",
+        "technique": null
+      }
+    ]
+  },
+  "CAMP_15E98B82": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "192.168.56.105",
+      "first_seen": "2026-09-24T08:34:21.151000000+00:00",
+      "last_seen": "2026-09-24T08:34:22.011288000+00:00",
+      "last_technique": "T1595",
+      "risk_score": 250.0,
+      "cti_score": 49.08,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_3970E3F5"
+    },
+    "events": [
+      {
+        "attack_id": "T1595",
+        "first_seen": "2026-09-24T08:34:21.169000000+00:00",
+        "occurrences": 25,
+        "provenance": "NATIVE_WAZUH",
+        "confidence": "CONFIRMED",
+        "technique": "T1595"
+      },
+      {
+        "attack_id": null,
+        "first_seen": "2026-09-24T08:34:22.001000000+00:00",
+        "occurrences": 1,
+        "provenance": "UNKNOWN",
+        "confidence": "NONE",
+        "technique": null
+      }
+    ]
+  },
+  "CAMP_B177634A": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "192.168.56.105",
+      "first_seen": "2026-09-24T16:16:37.528000000+00:00",
+      "last_seen": "2026-09-24T16:17:24.942000000+00:00",
+      "last_technique": "T1595",
+      "risk_score": 250.0,
+      "cti_score": 49.08,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_6844EECE"
+    },
+    "events": [
+      {
+        "attack_id": "T1595",
+        "first_seen": "2026-09-24T16:16:37.608000000+00:00",
+        "occurrences": 25,
+        "provenance": "NATIVE_WAZUH",
+        "confidence": "CONFIRMED",
+        "technique": "T1595"
+      },
+      {
+        "attack_id": null,
+        "first_seen": "2026-09-24T16:16:53.722000000+00:00",
+        "occurrences": 1,
+        "provenance": "UNKNOWN",
+        "confidence": "NONE",
+        "technique": null
+      },
+      {
+        "attack_id": null,
+        "first_seen": "2026-09-24T16:17:24.942000000+00:00",
+        "occurrences": 1,
+        "provenance": "UNKNOWN",
+        "confidence": "NONE",
+        "technique": null
+      }
+    ]
+  },
+  "CAMP_1B8E9033": {
+    "campaign": {
+      "attacker_ip": "192.168.56.106",
+      "victim_ip": "192.168.56.105",
+      "first_seen": "2026-09-25T06:41:34.574000000+00:00",
+      "last_seen": "2026-09-25T06:41:57.411739000+00:00",
+      "last_technique": "T1595",
+      "risk_score": 250.0,
+      "cti_score": 49.08,
+      "status": "INACTIVE",
+      "reopened_count": 0,
+      "operation_id": "OP_6844EECE"
+    },
+    "events": [
+      {
+        "attack_id": "T1595",
+        "first_seen": "2026-09-25T06:41:34.622000000+00:00",
+        "occurrences": 25,
+        "provenance": "NATIVE_WAZUH",
+        "confidence": "CONFIRMED",
+        "technique": "T1595"
+      },
+      {
+        "attack_id": null,
+        "first_seen": "2026-09-25T06:41:57.368000000+00:00",
+        "occurrences": 1,
+        "provenance": "UNKNOWN",
+        "confidence": "NONE",
+        "technique": null
+      }
+    ]
+  }
+}
