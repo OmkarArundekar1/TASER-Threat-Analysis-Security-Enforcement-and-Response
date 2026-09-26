@@ -38,5 +38,6 @@
 - No commercial SIEM comparison
 - MISP currently unreachable
 - Shuffle never live-triggered
+- Active containment/closed-loop response layer (backend/active_response/) is implemented and tested (876 backend tests) but has never executed against a real host — BLOCKED_BY_ENVIRONMENT, not live-verified; if the paper describes this capability at all, it must be framed as an implemented, unit/integration-tested architecture, not a demonstrated defensive capability. See `review/final_experimental_validation_report.md`.
 - Campaign correlation fragments real repeated-session traffic heavily (one real brute-force session split across up to 25 separate Campaign nodes) — found via the new independent evaluation framework, not previously measured
 - Independent evaluation ground truth (MITRE/threat-qualification/attribution/campaign-correlation) is AI-assisted-preliminary, not yet human-reviewed — see `review/paper_metrics_source_of_truth.md`

@@ -1,0 +1,120 @@
+{
+  "artifact_version": "final_paper_dataset_v1",
+  "generated_at": "2026-09-26",
+  "generated_by": "automated packaging of existing evaluation/results/*.json -- no new evaluation was run, no label was added or changed to produce this file",
+  "note": "This artifact does NOT overwrite or supersede evaluation/results/summary.json (the prior run's raw output) or any evaluation/ground_truth/provisional/*.jsonl file. It exists solely to give the paper one clean, single-file pointer with explicit provenance per metric.",
+  "human_review_status": {
+    "reviewed_row_count": 0,
+    "reviewers": [],
+    "statement": "Zero rows across all 8 review queues (evaluation/review/*.csv) have a non-empty reviewer field as of this artifact's generation. Confirmed by direct inspection, not assumed. No dataset in this project has been promoted past AUTO_PROPOSED. HUMAN_REVIEW_REQUIRED applies to every preliminary metric below."
+  },
+  "metrics": [
+    {
+      "metric": "MITRE mapping accuracy",
+      "definition": "Multi-label precision/recall/F1 of mitre_resolver.resolve_mitre() technique-set output vs. independently-built expected technique labels (raw alert rule text cross-referenced against MITRE ATT&CK's own definitions).",
+      "dataset": "evaluation/ground_truth/provisional/mitre_mapping_v0.jsonl",
+      "dataset_version": "v0-unlocked",
+      "n": 100,
+      "ground_truth": "AUTO_PROPOSED (AI-built, not human-reviewed)",
+      "value": {"precision": 1.0, "recall": 0.667, "f1": 0.80, "exact_match_ratio": 0.50},
+      "confidence_interval": null,
+      "status": "MEASURED_PRELIMINARY",
+      "evidence_source": "evaluation/results/mitre_mapping_metrics.json"
+    },
+    {
+      "metric": "Attribution accuracy",
+      "definition": "Fraction of real campaigns whose top threat_attribution_engine candidate shares the same real, directly-observed attacker_ip as the campaign under evaluation.",
+      "dataset": "evaluation/ground_truth/provisional/attribution_v0.jsonl",
+      "dataset_version": "v0-unlocked",
+      "n": 43,
+      "ground_truth": "AUTO_PROPOSED (raw attacker_ip network fact)",
+      "value": {"accuracy": 0.744},
+      "confidence_interval": {"type": "95% Wilson", "low": 0.598, "high": 0.851},
+      "status": "MEASURED_PRELIMINARY",
+      "evidence_source": "evaluation/results/attribution_metrics.json"
+    },
+    {
+      "metric": "Campaign correlation (pairwise + clustering agreement)",
+      "definition": "Pairwise precision/recall/F1, cluster purity, Adjusted Rand Index, Adjusted Mutual Information between an independent SESSION::<scenario>::<attacker>-><victim> boundary and CYUKTI's own Campaign.campaign_id assignment.",
+      "dataset": "evaluation/ground_truth/provisional/campaign_correlation_v0.jsonl",
+      "dataset_version": "v0-unlocked",
+      "n": 46,
+      "ground_truth": "AUTO_PROPOSED (independent session-boundary key)",
+      "value": {"pairwise_precision": 0.0, "pairwise_recall": 0.0, "pairwise_f1": 0.0,
+                "cluster_purity": 1.0, "adjusted_rand_index": 0.0, "adjusted_mutual_information": 0.0},
+      "confidence_interval": null,
+      "status": "MEASURED_PRELIMINARY",
+      "evidence_source": "evaluation/results/campaign_correlation_metrics.json",
+      "finding": "Severe fragmentation: one real session (Kali->pes1ug23cs411, brute force) is split across 25 separate CYUKTI Campaign nodes; the Nmap session across 17. Ground truth can only detect fragmentation, not over-merging, in this dataset shape."
+    },
+    {
+      "metric": "Threat qualification accuracy",
+      "definition": "Agreement between an independently-declared expected threat status (SUSPICIOUS/QUALIFIED_THREAT/NOT_THREAT) per scenario and CYUKTI's live cti_confidence_engine classification of the real campaign.",
+      "dataset": "evaluation/ground_truth/provisional/threat_qualification_v0.jsonl",
+      "dataset_version": "v0-unlocked",
+      "n": 24,
+      "ground_truth": "AUTO_PROPOSED (per-scenario AI-assisted judgment, not per-campaign human judgment)",
+      "value": {"accuracy": 0.083},
+      "confidence_interval": null,
+      "status": "MEASURED_PRELIMINARY",
+      "evidence_source": "evaluation/results/threat_qualification_metrics.json",
+      "finding": "20/20 campaigns from the SSH-brute-force scenario, scenario-labeled SUSPICIOUS, were classified QUALIFIED_THREAT by CYUKTI's live cti_score (65.81, above PUBLISH_THRESHOLD=40). Disclosed as an unresolved disagreement -- could reflect CYUKTI over-classifying, or the per-scenario ground truth being too coarse. Not resolved in this or any prior phase; requires human review."
+    },
+    {
+      "metric": "NEXT_TECHNIQUE prediction accuracy",
+      "definition": "predict_next_readonly()'s top-1 accuracy against real chronological AttackEvent.first_seen ordering.",
+      "dataset": "Frozen 60-row ml/datasets/campaign_dataset.csv (Phase 18)",
+      "dataset_version": "phase18-frozen",
+      "n": 12,
+      "ground_truth": "Real chronological event ordering (Phase 18 methodology)",
+      "value": null,
+      "confidence_interval": null,
+      "status": "UNMEASURABLE",
+      "evidence_source": "evaluation/results/prediction_metrics.json",
+      "note": "Live NEXT_TECHNIQUE graph re-checked this phase: still 3 edges (unchanged since Phase 18). No new held-out prediction opportunity exists. The historical Phase 18 result (4/12, 33.3%, INSUFFICIENT_FOR_SUPERVISED_ML) is NOT restated here as this phase's metric -- it produced no new number."
+    },
+    {
+      "metric": "RAG retrieval (3 sources)",
+      "definition": "Precision@K/Recall@K/MRR/nDCG@K per source (MITRE semantic, campaign narrative, GNN topology).",
+      "dataset": "evaluation/review/rag_query_queue_*.csv (10 candidate queries)",
+      "dataset_version": "v0-unlocked",
+      "n": 0,
+      "ground_truth": "None -- zero queries have a recorded relevance judgment",
+      "value": null,
+      "confidence_interval": null,
+      "status": "NOT_MEASURED",
+      "evidence_source": "evaluation/results/rag_*_metrics.json"
+    },
+    {
+      "metric": "Investigation confidence accuracy",
+      "definition": "Agreement between an independent analyst verdict and the investigation loop's top candidate hypothesis at stop time.",
+      "dataset": "evaluation/review/investigation_verdict_queue.csv (3 real Phase 21 investigations)",
+      "dataset_version": "v0-unlocked",
+      "n": 0,
+      "ground_truth": "None -- zero verdicts recorded",
+      "value": null,
+      "confidence_interval": null,
+      "status": "NOT_MEASURED",
+      "evidence_source": "evaluation/results/investigation_metrics.json"
+    },
+    {
+      "metric": "Active response (containment execution/verification success, recurrence, false-containment rate, latency percentiles)",
+      "definition": "See active_response/metrics.py.",
+      "dataset": "None -- zero real containment events exist",
+      "dataset_version": "n/a",
+      "n": 0,
+      "ground_truth": "None",
+      "value": null,
+      "confidence_interval": null,
+      "status": "BLOCKED_BY_ENVIRONMENT",
+      "evidence_source": "review/phaseZ_final_integration_audit.md, review/final_experimental_validation_report.md",
+      "note": "Re-confirmed this phase: no shell access to the lab, and 192.168.56.105/.106 are unreachable by ping from this environment (0/1 packets received for both)."
+    }
+  ],
+  "limitations": [
+    "No metric above has been human-reviewed; all four preliminary evaluation categories require independent review before any number here may be cited as final.",
+    "Prediction remains UNMEASURABLE for new data; the live NEXT_TECHNIQUE graph has not grown since Phase 18.",
+    "Active-response metrics are entirely blocked by lack of lab access -- not a code gap.",
+    "RAG and investigation-confidence evaluators are real and tested but have zero real-data runs."
+  ]
+}
