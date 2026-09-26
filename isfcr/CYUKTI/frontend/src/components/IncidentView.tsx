@@ -3,6 +3,7 @@ import {
   ShieldAlert, Clock, GitBranch, X,
   CheckCircle2, XCircle, HelpCircle, Award, ChevronRight, ChevronDown,
   Radar, Fingerprint, Layers, SearchCheck, Gauge, Send, FileJson,
+  RefreshCw, PlayCircle, ShieldOff,
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { api } from '../services/api';
@@ -10,7 +11,7 @@ import { EvidenceInvestigation } from './EvidenceInvestigation';
 import { CampaignId } from './CampaignId';
 import type {
   IncidentOverview, IncidentResponsePlan, SoarRecommendationsResponse, RagSearchResponse,
-  CampaignCandidate,
+  CampaignCandidate, Playbook, PlaybookExecution, SoarStatus, ResponseStateResponse,
 } from '../types';
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -382,66 +383,332 @@ function MultiRagSection({ campaignId, query }: { campaignId: string; query: str
   );
 }
 
-// ---------------------------------------------------------------- G/H/I. Response, Shuffle, MISP, Memory
+// ---------------------------------------------------------------- G/H/I. Response Execution, MISP, Memory
 
-function ResponseSection({ campaignId }: { campaignId: string }) {
-  const [plan, setPlan] = useState<IncidentResponsePlan | null>(null);
-  const [loading, setLoading] = useState(true);
+// The real states CYUKTI's own APIs can produce -- no invented
+// "verifying"/"executing" that the backend doesn't actually report. See
+// ResponseSection below for exactly which endpoint/field drives each one.
+type ResponsePhase =
+  | 'RECOMMENDED' | 'GENERATING' | 'READY_FOR_REVIEW' | 'APPROVAL_REQUIRED'
+  | 'EXECUTING' | 'EXECUTED' | 'FAILED';
 
-  useEffect(() => {
-    setLoading(true);
-    api.incidentResponsePlan(campaignId).then(setPlan).catch(() => setPlan(null)).finally(() => setLoading(false));
-  }, [campaignId]);
+const PHASE_BADGE: Record<ResponsePhase, { label: string; className: string }> = {
+  RECOMMENDED: { label: 'RECOMMENDED', className: CLASSIFICATION_COLOR.NOT_THREAT },
+  GENERATING: { label: 'GENERATING', className: SEVERITY_COLOR.MEDIUM },
+  READY_FOR_REVIEW: { label: 'READY FOR REVIEW', className: SEVERITY_COLOR.LOW },
+  APPROVAL_REQUIRED: { label: 'APPROVAL REQUIRED', className: SEVERITY_COLOR.MEDIUM },
+  EXECUTING: { label: 'EXECUTING', className: SEVERITY_COLOR.MEDIUM },
+  EXECUTED: { label: 'EXECUTED', className: SEVERITY_COLOR.LOW },
+  FAILED: { label: 'FAILED', className: SEVERITY_COLOR.HIGH },
+};
 
-  if (loading) return <div className="glass-card p-4 text-xs text-slate-500 animate-pulse">Generating response plan...</div>;
-  if (!plan) return <div className="glass-card p-4 text-xs text-slate-500">Response plan unavailable.</div>;
-
+// Real, independently-verified containment state from the active-response
+// audit trail (backend/active_response) -- a completely separate pipeline
+// from SOAR playbook execution above. Only rendered when it actually has
+// activity for this campaign; never fabricated, never implied.
+function ContainmentVerificationLine({ responseState }: { responseState: ResponseStateResponse | null }) {
+  if (!responseState || responseState.current_state === 'NO_RESPONSE_ACTIVITY') return null;
+  const state = responseState.current_state;
+  if (state === 'CONTAINMENT_VERIFIED') {
+    return (
+      <p className="text-[11px] text-emerald-400 flex items-center gap-1.5 mt-2">
+        <ShieldCheckVerified /> Containment independently verified.
+      </p>
+    );
+  }
+  if (state === 'CONTAINMENT_NOT_VERIFIED' || state === 'CONTAINMENT_FAILED') {
+    return (
+      <p className="text-[11px] text-red-400 mt-2">
+        Response was submitted, but containment could not be verified.
+      </p>
+    );
+  }
+  if (state === 'CONTAINMENT_EXECUTED') {
+    return (
+      <p className="text-[11px] text-amber-400 mt-2">
+        A containment action executed but has not yet been independently verified.
+      </p>
+    );
+  }
   return (
-    <div className="glass-card p-4">
-      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Recommended Response</h2>
-      {plan.selected_historical_campaign && (
-        <div className="text-[11px] text-slate-400 border-l-2 border-cyan-500/40 pl-2 mb-3">
-          Based on historical match <span className="font-mono text-cyan-400">{plan.selected_historical_campaign}</span> ({plan.selection_confidence} confidence)
-        </div>
-      )}
-      {plan.playbook ? (
-        <div className="space-y-1.5">
-          {plan.playbook.actions.map((a) => (
-            <div key={a.action_id} className="flex items-center justify-between text-xs bg-[#0a0e17]/60 border border-[#1e2d4a] rounded px-2.5 py-2">
-              <span className="text-slate-300">{a.order}. {a.name}</span>
-              <div className="flex gap-1.5 shrink-0">
-                <Badge label={a.destructive ? 'DESTRUCTIVE' : 'SAFE'} className={a.destructive ? SEVERITY_COLOR.HIGH : SEVERITY_COLOR.LOW} />
-                <Badge label={a.requires_approval ? 'APPROVAL' : 'AUTOMATIC'} className={a.requires_approval ? SEVERITY_COLOR.MEDIUM : CLASSIFICATION_COLOR.NOT_THREAT} />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-slate-500">No playbook generated for this incident.</p>
-      )}
-    </div>
+    <p className="text-[11px] text-slate-500 mt-2">
+      Containment status: {state.replace(/_/g, ' ').toLowerCase()}.
+    </p>
   );
 }
 
-function ShuffleStatus({ overview }: { overview: IncidentOverview }) {
-  const executions = overview.soar.executions;
-  const active = executions.find((e) => e.status === 'running' || e.status === 'pending_approval');
-  const playbook = overview.soar.playbooks[0];
+function ShieldCheckVerified() {
+  return <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />;
+}
+
+function ResponseSection({ campaignId, overview }: { campaignId: string; overview: IncidentOverview }) {
+  const [plan, setPlan] = useState<IncidentResponsePlan | null>(null);
+  const [planLoading, setPlanLoading] = useState(true);
+  const [playbook, setPlaybook] = useState<Playbook | null>(overview.soar.playbooks[0] ?? null);
+  const [execution, setExecution] = useState<PlaybookExecution | null>(overview.soar.executions[0] ?? null);
+  const [soarStatus, setSoarStatus] = useState<SoarStatus | null>(null);
+  const [responseState, setResponseState] = useState<ResponseStateResponse | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+
+  useEffect(() => {
+    setPlanLoading(true);
+    api.incidentResponsePlan(campaignId).then(setPlan).catch(() => setPlan(null)).finally(() => setPlanLoading(false));
+    api.soarStatus().then(setSoarStatus).catch(() => setSoarStatus(null));
+    api.responseState(campaignId).then(setResponseState).catch(() => setResponseState(null));
+  }, [campaignId]);
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setGenerateError(null);
+    try {
+      const generated = await api.generatePlaybook(campaignId);
+      setPlaybook(generated);
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : 'Unable to generate playbook.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleExecute = async () => {
+    if (!playbook) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      const result = await api.executePlaybook(playbook.playbook_id, campaignId);
+      setExecution(result);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Execution failed. No successful containment is claimed.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!execution) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      setExecution(await api.approveExecution(execution.execution_id));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Approval failed.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!execution) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      setExecution(await api.rejectExecution(execution.execution_id, 'Rejected by analyst'));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Reject failed.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePoll = async () => {
+    if (!execution) return;
+    setActionLoading(true);
+    setActionError(null);
+    try {
+      setExecution(await api.pollExecution(execution.execution_id));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to check execution status.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // shuffle_reachable is a live health check (soar/api.py); null/false
+  // both mean "not confirmed reachable" -- never offer an Execute action
+  // CYUKTI cannot back up. See MISP_INTEGRATION.md-style honesty
+  // convention: an unconfirmed capability is treated as unavailable.
+  const shuffleAvailable = soarStatus?.shuffle_reachable === true;
+
+  let phase: ResponsePhase;
+  if (!playbook) phase = generating ? 'GENERATING' : 'RECOMMENDED';
+  else if (execution?.status === 'pending_approval') phase = 'APPROVAL_REQUIRED';
+  else if (execution?.status === 'running') phase = 'EXECUTING';
+  else if (execution?.status === 'success') phase = 'EXECUTED';
+  else if (execution?.status === 'failed' || execution?.status === 'timeout') phase = 'FAILED';
+  else phase = 'READY_FOR_REVIEW'; // playbook exists; no execution, or a past one was rejected/cancelled
+
+  // The Recommendation always reflects the response plan's own playbook
+  // (real even before one is formally generated -- incident_response_plan
+  // falls back to a fresh, unsaved preview), never the `playbook` state
+  // above, which only reflects a persisted (Generate Playbook'd) one.
+  const primaryAction = plan?.playbook?.actions[0] ?? null;
+  const severityLabel = overview.severity.label;
 
   return (
-    <div className="glass-card p-4">
-      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Response Execution</h2>
-      <div className="text-xs text-slate-300 mb-1">Playbook: <span className="text-slate-400">{playbook?.name || 'Not yet generated'}</span></div>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-xs text-slate-300">Status:</span>
-        <Badge
-          label={active ? active.status.replace('_', ' ').toUpperCase() : executions.length > 0 ? 'COMPLETED' : 'RECOMMENDED'}
-          className={active ? SEVERITY_COLOR.MEDIUM : CLASSIFICATION_COLOR.NOT_THREAT}
-        />
+    <div className="glass-card p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">Response Execution</h2>
+        <Badge label={PHASE_BADGE[phase].label} className={PHASE_BADGE[phase].className} />
       </div>
-      <div className="text-xs text-slate-500">Actions: {playbook?.actions.length ?? '—'}</div>
-      {executions.length === 0 && (
-        <p className="text-[11px] text-slate-500 mt-2">Execution unavailable — recommendation remains available locally.</p>
+
+      {/* Recommendation -- always visible, even when nothing has been generated/executed yet */}
+      <div>
+        <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Recommendation</div>
+        {planLoading ? (
+          <p className="text-xs text-slate-500 animate-pulse">Generating response plan...</p>
+        ) : !plan || !primaryAction ? (
+          <p className="text-xs text-slate-500">No response recommendation available.</p>
+        ) : (
+          <div className="bg-[#0a0e17]/60 border border-[#1e2d4a] rounded px-2.5 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-slate-200 font-semibold">{primaryAction.name}</span>
+              <Badge label={`PRIORITY: ${severityLabel}`} className={SEVERITY_COLOR[severityLabel] || SEVERITY_COLOR.LOW} />
+            </div>
+            {primaryAction.reason && <div className="text-[11px] text-slate-500 mt-1">{primaryAction.reason}</div>}
+            {plan.selected_historical_campaign && (
+              <div className="text-[11px] text-slate-400 border-l-2 border-cyan-500/40 pl-2 mt-2">
+                Based on historical match <span className="font-mono text-cyan-400">{plan.selected_historical_campaign}</span> ({plan.selection_confidence} confidence)
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-[#1e2d4a]" />
+
+      {/* Playbook */}
+      <div>
+        <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Playbook</div>
+        {!playbook ? (
+          <div className="space-y-2">
+            <p className="text-xs text-slate-500">
+              A response recommendation is available. Playbook generation is not currently available.
+            </p>
+            {generateError && <p className="text-[11px] text-red-400">Unable to generate playbook. The recommendation is still available.</p>}
+            <button
+              onClick={handleGenerate}
+              disabled={generating || !plan}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20 disabled:opacity-50 transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${generating ? 'animate-spin' : ''}`} /> {generating ? 'Generating...' : 'Generate Playbook'}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-xs text-slate-200 truncate">{playbook.name}</div>
+              <div className="text-[11px] text-slate-500">{playbook.actions.length} action{playbook.actions.length === 1 ? '' : 's'} · {playbook.execution_policy.replace('_', ' ')}</div>
+            </div>
+            <button
+              onClick={() => setReviewOpen(true)}
+              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-md bg-[#131c2e] text-slate-300 border border-[#1e2d4a] hover:bg-[#1a2540] transition-colors"
+            >
+              Review Playbook
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-[#1e2d4a]" />
+
+      {/* Execution */}
+      <div>
+        <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Execution</div>
+        {!playbook ? (
+          <p className="text-xs text-slate-500">Waiting for playbook.</p>
+        ) : actionError ? (
+          <p className="text-[11px] text-red-400 mb-2">{actionError}</p>
+        ) : null}
+
+        {playbook && playbook.execution_policy === 'recommend_only' && !execution && (
+          <p className="text-xs text-slate-500">This playbook is recommendation-only; CYUKTI does not offer execution for it.</p>
+        )}
+
+        {playbook && playbook.execution_policy !== 'recommend_only' && !execution && !shuffleAvailable && (
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-red-400">
+              <ShieldOff className="w-3.5 h-3.5" /> Shuffle UNAVAILABLE
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Playbook generated successfully. Execution is currently unavailable because the execution service is not reachable.
+            </p>
+          </div>
+        )}
+
+        {playbook && playbook.execution_policy !== 'recommend_only' && !execution && shuffleAvailable && (
+          <button
+            onClick={handleExecute}
+            disabled={actionLoading}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
+          >
+            <PlayCircle className="w-3.5 h-3.5" /> {actionLoading ? 'Requesting...' : 'Execute'}
+          </button>
+        )}
+
+        {execution?.status === 'pending_approval' && (
+          <div className="flex gap-2">
+            <button
+              onClick={handleApprove}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" /> Approve &amp; Execute
+            </button>
+            <button
+              onClick={handleReject}
+              disabled={actionLoading}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+            >
+              <XCircle className="w-3.5 h-3.5" /> Reject
+            </button>
+          </div>
+        )}
+
+        {execution?.status === 'running' && (
+          <button
+            onClick={handlePoll}
+            disabled={actionLoading}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-[#131c2e] text-slate-300 border border-[#1e2d4a] hover:bg-[#1a2540] disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${actionLoading ? 'animate-spin' : ''}`} /> Check status
+          </button>
+        )}
+
+        {execution?.status === 'success' && (
+          <p className="text-[11px] text-emerald-400">Execution accepted by Shuffle.</p>
+        )}
+        {(execution?.status === 'failed' || execution?.status === 'timeout') && (
+          <p className="text-[11px] text-red-400">Execution failed. No successful containment is claimed.</p>
+        )}
+        {(execution?.status === 'rejected' || execution?.status === 'cancelled') && (
+          <p className="text-[11px] text-slate-500">Previous execution was {execution.status}. The playbook is still available to review or re-run.</p>
+        )}
+
+        <ContainmentVerificationLine responseState={responseState} />
+      </div>
+
+      {playbook && (
+        <Drawer open={reviewOpen} onClose={() => setReviewOpen(false)} title={`Playbook — ${playbook.name}`}>
+          <div className="space-y-1.5">
+            {playbook.actions.map((a) => (
+              <div key={a.action_id} className="flex items-center justify-between text-xs bg-[#0a0e17]/60 border border-[#1e2d4a] rounded px-2.5 py-2">
+                <div className="min-w-0">
+                  <div className="text-slate-300">{a.order}. {a.name}</div>
+                  {a.reason && <div className="text-[10px] text-slate-500 truncate" title={a.reason}>{a.reason}</div>}
+                </div>
+                <div className="flex gap-1.5 shrink-0">
+                  <Badge label={a.destructive ? 'DESTRUCTIVE' : 'SAFE'} className={a.destructive ? SEVERITY_COLOR.HIGH : SEVERITY_COLOR.LOW} />
+                  <Badge label={a.requires_approval ? 'APPROVAL' : 'AUTOMATIC'} className={a.requires_approval ? SEVERITY_COLOR.MEDIUM : CLASSIFICATION_COLOR.NOT_THREAT} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <ExpandableTechnicalDetails data={playbook} />
+        </Drawer>
       )}
     </div>
   );
@@ -560,12 +827,9 @@ export function IncidentView() {
               <MultiRagSection campaignId={selectedCampaign} query={ragQuery} />
             </div>
 
-            <ResponseSection campaignId={selectedCampaign} />
+            <ResponseSection campaignId={selectedCampaign} overview={overview} />
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <ShuffleStatus overview={overview} />
-              <MispStatus overview={overview} />
-            </div>
+            <MispStatus overview={overview} />
 
             <PlaybookMemorySection campaignId={selectedCampaign} />
           </>

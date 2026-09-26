@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
-import { expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { IncidentView } from './IncidentView';
 import { api } from '../services/api';
 import { useDashboard } from '../context/DashboardContext';
@@ -13,6 +13,13 @@ vi.mock('../services/api', () => ({
     ragSearch: vi.fn(),
     soarRecommendations: vi.fn(),
     investigate: vi.fn(),
+    soarStatus: vi.fn(),
+    responseState: vi.fn(),
+    generatePlaybook: vi.fn(),
+    executePlaybook: vi.fn(),
+    approveExecution: vi.fn(),
+    rejectExecution: vi.fn(),
+    pollExecution: vi.fn(),
   },
 }));
 
@@ -65,6 +72,22 @@ const sampleOverview = {
   rag_available: true,
 };
 
+const samplePlaybook = {
+  playbook_id: 'PB_1', name: 'Contain Brute Force Campaign', version: 1, description: 'd',
+  trigger_conditions: {}, campaign_type: 'brute_force', mitre_techniques: ['T1110'],
+  severity: 'CRITICAL', risk: 90, required_evidence: [],
+  actions: [
+    { action_id: 'A1', action_type: 'BLOCK_SOURCE_IP', name: 'Contain source IP', description: 'd', order: 1,
+      inputs: {}, expected_output: 'o', destructive: true, requires_approval: true, timeout_seconds: 60, reason: 'Active brute-force source' },
+  ],
+  execution_policy: 'analyst_approval' as const,
+  shuffle_workflow_id: null, shuffle_workflow_version: null,
+  created_at: 't', updated_at: 't', status: 'active' as const,
+  source_campaign_id: 'CAMP_1', adapted_from_playbook_id: null, has_destructive_action: true,
+};
+
+const noResponseState = { correlation_id: 'CAMP_1', current_state: 'NO_RESPONSE_ACTIVITY', event_count: 0, events: [] };
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockApi.campaignTimeline.mockResolvedValue({ campaign_id: 'CAMP_1', events: [] });
@@ -75,9 +98,14 @@ beforeEach(() => {
   mockApi.incidentResponsePlan.mockResolvedValue({
     campaign_id: 'CAMP_1', threat_summary: 'summary', why_threat: [], mitre_techniques: [],
     severity: 'CRITICAL', risk_score: 1300, selected_historical_campaign: null, why_selected: null,
-    selection_confidence: null, playbook: null, historical_playbook_success_rate: null,
+    selection_confidence: null, playbook: samplePlaybook as any, historical_playbook_success_rate: null,
     historical_playbook_executions: 0, misp_status: 'NOT_APPLICABLE', misp_reason: 'r',
   });
+  mockApi.soarStatus.mockResolvedValue({
+    shuffle_webhook_configured: false, shuffle_api_configured: false, shuffle_reachable: null,
+    stored_playbooks: 0, stored_executions: 0,
+  });
+  mockApi.responseState.mockResolvedValue(noResponseState as any);
 });
 
 it('prompts for an incident selection when none is selected', () => {
@@ -168,4 +196,195 @@ it('shows an error state when the overview request fails', async () => {
 
   render(<IncidentView />);
   await waitFor(() => expect(screen.getByText('boom')).toBeInTheDocument());
+});
+
+describe('Response Execution', () => {
+  it('never shows the old dead-end "Execution unavailable" message for a RECOMMENDED playbook', async () => {
+    setDashboard('CAMP_1');
+    mockApi.incidentOverview.mockResolvedValue(sampleOverview as any); // soar.playbooks: []
+
+    render(<IncidentView />);
+    await waitFor(() => expect(screen.getByText('RECOMMENDED')).toBeInTheDocument());
+    expect(screen.queryByText(/Execution unavailable/)).not.toBeInTheDocument();
+  });
+
+  it('A: recommendation exists, no playbook -> Generate Playbook is the obvious next action', async () => {
+    setDashboard('CAMP_1');
+    mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
+
+    render(<IncidentView />);
+    await waitFor(() => expect(screen.getByText('Contain source IP')).toBeInTheDocument()); // the recommendation, from the response plan
+    expect(screen.getByRole('button', { name: /Generate Playbook/ })).toBeInTheDocument();
+    expect(screen.getByText('Waiting for playbook.')).toBeInTheDocument();
+  });
+
+  it('B: generating a playbook updates the card to show it, with a Review Playbook action', async () => {
+    setDashboard('CAMP_1');
+    mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
+    mockApi.generatePlaybook.mockResolvedValue(samplePlaybook as any);
+
+    render(<IncidentView />);
+    // The button renders immediately but stays disabled until the response
+    // plan (which gates it) has loaded -- wait for the plan's own content
+    // first so the click below lands on an enabled button.
+    await waitFor(() => expect(screen.getByText('Contain source IP')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: /Generate Playbook/ })).toBeEnabled());
+
+    fireEvent.click(screen.getByRole('button', { name: /Generate Playbook/ }));
+    await waitFor(() => expect(mockApi.generatePlaybook).toHaveBeenCalledWith('CAMP_1'));
+
+    await waitFor(() => expect(screen.getByText('Contain Brute Force Campaign')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Review Playbook' })).toBeInTheDocument();
+    expect(screen.getByText('READY FOR REVIEW')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review Playbook' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('1. Contain source IP')).toBeInTheDocument();
+  });
+
+  it('shows a playbook-generation failure without losing the recommendation', async () => {
+    setDashboard('CAMP_1');
+    mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
+    mockApi.generatePlaybook.mockRejectedValue(new Error('boom'));
+
+    render(<IncidentView />);
+    await waitFor(() => expect(screen.getByText('Contain source IP')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('button', { name: /Generate Playbook/ })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: /Generate Playbook/ }));
+
+    await waitFor(() => expect(screen.getByText('Unable to generate playbook. The recommendation is still available.')).toBeInTheDocument());
+    expect(screen.getByText('Contain source IP')).toBeInTheDocument(); // recommendation still visible
+  });
+
+  it('C: an already-generated playbook with Shuffle unreachable shows UNAVAILABLE, never a fake Execute button', async () => {
+    setDashboard('CAMP_1');
+    mockApi.incidentOverview.mockResolvedValue({
+      ...sampleOverview,
+      soar: { playbooks: [samplePlaybook], executions: [] },
+    } as any);
+    mockApi.soarStatus.mockResolvedValue({
+      shuffle_webhook_configured: true, shuffle_api_configured: false, shuffle_reachable: null,
+      stored_playbooks: 1, stored_executions: 0,
+    });
+
+    render(<IncidentView />);
+    await waitFor(() => expect(screen.getByText('Shuffle UNAVAILABLE')).toBeInTheDocument());
+    expect(screen.getByText(/Playbook generated successfully\. Execution is currently unavailable/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Execute$/ })).not.toBeInTheDocument();
+    // still inspectable
+    expect(screen.getByRole('button', { name: 'Review Playbook' })).toBeInTheDocument();
+  });
+
+  it('executing a playbook that requires approval shows Approve & Execute / Reject, not immediate execution', async () => {
+    setDashboard('CAMP_1');
+    mockApi.incidentOverview.mockResolvedValue({
+      ...sampleOverview,
+      soar: { playbooks: [samplePlaybook], executions: [] },
+    } as any);
+    mockApi.soarStatus.mockResolvedValue({
+      shuffle_webhook_configured: true, shuffle_api_configured: true, shuffle_reachable: true,
+      stored_playbooks: 1, stored_executions: 0,
+    });
+    mockApi.executePlaybook.mockResolvedValue({
+      execution_id: 'EX_1', playbook_id: 'PB_1', playbook_version: 1, campaign_id: 'CAMP_1',
+      operation_id: null, investigation_id: null, status: 'pending_approval', shuffle_execution_id: null,
+      started_at: null, completed_at: null, action_results: [], approved_by: null,
+      approval_decision_at: null, rejection_reason: null, created_at: 't',
+    } as any);
+
+    render(<IncidentView />);
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Execute$/ })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /^Execute$/ }));
+    await waitFor(() => expect(mockApi.executePlaybook).toHaveBeenCalledWith('PB_1', 'CAMP_1'));
+
+    await waitFor(() => expect(screen.getByText('APPROVAL REQUIRED')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /Approve & Execute/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument();
+    // never claim containment before it's actually confirmed
+    expect(screen.queryByText(/ATTACK BLOCKED/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^CONTAINED$/)).not.toBeInTheDocument();
+  });
+
+  it('D: execution failure is shown explicitly and never claimed as successful containment', async () => {
+    setDashboard('CAMP_1');
+    mockApi.incidentOverview.mockResolvedValue({
+      ...sampleOverview,
+      soar: {
+        playbooks: [samplePlaybook],
+        executions: [{
+          execution_id: 'EX_1', playbook_id: 'PB_1', playbook_version: 1, campaign_id: 'CAMP_1',
+          operation_id: null, investigation_id: null, status: 'failed', shuffle_execution_id: 'SH_1',
+          started_at: 't', completed_at: 't', action_results: [], approved_by: 'analyst',
+          approval_decision_at: 't', rejection_reason: null, created_at: 't',
+        }],
+      },
+    } as any);
+
+    render(<IncidentView />);
+    await waitFor(() => expect(screen.getByText('FAILED')).toBeInTheDocument());
+    expect(screen.getByText('Execution failed. No successful containment is claimed.')).toBeInTheDocument();
+    expect(screen.queryByText(/ATTACK BLOCKED/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^CONTAINED$/)).not.toBeInTheDocument();
+  });
+
+  it('E: a successful execution whose containment was not independently verified says so explicitly', async () => {
+    setDashboard('CAMP_1');
+    mockApi.incidentOverview.mockResolvedValue({
+      ...sampleOverview,
+      soar: {
+        playbooks: [samplePlaybook],
+        executions: [{
+          execution_id: 'EX_1', playbook_id: 'PB_1', playbook_version: 1, campaign_id: 'CAMP_1',
+          operation_id: null, investigation_id: null, status: 'success', shuffle_execution_id: 'SH_1',
+          started_at: 't', completed_at: 't', action_results: [], approved_by: 'analyst',
+          approval_decision_at: 't', rejection_reason: null, created_at: 't',
+        }],
+      },
+    } as any);
+    mockApi.responseState.mockResolvedValue({
+      correlation_id: 'CAMP_1', current_state: 'CONTAINMENT_NOT_VERIFIED', event_count: 2, events: [],
+    } as any);
+
+    render(<IncidentView />);
+    await waitFor(() => expect(screen.getByText('EXECUTED')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Response was submitted, but containment could not be verified.')).toBeInTheDocument());
+    expect(screen.queryByText(/ATTACK BLOCKED/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^CONTAINED$/)).not.toBeInTheDocument();
+  });
+
+  it('shows independently VERIFIED containment only when the real verification pipeline confirms it', async () => {
+    setDashboard('CAMP_1');
+    mockApi.incidentOverview.mockResolvedValue({
+      ...sampleOverview,
+      soar: {
+        playbooks: [samplePlaybook],
+        executions: [{
+          execution_id: 'EX_1', playbook_id: 'PB_1', playbook_version: 1, campaign_id: 'CAMP_1',
+          operation_id: null, investigation_id: null, status: 'success', shuffle_execution_id: 'SH_1',
+          started_at: 't', completed_at: 't', action_results: [], approved_by: 'analyst',
+          approval_decision_at: 't', rejection_reason: null, created_at: 't',
+        }],
+      },
+    } as any);
+    mockApi.responseState.mockResolvedValue({
+      correlation_id: 'CAMP_1', current_state: 'CONTAINMENT_VERIFIED', event_count: 3, events: [],
+    } as any);
+
+    render(<IncidentView />);
+    await waitFor(() => expect(screen.getByText('Containment independently verified.')).toBeInTheDocument());
+  });
+
+  it('a recommend_only playbook never offers execution', async () => {
+    setDashboard('CAMP_1');
+    mockApi.incidentOverview.mockResolvedValue({
+      ...sampleOverview,
+      soar: { playbooks: [{ ...samplePlaybook, execution_policy: 'recommend_only' }], executions: [] },
+    } as any);
+
+    render(<IncidentView />);
+    await waitFor(() => expect(screen.getByText('READY FOR REVIEW')).toBeInTheDocument());
+    expect(screen.getByText(/recommendation-only/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Execute$/ })).not.toBeInTheDocument();
+  });
 });
