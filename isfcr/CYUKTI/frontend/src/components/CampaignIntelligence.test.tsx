@@ -38,20 +38,20 @@ describe('CampaignIntelligence -- list view', () => {
     expect(screen.getByText(/no active campaigns/i)).toBeInTheDocument();
   });
 
-  it('renders every real campaign field for each row', () => {
+  it('renders the canonical campaign_id (never the campaign_label) plus the other real fields', () => {
     setState({ campaigns: [campaignFixture] });
     render(<CampaignIntelligence />);
-    expect(screen.getByText(campaignFixture.campaign_label!)).toBeInTheDocument();
-    expect(screen.getByText(campaignFixture.attacker_ip)).toBeInTheDocument();
-    expect(screen.getByText(campaignFixture.victim_ip)).toBeInTheDocument();
+    expect(screen.getByText(campaignFixture.campaign_id)).toBeInTheDocument();
+    expect(screen.queryByText(campaignFixture.campaign_label!)).not.toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${campaignFixture.attacker_ip}.*${campaignFixture.victim_ip}`))).toBeInTheDocument();
     expect(screen.getByText(campaignFixture.latest_technique)).toBeInTheDocument();
     expect(screen.getByText(campaignFixture.predicted_technique!)).toBeInTheDocument();
   });
 
-  it('selects a campaign when its row is clicked', () => {
+  it('selects a campaign when its card is clicked', () => {
     setState({ campaigns: [campaignFixture] });
     render(<CampaignIntelligence />);
-    fireEvent.click(screen.getByText(campaignFixture.campaign_label!));
+    fireEvent.click(screen.getByText(campaignFixture.campaign_id));
     expect(selectCampaign).toHaveBeenCalledWith(campaignFixture.campaign_id);
   });
 });

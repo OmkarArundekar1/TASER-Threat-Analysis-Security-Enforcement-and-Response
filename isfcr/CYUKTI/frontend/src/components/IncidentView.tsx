@@ -7,6 +7,7 @@ import {
 import { useDashboard } from '../context/DashboardContext';
 import { api } from '../services/api';
 import { EvidenceInvestigation } from './EvidenceInvestigation';
+import { CampaignId } from './CampaignId';
 import type {
   IncidentOverview, IncidentResponsePlan, SoarRecommendationsResponse, RagSearchResponse,
   CampaignCandidate,
@@ -81,9 +82,11 @@ function IncidentHeader({ overview }: { overview: IncidentOverview }) {
   const primaryTechnique = overview.mitre[0];
   return (
     <div className="glass-card p-4">
-      <div className="flex flex-wrap items-center gap-2 mb-2">
-        <Badge label={CLASSIFICATION_LABEL[threat_qualification.classification]} className={CLASSIFICATION_COLOR[threat_qualification.classification]} />
+      {/* PRIMARY: the canonical campaign ID, then concise state/severity right below it */}
+      <CampaignId id={campaign.campaign_id} size="lg" className="block mb-1.5" />
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         <Badge label={`${severity.label} SEVERITY`} className={SEVERITY_COLOR[severity.label] || SEVERITY_COLOR.LOW} />
+        <Badge label={CLASSIFICATION_LABEL[threat_qualification.classification]} className={CLASSIFICATION_COLOR[threat_qualification.classification]} />
         {threat_qualification.cti_score !== null && (
           <span className="text-[11px] text-slate-400">Confidence {threat_qualification.cti_score.toFixed(0)}%</span>
         )}
@@ -91,7 +94,9 @@ function IncidentHeader({ overview }: { overview: IncidentOverview }) {
           <span className="font-mono text-[11px] text-cyan-400 ml-auto">{primaryTechnique.mitre_id}</span>
         )}
       </div>
-      <h1 className="text-lg font-bold text-white mb-2">
+
+      {/* SECONDARY: what it is */}
+      <h1 className="text-base font-semibold text-white mb-2">
         {primaryTechnique?.technique_name || campaign.last_technique || 'Unclassified Activity'}
       </h1>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
@@ -103,6 +108,8 @@ function IncidentHeader({ overview }: { overview: IncidentOverview }) {
         </span>
         {operation_id && <span className="font-mono text-fuchsia-400">Operation {operation_id}</span>}
       </div>
+
+      {/* TERTIARY: raw/technical details, collapsed by default */}
       <ExpandableTechnicalDetails data={{ campaign_id: campaign.campaign_id, operation_id, mitre: overview.mitre, risk_score: campaign.risk_score }} />
     </div>
   );
@@ -523,7 +530,7 @@ export function IncidentView() {
           >
             <option value="">Select an incident/campaign...</option>
             {campaigns.map((c) => (
-              <option key={c.campaign_id} value={c.campaign_id}>{c.campaign_label || c.campaign_id}</option>
+              <option key={c.campaign_id} value={c.campaign_id}>{c.campaign_id}</option>
             ))}
           </select>
         </div>

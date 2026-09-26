@@ -1,7 +1,8 @@
 import { useDashboard } from '../context/DashboardContext';
-import { Target, Clock, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Target, Clock, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { CampaignId } from './CampaignId';
 
 export function CampaignIntelligence() {
   const { campaigns, selectedCampaign, selectCampaign, predictions, recommendations } = useDashboard();
@@ -55,7 +56,7 @@ export function CampaignIntelligence() {
             <div className="bg-[#0a0e17] border border-[#1e2d4a] rounded p-3">
               <h3 className="text-xs text-slate-400 uppercase tracking-widest mb-2 font-semibold">Summary</h3>
               <div className="flex justify-between items-end mb-3">
-                <div className="font-mono text-lg text-orange-400 font-bold">{camp.campaign_label || camp.campaign_id}</div>
+                <CampaignId id={camp.campaign_id} size="lg" />
                 <div className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getRiskClass(camp.risk_level)}`}>
                   {camp.risk_score}/100 · {camp.risk_level}
                 </div>
@@ -141,94 +142,74 @@ export function CampaignIntelligence() {
         )}
       </div>
 
-      <div className="flex-1 overflow-auto">
-        <table className="soc-table w-full">
-          <thead>
-            <tr>
-              <th>Campaign ID</th>
-              <th>Scope</th>
-              <th>Risk</th>
-              <th>Latest TTP</th>
-              <th>Predicted Next</th>
-            </tr>
-          </thead>
-          <tbody>
-            {campaigns.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="text-center py-8 text-slate-500 italic">No active campaigns</td>
-              </tr>
-            ) : (
-              campaigns.map((camp) => (
-                <tr 
-                  key={camp.campaign_id} 
-                  onClick={() => selectCampaign(camp.campaign_id)}
-                  className={`cursor-pointer transition-all ${
-                    selectedCampaign === camp.campaign_id 
-                      ? 'bg-indigo-500/10 border-l-2 border-l-indigo-500' 
-                      : 'hover:bg-[#1a2540] border-l-2 border-l-transparent'
-                  }`}
-                >
-                  <td>
-                    <div className="flex flex-col">
-                      <span className="font-mono text-orange-400 font-bold truncate max-w-[150px]" title={camp.campaign_id}>
-                        {camp.campaign_label || camp.campaign_id}
+      <div className="flex-1 overflow-auto p-2 space-y-1.5">
+        {campaigns.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 italic text-sm">No active campaigns</div>
+        ) : (
+          campaigns.map((camp) => {
+            const isSelected = selectedCampaign === camp.campaign_id;
+            return (
+              <button
+                key={camp.campaign_id}
+                onClick={() => selectCampaign(camp.campaign_id)}
+                className={`w-full text-left rounded-md border px-3 py-2 transition-colors ${
+                  isSelected
+                    ? 'bg-indigo-500/10 border-indigo-500/40'
+                    : 'bg-[#0a0e17]/60 border-[#1e2d4a] hover:bg-[#1a2540] hover:border-[#2a3a5a]'
+                }`}
+              >
+                {/* PRIMARY: canonical campaign ID + risk */}
+                <div className="flex items-center justify-between gap-2">
+                  <CampaignId id={camp.campaign_id} size="sm" />
+                  <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold border ${getRiskClass(camp.risk_level)}`}>
+                    {camp.risk_level}
+                  </span>
+                </div>
+
+                {/* SECONDARY: latest technique -> predicted next */}
+                <div className="flex items-center gap-1.5 mt-1.5 text-[10px] font-mono flex-wrap">
+                  <span className="px-1.5 py-0.5 bg-[#0a0e17] border border-[#1e2d4a] rounded text-indigo-400 font-bold">
+                    {camp.latest_technique}
+                  </span>
+                  {camp.predicted_technique && (
+                    <>
+                      <ArrowRight className="w-2.5 h-2.5 text-slate-600 shrink-0" />
+                      <span className="px-1.5 py-0.5 bg-cyan-500/10 border border-cyan-500/30 rounded text-cyan-400 font-bold">
+                        {camp.predicted_technique}
                       </span>
-                      <span className="text-[9px] text-slate-500 flex items-center gap-1 mt-1">
-                        <Clock className="w-2.5 h-2.5" /> 
-                        {new Date(camp.last_seen).toLocaleTimeString()}
-                        <span className="bg-slate-800 px-1 rounded ml-1">{camp.event_count} events</span>
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="flex flex-col gap-1 text-[10px] font-mono">
-                      <span className="text-red-400 flex items-center gap-1 truncate max-w-[120px]" title={camp.attacker_ip}><span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span> {camp.attacker_ip}</span>
-                      <span className="text-blue-400 flex items-center gap-1 truncate max-w-[120px]" title={camp.victim_ip}><span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span> {camp.victim_ip}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="flex flex-col gap-1 w-20">
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className={`px-1.5 rounded border font-bold ${getRiskClass(camp.risk_level)}`}>
-                          {camp.risk_level}
-                        </span>
-                      </div>
-                      <div className="w-full h-1.5 bg-[#1e2d4a] rounded-full overflow-hidden mt-0.5">
-                        <div
-                          className={`h-full rounded-full ${
-                            camp.risk_level === 'CRITICAL' ? 'bg-red-500' :
-                            camp.risk_level === 'HIGH' ? 'bg-orange-500' :
-                            camp.risk_level === 'MEDIUM' ? 'bg-yellow-500' : 'bg-blue-500'
-                          }`}
-                          style={{ width: getRiskWidth(camp.risk_score) }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="px-1.5 py-0.5 bg-[#0a0e17] border border-[#1e2d4a] rounded text-indigo-400 font-mono text-[10px] font-bold shadow-[inset_0_0_10px_rgba(99,102,241,0.1)]">
-                      {camp.latest_technique}
-                    </span>
-                  </td>
-                  <td>
-                    {camp.predicted_technique ? (
-                      <div className="flex flex-col gap-0.5">
-                        <span className="px-1.5 py-0.5 bg-cyan-500/10 border border-cyan-500/30 rounded text-cyan-400 font-mono text-[10px] font-bold w-fit">
-                          {camp.predicted_technique}
-                        </span>
-                        {camp.prediction_confidence !== undefined && (
-                          <span className="text-[9px] text-slate-500">{camp.prediction_confidence}% conf</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-[10px] text-slate-600">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                      {camp.prediction_confidence !== undefined && (
+                        <span className="text-slate-500">{camp.prediction_confidence}%</span>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* TERTIARY: compact metadata row -- timestamps, counts, attacker/victim */}
+                <div className="flex items-center gap-2 mt-1.5 text-[9px] text-slate-500 overflow-hidden">
+                  <span className="flex items-center gap-1 shrink-0">
+                    <Clock className="w-2.5 h-2.5" /> {new Date(camp.last_seen).toLocaleTimeString()}
+                  </span>
+                  <span className="shrink-0">{camp.event_count} events</span>
+                  <span className="truncate" title={`${camp.attacker_ip} → ${camp.victim_ip}`}>
+                    {camp.attacker_ip} → {camp.victim_ip}
+                  </span>
+                </div>
+
+                {/* Risk bar */}
+                <div className="w-full h-1 bg-[#1e2d4a] rounded-full overflow-hidden mt-1.5">
+                  <div
+                    className={`h-full rounded-full ${
+                      camp.risk_level === 'CRITICAL' ? 'bg-red-500' :
+                      camp.risk_level === 'HIGH' ? 'bg-orange-500' :
+                      camp.risk_level === 'MEDIUM' ? 'bg-yellow-500' : 'bg-blue-500'
+                    }`}
+                    style={{ width: getRiskWidth(camp.risk_score) }}
+                  />
+                </div>
+              </button>
+            );
+          })
+        )}
       </div>
     </div>
   );
