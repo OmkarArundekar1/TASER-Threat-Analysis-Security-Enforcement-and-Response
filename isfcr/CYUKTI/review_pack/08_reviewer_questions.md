@@ -19,9 +19,11 @@ For severity: a deterministic function of the normalized cumulative TPS score (`
 
 **6. Why XGBoost / why this ML model?**
 Gradient-boosted trees handle the tabular, mixed-scale, partially-sparse 57-feature vector well without extensive tuning, and give interpretable feature importances — useful for catching leakage (see Q5). We are explicit that its current 0.917 in-sample accuracy is not a generalization claim; no held-out split exists yet.
+*Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 
 **7. How is attribution validated?**
 Honestly: it isn't, quantitatively. `threat_attribution_engine.py` is implemented and exercised at the evidence-collector unit-test level, but no ground-truth attacker-identity dataset exists to compute an accuracy metric against. We report this as `NOT MEASURED`, not as a hidden gap.
+*Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed.
 
 **8. How do you handle missing MITRE mappings?**
 That's Phase 20's entire subject: a 4-tier resolver (native Wazuh mapping, reviewed rule registry, deterministic inference, UNKNOWN), each carrying explicit provenance/confidence/reason. Missing mapping is not an ingestion blocker — it results in a preserved `UNKNOWN` AttackEvent instead.
@@ -49,12 +51,15 @@ It's not fundamentally different — it's TF-IDF over the real, vendored ATT&CK 
 
 **16. How is MISP used?**
 As a CTI-sharing sink for resolved (attributed) incidents only — `cti_publisher.py`/`misp_sync.py` publish after the Neo4j write, with failures caught and logged non-fatally. UNKNOWN events are never published to MISP (nothing to attribute). Live publish success has not been reconfirmed this session (`MISP_API_KEY` was empty as of a prior audit).
+*Planned:* reconfirm once `MISP_API_KEY` is configured and the MISP service is running for a verification session.
 
 **17. What happens when Neo4j is unavailable?**
 Not formally tested this session. The driver is constructed eagerly at import time; a connection failure would surface as an exception on first query, not gracefully degraded. This is a real, disclosed gap — we have not built or tested a Neo4j-unavailable fallback path.
+*Planned:* add an integration test that simulates Neo4j unavailability and verifies the fallback path.
 
 **18. What are the current system limitations?**
 See `10_limitations_and_future_work.md` in full; top items: dataset not ready for calibration (Phase 17), NEXT_TECHNIQUE insufficient for supervised ML (Phase 18), a known non-blocking maintenance-thread exception, and the unresolved `100500`/`100501` duplicate rule question.
+*Planned:* the Phase 19 dataset-expansion spec addresses the dataset and NEXT_TECHNIQUE gaps; the maintenance-thread bug and the `100500`/`100501` duplicate-rule question both have concrete, scoped fixes queued (see `10_limitations_and_future_work.md`).
 
 **19. What is actually novel?**
 Not the individual techniques (graph DBs, TF-IDF, XGBoost, GraphSAGE are all standard). The defensible claim is the *system-level design decision*, correctly and verifiably implemented: separating telemetry ingestion from ATT&CK attribution with mandatory provenance, an explicit UNKNOWN outcome, and structurally-proven non-contamination of downstream learning — applied specifically to the real problem of Wazuh's incomplete native MITRE coverage.

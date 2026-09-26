@@ -25,8 +25,11 @@ CYUKTI separates ingestion from attribution with an explicit, provenance-tracked
 
 The ML components do not currently generalize, and the project says so explicitly rather than hiding it:
 - XGBoost severity classifier: 91.7% accuracy, but **in-sample only** (n=60, the same rows it was trained on) — no held-out split exists anywhere in the repository.
+  *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation (see Section 8).
 - NEXT_TECHNIQUE prediction: 33.3% accuracy (4/12 evaluable predictions) — the project's own dataset-validity audit (Phase 17) and NEXT_TECHNIQUE audit (Phase 18) independently concluded, respectively, `NOT_READY_FOR_CALIBRATION` and `INSUFFICIENT_FOR_SUPERVISED_ML`, **before** these numbers were even computed.
+  *Planned:* the same Phase 19 dataset expansion is intended to accumulate enough real technique transitions to revisit this verdict.
 - Threat attribution: zero accuracy metric exists, because no ground-truth attacker-identity dataset exists.
+  *Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed (see Section 8).
 
 ## 6. Why the negative results matter (and strengthen, not weaken, academic credibility)
 
@@ -37,8 +40,11 @@ A system that reports 91.7% accuracy without disclosing it's in-sample, or 33.3%
 - Real, live, multi-service integration (Wazuh + Neo4j + a trained ML stack) with tested, working recovery from a real infrastructure outage — beyond a bare prototype.
 - A genuine production defect (44 orphaned AttackEvents) was found, root-caused, and durably repaired with proven idempotency — evidence of engineering rigor, not just design intent.
 - No held-out evaluation methodology exists for any ML component, and the project's own internal audits explicitly rule several core modules not-yet-viable for the claims a mature system would make — this rules out "Production-like Research System" or higher.
+  *Planned:* see Section 8, item 2 — a held-out ML evaluation once the Phase 19 dataset expansion makes one statistically meaningful.
 - At least one disclosed, unfixed defect remains live (a maintenance-thread exception triggered by a specific UNKNOWN-first-event condition) — non-blocking, but unresolved by deliberate choice pending broader scope authorization.
+  *Planned fix:* initialize `context.last_seen` in `create_campaign_context()` (or guard `expire_active_campaigns()` against `None`) once `campaign_manager.py` is back in scope; add a regression test for the UNKNOWN-first-event path (see Section 8, item 4).
 - Several major modules (attribution, GNN on real data, RAG retrieval quality, MISP live publication) have zero quantitative benchmark beyond unit-test-level verification.
+  *Planned:* the Phase 19 dataset expansion and the attribution/RAG/MISP mitigations described above and in Section 8 target each of these gaps.
 
 ## 8. Future experimental path (smallest set to move toward EMPIRICALLY VALIDATED RESEARCH SYSTEM)
 
@@ -62,6 +68,7 @@ Everything above this line reflects the project state through the previous sessi
 **What was implemented**: `ActionMeta.depends_on` (one real, verified dependency: ATTRIBUTION_MATCH → CAMPAIGN_HISTORY, confirmed by reading `threat_attribution_engine.attribute()`'s source), a bounded `redundancy_penalty` term in the next-best-evidence value function, per-instance `Evidence.derived_from` tracking, `InvestigationState.candidate_hypotheses`, and a compounding (rather than flat) conflict penalty. 14 new tests, 164/164 total passing, zero regressions.
 
 **What was not established**: live-Neo4j validation. Infrastructure was unavailable throughout this session and was not restarted to force a result — this is disclosed plainly, consistent with the rest of this project's evidence discipline, rather than substituted with a fake demonstration.
+*Planned:* re-run the live-Neo4j integration validation once the infrastructure is available in a future session.
 
 **Full detail**: `review/evidence_aware_investigation.md`.
 
@@ -74,6 +81,7 @@ Everything above reflects the state through the implementation session, when Neo
 **What was found, running unmodified `scripts/run_real_investigations.py` against 3 real campaigns:** confidence and uncertainty outputs are genuinely campaign-dependent on real data — final `investigation_confidence` ranged 0.069-0.184, `model_probabilities` differed substantially, all consistent with real evidence, not fixed numbers. But evidence-selection *order* was identical across all 3 real campaigns, to 3 decimal places on every per-step score. Reading `next_best_evidence.py` explains why: the ranking formula's only evidence-content-sensitive term applies to exactly one action (the model prediction); everything else depends on which action *types* have run, not what they returned — and all 3 real investigations exhausted the same fixed 8-action universe, so order was necessarily identical every time.
 
 **How this is being told in review**: as a real, mixed result, not a clean win. The strong form of "the investigator adapts what it looks at based on the campaign" is not supported by this data — say so directly if asked. The confidence/uncertainty architecture being genuinely data-dependent on real campaigns, and the dependency-discount mechanism firing correctly when its precondition is met, are supported and can be stated as such.
+*Planned:* revisit the NBE scoring formula so adaptive terms can encode evidence content rather than only action-type sequence, once that redesign is scoped.
 
 **Full detail**: `review/phase21_real_investigation_validation.md`, `review/phase21_real_investigation_results.json`.
 
@@ -88,5 +96,6 @@ This is an evaluation/ablation study, not new features — nothing in `investiga
 **What was found:** all 8 configurations agree, perfectly, across all 3 campaigns, at all 8 steps — 192 pairwise comparisons, 0 ranking differences, 0 score differences, not even a rounding-level discrepancy. Critically, isolating each adaptive term individually (novelty alone, uncertainty-reduction alone, redundancy alone) still produced zero cross-campaign variance — ruling out "the real signal is there but static terms are drowning it out" as the explanation. The actual explanation, traced to specific lines of code: the formula's "adaptive" terms respond only to *which action types have already run* (a coarse, sequence-level fact), never to *what those actions actually found*. The one term that could in principle carry real content (XGBoost's model-state term) is evaluated only at a moment that's structurally pinned to the same value every time, because the action that always runs immediately before it (`mitre_knowledge`) produces evidence with zero `relevance` by construction of its collector — so it can never move the coverage/reliability numbers that term depends on.
 
 **How this is being told in review:** as a root-cause finding, not a new negative result layered on the old one. Phase 21 said "the order didn't change"; Phase 22 says, with code-level precision and an exhaustive ablation, exactly why — and rules out the more forgiving explanation (signal present, just outweighed) in favor of the less forgiving one (no content-sensitive signal exists in the formula as written, for 7 of 8 actions).
+*Planned:* have the mitre_collector populate `Evidence.relevance` (or otherwise give step-1 evidence nonzero weight) so `current_uncertainty` can vary by campaign content, once that change is scoped.
 
 **Full detail**: `review/phase22_nbe_sensitivity_validation.md`, `review/phase22_nbe_sensitivity_results.json`.

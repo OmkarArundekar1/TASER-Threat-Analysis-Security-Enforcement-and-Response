@@ -127,11 +127,12 @@ Mean model confidence: 0.7639.
 | GNN embedding (p50/p95/p99) | 2.818 / 3.981 / 4.070 ms | same |
 | **End-to-end** `GET /api/incidents/<id>/overview` (p50/p95/p99) | **35.538 / 66.869 / 100.484 ms** | same — real HTTP round trip |
 | Throughput (end-to-end) | ~22.8 ops/sec | same |
-| Listener throughput (sustained ingestion rate) | NOT MEASURED / NOT AVAILABLE | Only qualitative "offset caught up, no backlog" observed live; not separately benchmarked |
-| Memory usage | NOT MEASURED / NOT AVAILABLE | Not instrumented |
+| Listener throughput (sustained ingestion rate) | NOT MEASURED / NOT AVAILABLE | Only qualitative "offset caught up, no backlog" observed live; not separately benchmarked. *Planned:* extend the benchmark harness to a sustained-load ingestion test once a suitable traffic generator is in place. |
+| Memory usage | NOT MEASURED / NOT AVAILABLE | Not instrumented. *Planned:* add memory profiling to the benchmark harness alongside the existing latency instrumentation. |
 
 Caveat carried from `BENCHMARKS.md`: single-process, single-machine, low-concurrency numbers on a development machine — not a load-tested production SLA.
 
 ## Investigation confidence architecture — real XGBoost probabilities (historical claim, not re-verified this session)
 
 The Phase 20 task brief for this session stated that real XGBoost probabilities were previously recorded for three named campaigns (CAMP_427A075C, CAMP_1429ADB4, CAMP_D8605E81) as part of validating the confidence architecture. **This session did not independently re-run or re-verify those specific numbers** — they are carried forward from prior-session project history, not fresh evidence gathered today. If citing them in a review, label them explicitly as "previously recorded, from project history" rather than as evidence generated during this audit.
+*Planned:* schedule a fresh live end-to-end investigation trace against Neo4j in the next verification session to independently re-verify these numbers.

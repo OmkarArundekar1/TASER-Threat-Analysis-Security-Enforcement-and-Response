@@ -260,6 +260,10 @@ from this decision entirely — it has a real, current consumer (the
 demo notebooks) and must be retained regardless of what happens to the
 rest of Category C.
 
+*Planned:* revisit the delete-vs-archive decision in a future session
+once product/architecture priorities allow a human to make the call
+this audit deliberately did not make on its own.
+
 ## 9. Tests
 
 ```bash
@@ -299,3 +303,8 @@ package. Pre-existing, unrelated to this session's change, not fixed
 here (out of scope — this session touches only `soc_engine/__init__.py`).
 The full regression suite (`tests/`, run via its normal `conftest.py`
 path setup) already covers `wazuh_listener.py` and passes.
+
+*Planned:* fix the import ordering (add `BACKEND_DIR` to `sys.path`
+before `from utils import generate_alert_id`) in a session scoped to
+touch `wazuh_listener.py`, with a regression test covering the
+dotted-module-path import case.

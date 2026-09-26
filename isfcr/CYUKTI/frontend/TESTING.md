@@ -177,6 +177,8 @@ as its own code says it should.
   pass. `RiskPropagation`'s and `QueryConsole`'s backend endpoints
   (`/api/risk/propagation`, `/api/query`) are already behaviorally
   verified at the API layer in `backend/tests/test_dashboard_api_routes.py`.
+  *Planned:* extend component coverage to these remaining components in
+  a future test-infrastructure pass, prioritized by usage.
 - **Real browser rendering / visual regression.** No Playwright,
   Cypress, or similar was introduced (none existed before, and the
   mission was explicit not to add one "unless genuinely necessary").

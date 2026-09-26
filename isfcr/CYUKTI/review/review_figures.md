@@ -35,6 +35,7 @@ Each figure below uses only numbers already established in `quantitative_results
 - **X-axis**: severity class. **Y-axis**: campaign count.
 - **Demonstrates**: severe class imbalance and a structurally empty High class — this figure should be framed as evidence *for* the `NOT_READY_FOR_CALIBRATION` verdict, not as a dataset-quality showcase.
 - **Must NOT imply**: that this distribution reflects real-world attack severity base rates — it reflects a small, non-representative lab dataset from 3 attacker identities.
+- *Planned:* the Phase 19 dataset-expansion spec directly targets this gap — more attackers/victims and real High-severity examples.
 
 ## Figure 5 — XGBoost confusion matrix
 - **Data source**: `evaluate_model.py` run, 2026-08-31, n=60.
@@ -43,12 +44,14 @@ Each figure below uses only numbers already established in `quantitative_results
 - **Values**: `[[1,2,1],[0,51,2],[0,0,3]]`.
 - **Demonstrates**: where the model's in-sample errors concentrate — specifically, that Critical is the weak class (only 1/4 correctly classified) despite strong aggregate accuracy.
 - **Must NOT imply**: generalization performance — the title/caption must state "in-sample, n=60, no held-out data" directly on the figure, not only in surrounding text.
+- *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 
 ## Figure 6 — NEXT_TECHNIQUE evaluable predictions (recommend a plain statement, not a chart)
 - **Data source**: Phase 18 dataset rebuild.
 - **Recommendation**: **do not chart this.** n=12 is too small to support a meaningful visual (a pie/bar chart of 4 vs 8 would look like it's presenting a real distribution when it's a single small offline experiment). Present as plain text: "4/12 correct (33.3%) — labeled `INSUFFICIENT_FOR_SUPERVISED_ML`."
 - **Demonstrates (as text, not a chart)**: the pipeline can be evaluated at all, and the project correctly self-identifies the result as statistically insufficient.
 - **Must NOT imply**: that a chart of 12 data points represents a validated accuracy rate.
+- *Planned:* the Phase 19 dataset expansion is intended to accumulate enough real technique transitions to revisit this verdict.
 
 ## Figure 7 (optional) — Test suite composition
 - **Data source**: `pytest -q -v` breakdown by file, 2026-09-14 re-run (historical — the file-by-file counts below have not been re-tallied since; the current total is 689 backend across 65 files, up from the ~150 these per-file counts summed to).

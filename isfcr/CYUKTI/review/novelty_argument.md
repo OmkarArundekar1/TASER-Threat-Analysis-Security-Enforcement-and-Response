@@ -19,8 +19,11 @@ CYUKTI structurally separates telemetry ingestion from ATT&CK attribution, enfor
 ## 4. What cannot yet be claimed
 
 - That this design measurably improves any downstream task's accuracy relative to a naive discard-or-fabricate baseline — no comparative experiment exists.
+  *Planned:* run a controlled comparative experiment against a naive discard-or-fabricate baseline once the Phase 19 dataset expansion provides enough scale to make the comparison meaningful.
 - That the mechanism generalizes beyond this specific Wazuh/Neo4j pipeline — it has been validated in exactly one deployment.
+  *Planned:* validate the same design on a second, independent Wazuh/Neo4j-style deployment to test generalization.
 - Any comparison to existing commercial or open-source SOC platforms — no such comparison exists in the repository, and none should be asserted without one.
+  *Planned:* benchmark against an open-source SIEM/SOAR baseline once a comparable test environment can be set up.
 - Novelty of the underlying components themselves (graph databases, TF-IDF, gradient boosting, GraphSAGE) — all are standard techniques; the contribution is their application and the specific safety guarantee around attribution, not the techniques themselves.
 
 ## 5. A 30-second oral explanation
@@ -32,6 +35,7 @@ CYUKTI structurally separates telemetry ingestion from ATT&CK attribution, enfor
 ## NEW PHASE RESULTS (2026-09-14): Evidence-Aware Adaptive Investigation
 
 Extends, does not replace, the novelty claim above. The same principle — never let source reliability alone stand in for the answer to the actual question being asked — now also governs *evidence selection* during investigation, not only MITRE attribution: the investigator recognizes when a candidate evidence-gathering action's information is code-verified to overlap already-collected evidence (e.g. ATTRIBUTION_MATCH vs. CAMPAIGN_HISTORY) and discounts it accordingly, rather than treating every additional fact as independent corroboration. This is a real, tested (164/164 passing) extension of the same underlying design discipline to a second investigative concern (evidence redundancy) beyond the first (attribution provenance). Live-data validation of this specific extension is `NOT MEASURED` this session — Neo4j was unavailable — and is disclosed as such rather than assumed. See `review/evidence_aware_investigation.md`.
+*Planned:* re-run the live-Neo4j integration validation once the infrastructure is available in a future session.
 
 ---
 
@@ -44,3 +48,4 @@ Neo4j became reachable later the same day and the real experiment was run (`revi
 ## PHASE 22 REAL-CAMPAIGN RESULTS (2026-09-14): the negative result is now mechanistically explained, not just observed
 
 An ablation study (`review/phase22_nbe_sensitivity_validation.md`) isolated each of the NBE formula's nominally-adaptive terms (novelty, uncertainty-reduction, dependency/redundancy) individually, across all 3 real campaigns and all 8 investigation steps — 192 pairwise comparisons total, zero divergence in any of them, including the 3 isolated-term configurations. This rules out "static terms are simply outweighing real adaptive signal" as the explanation and confirms instead that the adaptive terms currently only read *which action types have run*, never *what evidence content those actions returned*. **This does not change the novelty argument's boundary from what Phase 21 already established** — it replaces "we observed invariant ranking" with "we know precisely why, at the level of specific code paths, and have ruled out the alternative explanation." No stronger claim is licensed by this; if anything, it sharpens the honest boundary further: the current evidence-redundancy mechanism (the extension claimed above) is real and tested, but is provably insensitive to evidence content — it is a same-action-type-repeat guard, not a content-aware redundancy detector, and should be described that way if asked directly.
+*Planned:* give `mitre_collector.py` (and other static-scoring collectors) a real, non-zero relevance signal so novelty/redundancy discounting becomes content-aware rather than type-only — identified but out of scope for this project's remaining time.

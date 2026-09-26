@@ -307,22 +307,33 @@ work, not attempted here.
 
 - 71 samples, 59/12 split — small by any general ML convention;
   validation metrics (Section 9) should be read as directional, not
-  precise.
+  precise. *Planned:* the Phase 19 dataset expansion (or equivalent
+  real-campaign growth) is expected to widen this split.
 - 10.4% near-duplicate embedding pairs (Section 10) — partly expected
-  given real shape repetition, not fully explained.
+  given real shape repetition, not fully explained. *Planned:* revisit
+  once more structurally-diverse real campaigns exist to test whether
+  the near-duplicate rate falls as shape repetition decreases.
 - Model's default-threshold (0.5) edge-existence classification is
   worse than a trivial baseline (Section 12) — ranking quality (AUC) is
-  the metric that shows real signal, not raw F1.
+  the metric that shows real signal, not raw F1. *Planned:* if a
+  calibrated decision threshold is ever needed downstream, tune it
+  explicitly against a held-out set rather than the default 0.5.
 - Temporal analysis (Section 11) covers only 21 campaigns, one of
-  which is an exception to the main finding.
+  which is an exception to the main finding. *Planned:* re-run once
+  more real campaigns accumulate enough distinctly-timestamped events
+  to grow this subset.
 - No embedding-dimension or loss-weighting hyperparameter search was
   performed — the configuration (Section 8) is a documented, justified
-  first choice, not a tuned optimum.
+  first choice, not a tuned optimum. *Planned:* run a small search once
+  a downstream consumer justifies the extra tuning effort.
 - The `GraphSnapshotLoader` untyped-pattern finding (`GNN_OBJECTIVE_DECISION.md`
   Section 8) still applies to the base 71-graph dataset used here
   (unchanged, per this phase's explicit instruction not to touch the
   loader) — the temporal dataset (Section 7) deliberately avoids it via
   a separate, typed query, but the base autoencoder dataset does not.
+  *Planned:* resolve the loader-scope decision (`GNN_OBJECTIVE_DECISION.md`
+  Section 10's L1-L3 options) and re-extract the base dataset
+  consistently once that decision is made.
 
 ## What has NOT been demonstrated
 
@@ -337,6 +348,11 @@ work, not attempted here.
 - No production runtime benefit of any kind — this phase produces and
   evaluates embeddings only; nothing in `dashboard_api.py`,
   `investigation/`, or any decision engine consumes them.
+
+*Planned:* these downstream comparisons (severity, correlation,
+attribution) are natural candidates for a future evaluation phase once
+a production-integration decision is made — see `GNN_PRODUCTION_INTEGRATION.md`
+for the phase that later wires the embedding in additively.
 
 ---
 

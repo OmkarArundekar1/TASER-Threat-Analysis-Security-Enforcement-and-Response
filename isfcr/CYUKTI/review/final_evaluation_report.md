@@ -1,6 +1,7 @@
 # CYUKTI — Final Evaluation Report
 
 > 2026-09-26. This report documents the outcome of the independent-ground-truth review lifecycle task. **Headline finding: no dataset reached LOCKED status this session, because no independent human reviewer was available.** Every number in this report remains `MEASURED_PRELIMINARY`, exactly as it was before this task started. What changed is the review infrastructure (now complete and tested for all 4 preliminary categories, not just 2) and a clean anti-circularity audit. This is reported plainly rather than dressed up as more progress than it is.
+*Planned:* Section 20 below enumerates the exact human actions (fill in each review queue, then `lock_dataset()`) needed to move each category from `MEASURED_PRELIMINARY` to `MEASURED`.
 
 ## 1. Evaluation architecture
 
@@ -63,6 +64,7 @@ Every "Final" cell is genuinely empty, not populated with the preliminary number
 ## 13. Confidence intervals
 
 Unchanged from the prior task: attribution's 95% Wilson CI [0.598, 0.851] is the only interval currently computed and reported (via `evaluation_metrics.wilson_confidence_interval`). MITRE mapping, campaign correlation, and threat qualification do not yet have reported intervals in the evaluator output — a real gap, noted here rather than silently left implicit. (Not fixed this task, since it touches evaluator code the task said not to rebuild; flagged as a candidate follow-up.)
+*Planned:* add Wilson-interval reporting to the MITRE mapping, campaign correlation, and threat qualification evaluators in the next evaluator-code pass.
 
 ## 14. Failure/disagreement analysis
 

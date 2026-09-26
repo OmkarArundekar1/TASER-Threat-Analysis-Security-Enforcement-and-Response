@@ -16,6 +16,7 @@
 | UNKNOWN | 94 | 78.3% |
 
 None of the six specifically-fixed rule IDs (100510, 100511, 100513, 210001, 210011, and the sixth from Section 4.9) appear in this 120-alert window — it's dominated by Suricata APT-repo noise (rule 86601), dpkg housekeeping (2902/2904), and rule 100500 (Nmap reconnaissance, already correctly resolving to T1595 via NATIVE_WAZUH *before* this fix — it was never one of the broken rules). This is **not** evidence the fix failed; the specific attack types the fix targeted (brute force, port-scan variants, DoS) simply haven't been re-triggered against this environment since the reboot. **Status: rules active in the live manager, not yet exercised end-to-end by a matching alert.**
+*Planned:* re-run `scripts/mitre_coverage_report.py` once brute-force, port-scan, or DoS traffic is generated against the environment, to confirm the fixed rules resolve end-to-end.
 
 ## Phase progression (verified against repository/logs, not blindly trusted)
 
@@ -76,6 +77,7 @@ Prior audit found rule IDs `100500` and `100501` defined **twice** in `local_rul
 **New evidence this session**: live alert data shows rule `100500` firing 25 times with `rule.mitre = {"id": ["T1595"], "tactic": ["Reconnaissance"], "technique": ["Active Scanning"]}` present in the raw Wazuh alert. This is **behavioral evidence** that the Nmap-detection definition is the one currently active — but it is not the same as a direct `wazuh-analysisd -t` confirmation, and the *other* duplicate (`100501`) has not fired in this window, so its status remains unconfirmed either way.
 
 **Status: unresolved — requires root-level `wazuh-analysisd -t` validation to confirm definitively.** Do not claim it is resolved; do not guess which definition wins for `100501`.
+*Planned fix:* run `wazuh-analysisd -t` with root access in a maintenance window to get a direct confirmation, then remove or renumber whichever rule is the duplicate.
 
 ## T1548.003 (Part K)
 
@@ -83,6 +85,7 @@ Prior audit found rule IDs `100500` and `100501` defined **twice** in `local_rul
 - **Native Wazuh resolution**: valid — rule `5401` ("Failed attempt to run sudo") carries a genuine native Wazuh mapping to `T1548.003` (Abuse Elevation Control Mechanism: Sudo and Sudo Caching), tactics `Privilege Escalation` + `Defense Evasion`.
 - **Stage mapping**: `mitre_mapper.MITRE_TO_STAGE` has no entry for it, so any resolved event carrying this technique contributes `tps=0` via the `MITRE_TO_STAGE.get(id, "Unknown")` fallback — not because the resolution is wrong, but because CYUKTI's risk-stage taxonomy hasn't been extended to include it.
 - These are **separate concerns**: MITRE attribution correctness (native, valid) vs. CYUKTI's own risk-scoring coverage (incomplete). Not fixed, per instruction.
+  *Planned fix:* add a `T1548.003` entry to `MITRE_TO_STAGE` in the same pass as the next taxonomy update.
 
 ## UNKNOWN safety invariants — live-verified, not just claimed
 
@@ -102,4 +105,4 @@ Prior audit found rule IDs `100500` and `100501` defined **twice** in `local_rul
 | No `NEXT_TECHNIQUE` contamination | Confirmed — edge count stayed at 3 before and after |
 | No prediction triggered | Confirmed structurally: `predict_next()` is never called in the UNKNOWN code branch (line-number control-flow proof from Phase 20C stands, re-checked against current code) |
 | No MISP publication for UNKNOWN | Confirmed structurally: `sync.publish_campaign()` is never called in the UNKNOWN branch |
-| Multi-technique native preservation | Confirmed by test (`test_multiple_native_mitre_ids_are_preserved`, `test_multi_technique_native_alert_uses_first_as_primary_but_preserves_all`) — no live multi-technique native alert has been observed to independently confirm this in production traffic yet |
+| Multi-technique native preservation | Confirmed by test (`test_multiple_native_mitre_ids_are_preserved`, `test_multi_technique_native_alert_uses_first_as_primary_but_preserves_all`) — no live multi-technique native alert has been observed to independently confirm this in production traffic yet. *Planned:* confirm against a live multi-technique native alert once one is observed in production traffic. |

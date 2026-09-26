@@ -38,20 +38,24 @@
 
 ## Slide 6 — Prediction / ML
 - XGBoost severity classifier: real trained artifact, in-sample accuracy 0.917 (n=60, **not held-out** — say this explicitly).
+  *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 - SSL autoencoder trained on real CICIDS2017 windows; hand-built GNN (no torch_geometric).
 - NEXT_TECHNIQUE learning: only 3 real edges — own audit concluded `INSUFFICIENT_FOR_SUPERVISED_ML`.
+  *Planned:* the same Phase 19 dataset expansion is intended to accumulate enough real technique transitions to revisit this verdict.
 - Metric to show: confusion matrix; the `INSUFFICIENT_FOR_SUPERVISED_ML` verdict.
 - **Say**: "We built the full ML pipeline correctly, then used our own validity gate to conclude the current dataset can't yet support a real predictive claim — that's a finding, not a failure."
 
 ## Slide 7 — Threat Attribution
 - `threat_attribution_engine.py` implemented, evidence-collector-tested.
 - No ground-truth attribution dataset exists — accuracy is `NOT MEASURED`.
+  *Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed.
 - **Say**: "Attribution is implemented and exercised in the evidence pipeline, but we don't have a labeled dataset to report an accuracy number against, and we're not going to invent one."
 
 ## Slide 8 — Evidence / RAG / MISP
 - 6 evidence-source collectors (MITRE, graph, detection, CTI, campaign history, attribution).
 - RAG retriever indexes 500+ real ATT&CK techniques via TF-IDF over the vendored STIX corpus.
 - MISP client initializes against the local instance; live publish success not confirmed this session.
+  *Planned:* reconfirm once `MISP_API_KEY` is configured and the MISP service is running for a verification session.
 - **Say**: "Evidence is multi-source and grounded in a real ATT&CK corpus, not a toy dataset."
 
 ## Slide 9 — Phase 20: MITRE Resolution
@@ -65,22 +69,22 @@
 | Component | Implementation Status | Dataset/Test Size | Primary Metric | Result | Evidence |
 |---|---|---|---|---|---|
 | Wazuh ingestion | Complete, live | 120 live alerts (current snapshot) | Ingestion success (post-Phase 20) | 100% ingested (resolved or preserved-unknown) | Live listener log |
-| Neo4j graph | Complete, live | 111 Campaigns / 212 AttackEvents (2,539 total nodes, 20,804 total relationships) | Orphan rate | 0/124 (2026-09-12 check; not re-run at current scale) | Live Cypher query, 2026-09-25 |
+| Neo4j graph | Complete, live | 111 Campaigns / 212 AttackEvents (2,539 total nodes, 20,804 total relationships) | Orphan rate | 0/124 (2026-09-12 check; not re-run at current scale) — *Planned:* re-run at the current 212-event scale in the next verification session | Live Cypher query, 2026-09-25 |
 | Campaign reconstruction | Complete, validated | 44 real orphaned events repaired | Orphans after repair | 0 (as of 2026-09-12) | `campaign_reconstruction.py`, 10 tests |
-| Attack chain (NEXT_TECHNIQUE) | Implemented, data-limited | 3 learned edges | Evaluable prediction accuracy | 4/12 correct (33%) | Phase 18 rebuild |
-| MITRE mapping (stage) | Complete, 1 known gap | 13 technique→stage entries | T1548.003 coverage | Missing | `mitre_mapper.py`, live check |
+| Attack chain (NEXT_TECHNIQUE) | Implemented, data-limited | 3 learned edges | Evaluable prediction accuracy | 4/12 correct (33%) — *Planned:* Phase 19 expansion to accumulate enough real transitions to revisit this | Phase 18 rebuild |
+| MITRE mapping (stage) | Complete, 1 known gap | 13 technique→stage entries | T1548.003 coverage | Missing — *Planned fix:* add a `T1548.003` entry in the next taxonomy update | `mitre_mapper.py`, live check |
 | MITRE resolver (Phase 20) | Complete, live-validated | 120 live alerts (post rule-fix/reboot) | Resolution coverage | 21.7% native / 78.3% unknown | `mitre_coverage_report.py`, 2026-09-25 |
 | UNKNOWN handling | Complete, live-validated | 5 real UNKNOWN events | Fabricated attack_id | 0 | Direct Neo4j inspection |
-| Prediction engine | Implemented, not viable yet | 12 evaluable transitions | Own validity verdict | `INSUFFICIENT_FOR_SUPERVISED_ML` | Phase 18 audit |
-| Attribution | Implemented, unvalidated | — | Accuracy | NOT MEASURED | No ground-truth dataset |
+| Prediction engine | Implemented, not viable yet | 12 evaluable transitions | Own validity verdict | `INSUFFICIENT_FOR_SUPERVISED_ML` — *Planned:* revisit once Phase 19 accumulates enough real transitions | Phase 18 audit |
+| Attribution | Implemented, unvalidated | — | Accuracy | NOT MEASURED — *Planned:* build a ground-truth attacker-identity benchmark dataset | No ground-truth dataset |
 | RAG | Complete, tested | 500+ real ATT&CK docs | Index size | >500 documents | `test_rag.py` |
-| MISP | Implemented, unconfirmed live | — | Publish success | NOT MEASURED | Client initializes; not confirmed |
-| SOAR/Playbook layer | Complete, unit-tested | 83 tests, 9 files | Live Shuffle trigger | Not live-executed (webhook configured, unfired) | `tests/test_soar_*.py` |
+| MISP | Implemented, unconfirmed live | — | Publish success | NOT MEASURED — *Planned:* reconfirm once `MISP_API_KEY` is configured and MISP is running | Client initializes; not confirmed |
+| SOAR/Playbook layer | Complete, unit-tested | 83 tests, 9 files | Live Shuffle trigger | Not live-executed (webhook configured, unfired) — *Planned:* fire the configured webhook in a live verification session | `tests/test_soar_*.py` |
 | Dashboard/API | Complete | 46 routes (33 core + 13 SOAR) | — | Passing | `test_dashboard_api.py`, `test_soar_api.py` |
-| Dataset generation | Complete, frozen | 60 campaigns | Validity gate | `NOT_READY_FOR_CALIBRATION` | Phase 17 report |
-| ML (XGBoost) | Complete, in-sample only | 60 rows, no held-out split | Accuracy (in-sample) | 0.917 | `evaluate_model.py`, 2026-08-31 |
+| Dataset generation | Complete, frozen | 60 campaigns | Validity gate | `NOT_READY_FOR_CALIBRATION` — *Planned:* Phase 19 dataset-expansion spec directly targets this verdict's gaps | Phase 17 report |
+| ML (XGBoost) | Complete, in-sample only | 60 rows, no held-out split | Accuracy (in-sample) | 0.917 — *Planned:* introduce a held-out split once Phase 19 expansion lands | `evaluate_model.py`, 2026-08-31 |
 | ML (SSL autoencoder) | Complete, trained | Real CICIDS2017 windows | Convergence | Confirmed by test | `test_ssl_pipeline.py` |
-| ML (GNN) | Implemented, synthetic-tested only | Synthetic graphs | Real-data benchmark | NOT MEASURED | `test_gnn.py` |
+| ML (GNN) | Implemented, synthetic-tested only | Synthetic graphs | Real-data benchmark | NOT MEASURED — *Planned:* build a real-campaign benchmark once Phase 19 provides enough real campaign graphs | `test_gnn.py` |
 | Latency (end-to-end) | Measured | Real HTTP round trip | p50 / p95 | 35.5ms / 66.9ms | `run_benchmarks.py`, 2026-09-25 |
 | Test suite | Complete | 798 tests (689 backend, 65 files + 109 frontend, 17 files) | Pass rate | 798/798 | Fresh run, 2026-09-25 |
 
@@ -88,10 +92,15 @@
 
 ## Slide 11 — Limitations
 - Dataset frozen at 60 campaigns, 3 attackers, 2 victims — Phase 17's own verdict: `NOT_READY_FOR_CALIBRATION`.
+  *Planned:* the Phase 19 dataset-expansion spec directly targets every one of these gaps — more attackers/victims, deduplicated feature vectors, deconfounded severity labels, spread-out collection dates, and real High-severity examples.
 - NEXT_TECHNIQUE learning: only 3 edges — `INSUFFICIENT_FOR_SUPERVISED_ML`.
+  *Planned:* the same Phase 19 dataset expansion is intended to accumulate enough real technique transitions to revisit this verdict.
 - No held-out ML evaluation split exists anywhere.
+  *Planned:* introduce a held-out split once the Phase 19 dataset expansion provides enough campaigns to make one meaningful.
 - A recurring, non-blocking exception in the maintenance thread (`campaign_manager.expire_active_campaigns()`, `context.last_seen=None`) — known, not fixed, does not affect ingestion correctness.
+  *Planned fix:* initialize `context.last_seen` in `create_campaign_context()` (or guard `expire_active_campaigns()` against `None`) once `campaign_manager.py` is back in scope; add a regression test for the UNKNOWN-first-event path.
 - `100500`/`100501` duplicate local rule IDs — formally unresolved (needs root `wazuh-analysisd -t`); new live evidence suggests the Nmap-detection definition is active, not confirmed.
+  *Planned fix:* run `wazuh-analysisd -t` with root access in a maintenance window to get a direct confirmation, then remove or renumber whichever rule is the duplicate.
 - **Say**: "We're disclosing every open issue we know about, including one we found live yesterday and deliberately have not fixed yet."
 
 ## Slide 12 — Future Work
