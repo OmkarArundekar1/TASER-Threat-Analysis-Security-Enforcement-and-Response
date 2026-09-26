@@ -180,6 +180,43 @@ def test_technique_and_stage_propagate_as_tags():
     assert "stage:Credential Access" in tag_names
 
 
+def test_recommendation_dicts_from_get_recommendations_serialize_as_scalar_values():
+    """Regression test for the real, live-reproduced MISP 405 root cause
+    (2026-09-26): recommendation_engine.get_recommendations() returns a
+    list of dicts (recommendation/priority/mitre_mitigation/reason/
+    predicted_technique/traceability), not bare strings -- but
+    MISPEventGenerator.generate() was passing that dict straight through
+    as a MISP Attribute `value`. MISP rejected the whole event with
+    `MethodNotAllowedException: Attribute value is an array, which is
+    not allowed` (an Event-model validation failure, not a routing
+    problem), which CTIPublisher surfaced as an HTTP 405 on
+    /events/add. Confirmed via the live MISP instance's own
+    app/tmp/logs/error.log for this exact payload shape. Every
+    attribute value must be a JSON scalar, whatever shape the caller's
+    recommendations happen to be in.
+    """
+    mitigation_dict = {
+        "recommendation": "Account Use Policies",
+        "priority": "MITRE",
+        "mitre_mitigation": "M1036",
+        "reason": "Account Use Policies help mitigate unauthorized access...",
+        "predicted_technique": "T1078",
+        "traceability": "MITRE ATT&CK → M1036",
+    }
+    incident = _incident(recommendations=[mitigation_dict, "Rotate credentials"])
+    event = MISPEventGenerator().generate(incident)
+
+    comment_values = [a["value"] for a in event["Event"]["Attribute"] if a["type"] == "comment"]
+    assert "Account Use Policies" in comment_values
+    assert "Rotate credentials" in comment_values
+    for attribute in event["Event"]["Attribute"]:
+        assert isinstance(attribute["value"], (str, int, float, bool)), (
+            f"MISP attribute value must be a scalar, got "
+            f"{type(attribute['value'])}: {attribute['value']!r}"
+        )
+    json.dumps(event)  # must still serialize with no custom hacks
+
+
 def test_attacker_ip_is_a_typed_ip_src_ioc_attribute():
     """The only real IOC CYUKTI currently tracks end to end is the
     attacker IP (extract_iocs() in realtime_socgraph.py) -- verify it

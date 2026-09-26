@@ -135,11 +135,22 @@ class MISPEventGenerator:
                     }
                 )
         for recommendation in incident.recommendations:
+            # get_recommendations() (recommendation_engine.py) returns
+            # dicts ({"recommendation": ..., "priority": ..., ...}), not
+            # bare strings -- a MISP Attribute value must be a scalar, so
+            # passing the dict through as-is makes MISP reject the whole
+            # event with a MethodNotAllowedException ("Attribute value is
+            # an array"), surfaced as an HTTP 405 on /events/add.
+            text = (
+                recommendation["recommendation"]
+                if isinstance(recommendation, dict)
+                else recommendation
+            )
             attributes.append(
                 {
                     "type": "comment",
                     "category": "Other",
-                    "value": recommendation,
+                    "value": text,
                 }
             )
         tags = [

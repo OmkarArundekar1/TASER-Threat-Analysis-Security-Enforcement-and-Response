@@ -99,6 +99,52 @@ unambiguously knows which one actually ran), and
 (this scenario now also correctly reports `success: False`, per fix 1
 above, rather than a mislabeled success).
 
+**3. Live-reproduced 405 on `/events/add` (2026-09-26): recommendation
+dicts sent as MISP Attribute values.** Once `MISP_API_KEY` was
+populated and the listener ran live against real alerts, `/events/add`
+succeeded for the first three campaign publishes (`CAMP_718FCBC8`,
+`CAMP_641F34D7`, `CAMP_EC3B6019` — Events 2028-2030, all realistic
+0.4-0.9s latencies), then failed with HTTP 405 on every subsequent
+publish attempt (`CAMP_86EC269F` onward), each returning in 40-120ms —
+far faster than a genuine create, the first sign this wasn't a routing
+problem. **This was not an endpoint or MISP-configuration issue.** The
+live MISP instance's own `app/tmp/logs/error.log` recorded the real
+cause for every failing request:
+```
+Error: [MethodNotAllowedException] Attribute value is an array, which
+is not allowed: [Account Use Policies, MITRE, M1036, <mitigation
+description>, T1078, MITRE ATT&CK -> M1036]
+Request URL: /events/add
+```
+MISP's `Event` model throws `MethodNotAllowedException` (mapped to
+HTTP 405 by CakePHP) as a **data-validation failure** when an
+Attribute's `value` is non-scalar — nothing to do with the HTTP verb
+or route. `recommendation_engine.get_recommendations()` returns a list
+of dicts (`recommendation`/`priority`/`mitre_mitigation`/`reason`/
+`predicted_technique`/`traceability`), not bare strings.
+`MISPEventGenerator.generate()` was passing each dict straight through
+as an Attribute `value`; `realtime_socgraph.py` already knew
+recommendations could be dicts (it extracts `rec["recommendation"]`
+before printing) but never applied that extraction before handing the
+raw list to `IncidentContext`. The first three campaigns published
+successfully only because `predict_next()` had not yet produced a
+prediction for them (`recommendations` stayed the empty-list default);
+the first campaign with a real prediction pulled MITRE mitigation
+dicts from Neo4j via `get_recommendations()` and every publish from
+then on hit this defect. The existing test fixtures never caught it
+because `_incident()` in `test_misp_integration.py` always used a
+plain string list (`["Rotate credentials"]"`), a shape that never
+occurs once predictions exist in production.
+
+**Fixed** in `misp_event_generator.py`: the recommendation loop now
+extracts `recommendation["recommendation"]` when the entry is a dict,
+matching the pattern already used in `realtime_socgraph.py`'s print
+path. **Live-verified after the fix**: republishing an event with the
+exact same dict-shaped recommendation that previously produced the 405
+now returns `200` with a real MISP Event id; the test event was
+deleted immediately after verification. Regression test:
+`test_recommendation_dicts_from_get_recommendations_serialize_as_scalar_values`.
+
 No other defects were found; the retry/cache/error-handling design
 otherwise matched its own documented behavior in every scenario
 tested.
@@ -143,18 +189,36 @@ self-signed dev MISP instance, not something this session changed.
 
 ## Live verification
 
-**LIVE MISP UNAVAILABLE FOR AUTHENTICATED VERIFICATION — CONNECTIVITY
-LIVE-VERIFIED, MOCKED INTEGRATION VERIFIED FOR EVERYTHING ELSE.**
+**UPDATE (2026-09-26): `MISP_API_KEY` is now populated in
+`backend/.env` and the full authenticated round trip has been
+live-verified** — superseding the "unavailable for authenticated
+verification" note below, which is kept for historical record.
+
+Real, live, authenticated publishes from the running listener
+(`backend/logs/prerana_listener.log`): `POST /events/add` succeeded
+(`200`) for `CAMP_718FCBC8` (Event 2028), `CAMP_641F34D7` (Event 2029),
+and `CAMP_EC3B6019` (Event 2030), each with realistic 0.4-0.9s
+latency. `POST /events/restSearch` succeeded (`200`) on every call
+throughout the entire session, including during the window where
+`/events/add` failed — see the defect writeup above for the real cause
+(a data-validation failure in the generated event, not the endpoint or
+MISP config) and the live re-verification performed after the fix
+(republish with the same failing payload shape → real `200` + Event
+id, test event deleted immediately after).
+
+**Historical note (pre-2026-09-26, kept for record):**
+LIVE MISP UNAVAILABLE FOR AUTHENTICATED VERIFICATION — CONNECTIVITY
+LIVE-VERIFIED, MOCKED INTEGRATION VERIFIED FOR EVERYTHING ELSE.
 
 This environment's `backend/.env` has `MISP_URL=https://localhost:8443`
 reachable and confirmed to be a genuine, live MISP instance (real
 login page, MISP's characteristic security headers and static assets).
-`MISP_API_KEY` is genuinely empty in this environment (confirmed by
-reading `config.MISP_API_KEY`, not assumed) — matching the historical
-Phase 19 note.
+`MISP_API_KEY` was genuinely empty in this environment at the time
+(confirmed by reading `config.MISP_API_KEY`, not assumed) — matching
+the historical Phase 19 note.
 
-What was verified for real against the live instance (read-only,
-unauthenticated, nothing published): `CTIPublisher.health_check()`,
+What was verified for real against the live instance at that time
+(read-only, unauthenticated, nothing published): `CTIPublisher.health_check()`,
 called against the real server through the real `CTIPublisher`, sent a
 real HTTP request and received a real MISP response — `403` with
 MISP's actual JSON error body ("Authentication failed. Please make
@@ -165,15 +229,6 @@ transport layer (TLS, headers, JSON parsing, status handling) works
 correctly end to end against a real MISP server, and that the
 missing-credential failure path degrades safely and observably rather
 than reporting success or crashing.
-
-What could **not** be verified live: a full authenticated
-create/search/update round trip (`create_event`, `search_campaign`,
-`update_event`, `event_exists`) — these all require a valid MISP
-automation key, which this session does not have and must not request
-or expose. **Smallest required human action**: populate
-`MISP_API_KEY=` in `backend/.env` with a valid MISP automation key
-(MISP web UI → user profile → Auth keys) and re-run the live check
-below.
 
 Every other publisher/generator/sync behavior in this document is
 verified against a mocked HTTP transport
@@ -195,11 +250,12 @@ print('health_check:', pub.health_check())
 
 ## Tests
 
-`backend/tests/test_misp_integration.py` — 29 tests: event generation
+`backend/tests/test_misp_integration.py` — 30 tests: event generation
 (basic structure, attribution enrichment, campaign/operation
-propagation, technique tags, the attacker-IP IOC, JSON serialization),
+propagation, technique tags, the attacker-IP IOC, recommendation-dict
+scalar-value regression, JSON serialization),
 publisher success/auth-failure/5xx/4xx/timeout/connection-failure/
-missing-config/malformed-URL paths, the two fixed defects above,
+missing-config/malformed-URL paths, the three fixed defects above,
 credential-leakage checks, the full idempotency/dedup matrix (create,
 update, stale-cache self-heal, cache-miss-but-MISP-has-it, CTI-policy
 gating), and one full-pipeline test using real
