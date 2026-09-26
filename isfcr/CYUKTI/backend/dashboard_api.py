@@ -1969,4 +1969,13 @@ def ml_predict_severity():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5002)
+    # threaded=True: the dashboard's own frontend routinely fires 8-13
+    # concurrent requests at once (DashboardContext.refreshAll's 8
+    # parallel calls, plus IncidentView's own overview/timeline/RAG/
+    # response-plan/SOAR-recommendations calls when Explore Path opens).
+    # Werkzeug's default dev server handles one connection at a time;
+    # every route already opens its own per-request Neo4j session
+    # (driver.session() is safe to use concurrently) and soar/memory.py
+    # opens a fresh sqlite connection per call under its own lock, so
+    # nothing here depends on single-threaded execution.
+    app.run(host='0.0.0.0', port=5002, threaded=True)
