@@ -1,0 +1,4 @@
+query_id,query_text,"relevant_ids (fill in, comma-separated doc/campaign ids actually relevant)",reviewer
+CAMPAIGN_NARRATIVE-Q01,campaign targeting pes1ug23cs411-VirtualBox from 192.168.56.106,,
+CAMPAIGN_NARRATIVE-Q02,campaign with mixed exploitation techniques and high risk score,,
+CAMPAIGN_NARRATIVE-Q03,repeated brute-force campaign against the same victim host,,

@@ -1,0 +1,11 @@
+{
+  "task": "investigation_confidence_accuracy",
+  "status": "NOT_MEASURED",
+  "n": 0,
+  "metrics": {},
+  "ground_truth_review_status": "",
+  "dataset_name": "",
+  "method": "",
+  "limitations": [],
+  "reason": "No independent analyst verdicts exist at evaluation/labels/investigation_verdicts.json. CYUKTI's investigation loop has been run against real campaigns (Phase 21/22, review/phase21_real_investigation_validation.md), but no human has independently judged whether the resulting top hypothesis was actually correct for any of those runs. Building this requires a reviewer to read the real evidence trail and judge it -- see evaluation/review/export_review_queue.py."
+}

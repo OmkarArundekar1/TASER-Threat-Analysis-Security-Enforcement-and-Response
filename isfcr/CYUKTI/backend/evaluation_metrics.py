@@ -220,3 +220,204 @@ def mean_reciprocal_rank(relevant_ids_per_query: list[set], ranked_ids_per_query
         rank = next((i + 1 for i, item in enumerate(ranked) if item in relevant), None)
         reciprocal_ranks.append(1.0 / rank if rank else 0.0)
     return sum(reciprocal_ranks) / len(reciprocal_ranks) if reciprocal_ranks else 0.0
+
+
+def ndcg_at_k(graded_relevance: dict, ranked_ids: list, k: int) -> float:
+    """Normalized Discounted Cumulative Gain at K, for graded relevance
+    (e.g. 0=irrelevant .. 3=highly relevant), used for RAG evaluation
+    where a query set has graded rather than binary judgments.
+    `graded_relevance`: item_id -> relevance grade (missing = 0)."""
+    import math
+
+    def _dcg(ids: list) -> float:
+        return sum(
+            graded_relevance.get(item, 0) / math.log2(i + 2)
+            for i, item in enumerate(ids[:k])
+        )
+
+    dcg = _dcg(ranked_ids)
+    ideal_order = sorted(graded_relevance, key=lambda i: graded_relevance[i], reverse=True)
+    idcg = _dcg(ideal_order)
+    return dcg / idcg if idcg > 0 else 0.0
+
+
+# ---------------------------------------------------------------- clustering agreement (chance-corrected)
+
+def _pair_confusion(true_clusters: dict, pred_clusters: dict) -> tuple[int, int, int, int]:
+    """(n11, n10, n01, n00) pair counts shared between two labelings,
+    over every pair of items present in both. n11: same cluster in both.
+    n10: same in true, different in pred. n01: different in true, same
+    in pred. n00: different in both."""
+    items = sorted(set(true_clusters) & set(pred_clusters))
+    n11 = n10 = n01 = n00 = 0
+    for a, b in combinations(items, 2):
+        same_true = true_clusters[a] == true_clusters[b]
+        same_pred = pred_clusters[a] == pred_clusters[b]
+        if same_true and same_pred:
+            n11 += 1
+        elif same_true and not same_pred:
+            n10 += 1
+        elif not same_true and same_pred:
+            n01 += 1
+        else:
+            n00 += 1
+    return n11, n10, n01, n00
+
+
+def adjusted_rand_index(true_clusters: dict, pred_clusters: dict) -> float:
+    """Chance-corrected clustering agreement, -1..1 (1 = perfect
+    agreement, ~0 = agreement expected by random chance). Computed
+    directly from the contingency table (no scipy/sklearn dependency),
+    equivalent to sklearn.metrics.adjusted_rand_score."""
+    items = sorted(set(true_clusters) & set(pred_clusters))
+    if len(items) < 2:
+        return 0.0
+
+    contingency = defaultdict(lambda: defaultdict(int))
+    true_totals = defaultdict(int)
+    pred_totals = defaultdict(int)
+    for item in items:
+        t, p = true_clusters[item], pred_clusters[item]
+        contingency[t][p] += 1
+        true_totals[t] += 1
+        pred_totals[p] += 1
+
+    def _comb2(n: int) -> float:
+        return n * (n - 1) / 2.0
+
+    sum_comb_c = sum(_comb2(n) for row in contingency.values() for n in row.values())
+    sum_comb_true = sum(_comb2(n) for n in true_totals.values())
+    sum_comb_pred = sum(_comb2(n) for n in pred_totals.values())
+    total = len(items)
+    total_comb = _comb2(total)
+
+    expected_index = (sum_comb_true * sum_comb_pred) / total_comb if total_comb else 0.0
+    max_index = (sum_comb_true + sum_comb_pred) / 2.0
+    denom = max_index - expected_index
+    if denom == 0:
+        return 1.0 if sum_comb_c == expected_index else 0.0
+    return (sum_comb_c - expected_index) / denom
+
+
+def adjusted_mutual_information(true_clusters: dict, pred_clusters: dict) -> float:
+    """Chance-corrected mutual information between two labelings, using
+    the permutation-model expected MI (exact hypergeometric form),
+    equivalent to sklearn.metrics.adjusted_mutual_info_score with
+    average_method='arithmetic'. Pure Python, no scipy dependency."""
+    import math
+    from math import lgamma
+
+    items = sorted(set(true_clusters) & set(pred_clusters))
+    n = len(items)
+    if n == 0:
+        return 0.0
+
+    contingency = defaultdict(lambda: defaultdict(int))
+    true_totals = defaultdict(int)
+    pred_totals = defaultdict(int)
+    for item in items:
+        t, p = true_clusters[item], pred_clusters[item]
+        contingency[t][p] += 1
+        true_totals[t] += 1
+        pred_totals[p] += 1
+
+    def _entropy(totals: dict) -> float:
+        return -sum((c / n) * math.log(c / n) for c in totals.values() if c > 0)
+
+    h_true = _entropy(true_totals)
+    h_pred = _entropy(pred_totals)
+
+    mi = 0.0
+    for t, row in contingency.items():
+        for p, nij in row.items():
+            if nij == 0:
+                continue
+            mi += (nij / n) * math.log((n * nij) / (true_totals[t] * pred_totals[p]))
+
+    if h_true == 0.0 or h_pred == 0.0:
+        return 1.0 if mi == 0.0 else 0.0
+
+    def _log_comb(a: int, b: int) -> float:
+        if b < 0 or b > a:
+            return float("-inf")
+        return lgamma(a + 1) - lgamma(b + 1) - lgamma(a - b + 1)
+
+    emi = 0.0
+    for a in true_totals.values():
+        for b in pred_totals.values():
+            for nij in range(max(1, a + b - n), min(a, b) + 1):
+                log_term = (
+                    _log_comb(a, nij) + _log_comb(n - a, b - nij) - _log_comb(n, b)
+                )
+                if log_term == float("-inf"):
+                    continue
+                term_prob = math.exp(log_term)
+                if term_prob <= 0:
+                    continue
+                emi += term_prob * (nij / n) * math.log((n * nij) / (a * b))
+
+    mean_h = (h_true + h_pred) / 2.0
+    denom = mean_h - emi
+    if denom == 0:
+        return 1.0 if (mi - emi) == 0 else 0.0
+    return (mi - emi) / denom
+
+
+# ---------------------------------------------------------------- calibration
+
+def brier_score(confidences: list[float], outcomes: list[bool]) -> float:
+    """Mean squared error between a stated confidence (0-1) and the
+    binary outcome (1 if correct/true, 0 otherwise). Lower is better;
+    0 = perfect calibration and discrimination."""
+    if not confidences:
+        return 0.0
+    return sum((c - (1.0 if o else 0.0)) ** 2 for c, o in zip(confidences, outcomes)) / len(confidences)
+
+
+def expected_calibration_error(confidences: list[float], outcomes: list[bool], n_bins: int = 10) -> dict:
+    """ECE: bins predictions by stated confidence, compares each bin's
+    mean confidence to its actual accuracy, weights by bin size.
+    Returns the scalar ECE plus the per-bin breakdown for transparency."""
+    if not confidences:
+        return {"ece": 0.0, "bins": []}
+
+    bins = [[] for _ in range(n_bins)]
+    for c, o in zip(confidences, outcomes):
+        idx = min(int(c * n_bins), n_bins - 1)
+        bins[idx].append((c, o))
+
+    n = len(confidences)
+    ece = 0.0
+    bin_report = []
+    for i, bucket in enumerate(bins):
+        if not bucket:
+            continue
+        mean_conf = sum(c for c, _ in bucket) / len(bucket)
+        accuracy = sum(1 for _, o in bucket if o) / len(bucket)
+        weight = len(bucket) / n
+        ece += weight * abs(mean_conf - accuracy)
+        bin_report.append({
+            "bin_range": (i / n_bins, (i + 1) / n_bins),
+            "n": len(bucket),
+            "mean_confidence": mean_conf,
+            "accuracy": accuracy,
+        })
+    return {"ece": ece, "bins": bin_report}
+
+
+# ---------------------------------------------------------------- confidence intervals
+
+def wilson_confidence_interval(successes: int, n: int, z: float = 1.96) -> dict:
+    """Wilson score interval for a binary proportion (e.g. accuracy on
+    n samples) -- more defensible than a normal-approximation interval
+    at small n, which is exactly the regime most of this project's
+    evaluation samples fall into. z=1.96 -> ~95% CI."""
+    if n == 0:
+        return {"point": 0.0, "low": 0.0, "high": 0.0, "n": 0}
+    p_hat = successes / n
+    denom = 1 + z ** 2 / n
+    center = p_hat + z ** 2 / (2 * n)
+    margin = z * ((p_hat * (1 - p_hat) / n + z ** 2 / (4 * n ** 2)) ** 0.5)
+    low = (center - margin) / denom
+    high = (center + margin) / denom
+    return {"point": p_hat, "low": max(0.0, low), "high": min(1.0, high), "n": n}

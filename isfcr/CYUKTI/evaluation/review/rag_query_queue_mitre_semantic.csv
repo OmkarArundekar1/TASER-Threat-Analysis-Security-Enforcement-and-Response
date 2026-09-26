@@ -1,0 +1,6 @@
+query_id,query_text,"relevant_ids (fill in, comma-separated doc/campaign ids actually relevant)",reviewer
+MITRE_SEMANTIC-Q01,network reconnaissance active scanning technique,,
+MITRE_SEMANTIC-Q02,SSH brute force repeated failed authentication,,
+MITRE_SEMANTIC-Q03,service exhaustion denial of service flood,,
+MITRE_SEMANTIC-Q04,process injection privilege escalation,,
+MITRE_SEMANTIC-Q05,command and scripting interpreter JavaScript execution,,

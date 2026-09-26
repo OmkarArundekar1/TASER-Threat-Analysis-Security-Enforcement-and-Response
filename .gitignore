@@ -27,6 +27,16 @@ datasets/
 !isfcr/CYUKTI/experiments/records/*.json
 !isfcr/CYUKTI/backend/benchmarks/results/*.json
 
+# ...nor CYUKTI's independent evaluation framework: the scenario
+# registry, the raw evidence backing each ground-truth dataset, the
+# reproducible evaluation run artifacts, and the human review queues
+# -- all real, intentionally-committed data, not generated telemetry.
+# See isfcr/CYUKTI/review/evaluation_implementation_report.md.
+!isfcr/CYUKTI/evaluation/scenarios/*.json
+!isfcr/CYUKTI/evaluation/ground_truth/raw/*.json
+!isfcr/CYUKTI/evaluation/results/*.json
+!isfcr/CYUKTI/evaluation/review/*.csv
+
 # Models
 *.pkl
 *.pt

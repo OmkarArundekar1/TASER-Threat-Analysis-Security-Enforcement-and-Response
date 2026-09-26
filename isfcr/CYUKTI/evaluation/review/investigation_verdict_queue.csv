@@ -1,0 +1,4 @@
+investigation_id,attacker,victim,final_investigation_confidence,top_hypothesis_technique,evidence_summary,verdict (fill in: CORRECT|INCORRECT|PARTIALLY_CORRECT|INSUFFICIENT_EVIDENCE),reviewer
+CAMP_427A075C,192.168.56.106,192.168.56.105,0.1835,T1595,"Reconnaissance-only campaign (T1595), risk_score 8330. See review/phase21_real_investigation_validation.md Section 7 for the full evidence trail.",,
+CAMP_1429ADB4,192.168.56.105,pes1ug23cs411-VirtualBox,0.0687,T1210,"Mixed exploitation campaign (T1055/T1059/T1059.007/T1190/T1210/T1595.002), risk_score 34820. See review/phase21_real_investigation_validation.md Section 7.",,
+CAMP_D8605E81,192.168.56.106,pes1ug23cs411-VirtualBox,0.0963,T1110,"Brute-force campaign (T1110/T1110.001), risk_score 630. See review/phase21_real_investigation_validation.md Section 7.",,

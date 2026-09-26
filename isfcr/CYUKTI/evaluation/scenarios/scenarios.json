@@ -1,0 +1,97 @@
+[
+  {
+    "scenario_id": "SCN-NMAP-001",
+    "scenario_name": "Nmap service/version reconnaissance scan",
+    "attacker": "192.168.56.106",
+    "victim": "192.168.56.105",
+    "attack_family": "network_reconnaissance",
+    "expected_techniques": ["T1595"],
+    "expected_threat_status": "SUSPICIOUS",
+    "benign_or_malicious": "malicious",
+    "provenance": "manual_live_attack",
+    "evidence_sources": [
+      "INCIDENT_VIEW.md#Real-world validation",
+      "MITRE_MAPPING.md",
+      "experiments/examples/EXP-2026-09-25-nmap-scan-01.json"
+    ],
+    "expected_attribution": "KALI-LAB-HOST (192.168.56.106)",
+    "expected_prediction_transition": null,
+    "execution_command_reference": "nmap -sV (service/version detection) against 192.168.56.105, observed via its distinctive HTTP User-Agent 'Nmap Scripting Engine' in the resulting Suricata/Wazuh alert",
+    "notes": "T1595 (Active Scanning) is independently derivable from the raw alert's HTTP User-Agent string ('Mozilla/5.0 (compatible; Nmap Scripting Engine; ...)') cross-referenced against MITRE ATT&CK's own published T1595 definition -- this cross-reference does not call mitre_resolver.py. expected_threat_status is a provisional, AI-assisted analyst judgment (active reconnaissance against a declared victim is a genuine attack precursor, independent of what CYUKTI's own threat_qualification.py separately concluded) -- NOT a certified human reviewer's verdict; see review_status on the resulting ground-truth records."
+  },
+  {
+    "scenario_id": "SCN-SSHBRUTE-001",
+    "scenario_name": "SSH repeated failed authentication (brute force pattern)",
+    "attacker": "192.168.56.106",
+    "victim": "pes1ug23cs411-VirtualBox",
+    "attack_family": "credential_access_brute_force",
+    "expected_techniques": ["T1110", "T1110.001"],
+    "expected_threat_status": "SUSPICIOUS",
+    "benign_or_malicious": "malicious",
+    "provenance": "synthetic_generator_declared_intent",
+    "evidence_sources": [
+      "MITRE_MAPPING.md (rules 100510/210010/210011/100100/100200, 'LOGIN_ATTACK'/'LOGIN_FAIL')",
+      "ACCURACY_EVALUATION.md ('synthetic traffic generator (LOGIN_ATTACK, BOT_ATTACK, etc.)')",
+      "journal_ready_data.md Section 10.6 (CAMP_D8605E81, T1110/T1110.001, attacker 192.168.56.106 -> pes1ug23cs411-VirtualBox)"
+    ],
+    "expected_attribution": "KALI-LAB-HOST (192.168.56.106)",
+    "expected_prediction_transition": "T1110.001 -> T1110",
+    "execution_command_reference": "This lab's synthetic traffic generator's LOGIN_ATTACK/LOGIN_FAIL profile, which repeatedly submits failed SSH/login credentials against the target -- generator config predates and is independent of Wazuh/CYUKTI's subsequent processing.",
+    "notes": "T1110/T1110.001 is independently derivable from the raw Wazuh rule DESCRIPTION TEXT ('SSH Multiple Failed Login Attempts') cross-referenced against MITRE ATT&CK's own T1110 (Brute Force) / T1110.001 (Password Guessing) definitions -- independent of mitre_resolver.py's actual resolution logic, even though the resolver happens to reach the same conclusion via its own native-Wazuh-mapping path. The technique list for CAMP_D8605E81 as a WHOLE (used only to locate this scenario instance in Neo4j) is CYUKTI's own resolved output and is NOT used as MITRE ground truth here -- only the rule-text-level T1110/T1110.001 mapping is used as ground truth, and only after independently re-deriving it from the raw rule description, not by reading CampaignContext.techniques."
+  },
+  {
+    "scenario_id": "SCN-DOS-001",
+    "scenario_name": "'SLOW endpoint' service-exhaustion DoS pattern",
+    "attacker": null,
+    "victim": null,
+    "attack_family": "impact_service_exhaustion",
+    "expected_techniques": ["T1499.002"],
+    "expected_threat_status": "SUSPICIOUS",
+    "benign_or_malicious": "malicious",
+    "provenance": "synthetic_generator_declared_intent",
+    "evidence_sources": [
+      "MITRE_MAPPING.md (rules 100513/210013, 'SLOW endpoint')",
+      "journal_ready_data.md Section 4.9"
+    ],
+    "expected_attribution": null,
+    "expected_prediction_transition": null,
+    "execution_command_reference": "This lab's synthetic traffic generator's slow-endpoint/service-exhaustion profile.",
+    "notes": "HONESTLY INCOMPLETE: no specific live AttackEvent/Campaign instance for this scenario was cross-referenced in Neo4j this session (the Section 4.9 rule fix for 100513/210013 was verified live-loaded in the manager, but the newest 120-alert snapshot did not happen to contain a firing of this rule -- see journal_ready_data.md Section 24). This scenario definition exists so that IF a raw alert matching rule 100513/210013 is found in the historical alert archive, its expected MITRE label is already pre-declared here (T1499.002, independently derivable from MITRE ATT&CK's Service Exhaustion Flood definition against the raw rule text 'SLOW endpoint'), rather than being labeled after seeing CYUKTI's own resolution."
+  },
+  {
+    "scenario_id": "SCN-SESSION-BOUNDARY-001",
+    "scenario_name": "Independent campaign/session boundary: Kali(.106) -> pes1ug23cs411-VirtualBox, mixed exploitation session",
+    "attacker": "192.168.56.105",
+    "victim": "pes1ug23cs411-VirtualBox",
+    "attack_family": "mixed_exploitation_session",
+    "expected_techniques": [],
+    "expected_threat_status": "QUALIFIED_THREAT",
+    "benign_or_malicious": "malicious",
+    "provenance": "synthetic_generator_declared_intent",
+    "evidence_sources": [
+      "journal_ready_data.md Section 10.6 (CAMP_1429ADB4, attacker 192.168.56.105 -> victim pes1ug23cs411-VirtualBox, risk 34820)"
+    ],
+    "expected_attribution": "LAB-HOST-192.168.56.105",
+    "expected_prediction_transition": null,
+    "execution_command_reference": null,
+    "notes": "DELIBERATELY EMPTY expected_techniques: this scenario exists ONLY to provide an independent campaign-correlation ground-truth boundary (one real attacker+victim+session pair = one real-world campaign, by definition of the scenario, independent of how many Campaign nodes CYUKTI's own campaign_manager.py happens to create for it). The technique list actually observed (T1055/T1059/T1059.007/T1190/T1210/T1595.002 per journal_ready_data.md) is CYUKTI's OWN resolved output (CampaignContext.techniques) and is explicitly NOT copied into expected_techniques here, because doing so would make the MITRE-accuracy evaluation circular. This scenario is used by campaign_correlation_eval.py only, never by mitre_eval.py."
+  },
+  {
+    "scenario_id": "SCN-SESSION-BOUNDARY-002",
+    "scenario_name": "Independent campaign/session boundary: Kali(.106) -> pes1ug23cs411-VirtualBox, brute-force session",
+    "attacker": "192.168.56.106",
+    "victim": "pes1ug23cs411-VirtualBox",
+    "attack_family": "credential_access_brute_force",
+    "expected_techniques": [],
+    "expected_threat_status": "SUSPICIOUS",
+    "benign_or_malicious": "malicious",
+    "provenance": "synthetic_generator_declared_intent",
+    "evidence_sources": [
+      "journal_ready_data.md Section 10.6 (CAMP_D8605E81, attacker 192.168.56.106 -> victim pes1ug23cs411-VirtualBox, risk 630)"
+    ],
+    "expected_attribution": "KALI-LAB-HOST (192.168.56.106)",
+    "expected_prediction_transition": null,
+    "execution_command_reference": null,
+    "notes": "Same boundary-only purpose as SCN-SESSION-BOUNDARY-001, distinct attacker/victim pair. Used by campaign_correlation_eval.py to check whether CYUKTI kept this session's alerts in a campaign distinct from SCN-SESSION-BOUNDARY-001 and SCN-NMAP-001's (different attacker IP, .105 vs .106, against the same victim host) -- a real true-split/true-merge test case."
+  }
+]

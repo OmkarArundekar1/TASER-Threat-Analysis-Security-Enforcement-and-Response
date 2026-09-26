@@ -1,0 +1,49 @@
+{
+  "task": "prediction_accuracy",
+  "status": "UNMEASURABLE",
+  "n": 12,
+  "metrics": {
+    "live_next_technique_edge_count": 3,
+    "live_edges": [
+      {
+        "src": "T1110.001",
+        "dst": "T1110",
+        "count": 6,
+        "confidence": 1.0
+      },
+      {
+        "src": "T1110",
+        "dst": "T1078",
+        "count": 5,
+        "confidence": 1.0
+      },
+      {
+        "src": "T1078",
+        "dst": "T1110.001",
+        "count": 1,
+        "confidence": 1.0
+      }
+    ],
+    "historical_phase18_result": {
+      "evaluable_predictions": 12,
+      "correct": 4,
+      "incorrect": 8,
+      "accuracy": 0.3333333333333333,
+      "verdict": "INSUFFICIENT_FOR_SUPERVISED_ML",
+      "source": "scripts/phase18_next_technique_diagnosis.py, frozen ml/datasets/campaign_dataset.csv (60 rows)"
+    },
+    "historical_accuracy_95pct_wilson_interval": {
+      "point": 0.3333333333333333,
+      "low": 0.13811783989736134,
+      "high": 0.609382412602386,
+      "n": 12
+    }
+  },
+  "ground_truth_review_status": "",
+  "dataset_name": "NEXT_TECHNIQUE (live Neo4j graph)",
+  "method": "predict_next_readonly()'s real prediction target (learned NEXT_TECHNIQUE transitions) is unchanged in scale since Phase 18's real dataset rebuild (still <= 3 edges) -- there is no new held-out sequential data to generate a fresh prediction opportunity from, so the honest result is UNMEASURABLE for NEW data, reporting the historical real measurement instead of fabricating a new one.",
+  "limitations": [
+    "No live retrospective re-scoring was performed this session -- the reused Phase 18 number is the last real measurement of this exact target, not re-verified against fresh data because no fresh data exists to re-verify it against."
+  ],
+  "reason": "Live NEXT_TECHNIQUE graph has 3 edges (same order of magnitude as Phase 18's 3); no new attack sessions have been ingested that would create additional distinct technique transitions to retrospectively score. Historical real result reused: 4/12 (33.3%), verdict INSUFFICIENT_FOR_SUPERVISED_ML."
+}

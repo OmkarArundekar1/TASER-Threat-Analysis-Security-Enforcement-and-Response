@@ -1,0 +1,11 @@
+{
+  "task": "rag_retrieval_campaign_narrative",
+  "status": "NOT_MEASURED",
+  "n": 0,
+  "metrics": {},
+  "ground_truth_review_status": "",
+  "dataset_name": "",
+  "method": "",
+  "limitations": [],
+  "reason": "No independently-judged query set exists at evaluation/queries/rag_queries_campaign_narrative.json. Building one requires a human reviewer to judge relevant documents for a real incident context per query (see evaluation/review/export_review_queue.py for the mechanism to produce this) -- fabricating relevance judgments here would defeat the purpose of an independent evaluation, so this is honestly reported as not yet measured rather than guessed."
+}

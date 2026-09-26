@@ -1,0 +1,83 @@
+{
+  "task": "campaign_correlation_accuracy",
+  "status": "MEASURED_PRELIMINARY",
+  "n": 46,
+  "metrics": {
+    "n_real_campaigns": 46,
+    "n_independent_sessions": 3,
+    "pairwise_precision": 0.0,
+    "pairwise_recall": 0.0,
+    "pairwise_f1": 0.0,
+    "cluster_purity": 1.0,
+    "adjusted_rand_index": 0.0,
+    "adjusted_mutual_information": 4.719505071456704e-15,
+    "fragmentation_per_true_session": {
+      "SESSION::SCN-SESSION-BOUNDARY-001::192.168.56.105->pes1ug23cs411-VirtualBox": 4,
+      "SESSION::SCN-NMAP-001::192.168.56.106->192.168.56.105": 17,
+      "SESSION::SCN-SESSION-BOUNDARY-002::192.168.56.106->pes1ug23cs411-VirtualBox": 25
+    },
+    "fragmentation_examples": {
+      "SESSION::SCN-SESSION-BOUNDARY-001::192.168.56.105->pes1ug23cs411-VirtualBox": [
+        "CAMP_23FB320A",
+        "CAMP_1429ADB4",
+        "CAMP_F91A7652",
+        "CAMP_066240B7"
+      ],
+      "SESSION::SCN-SESSION-BOUNDARY-002::192.168.56.106->pes1ug23cs411-VirtualBox": [
+        "CAMP_5DD3F083",
+        "CAMP_A93237FD",
+        "CAMP_B12C16D4",
+        "CAMP_1627943B",
+        "CAMP_BB9A0F28",
+        "CAMP_0E9C0284",
+        "CAMP_C6E494CF",
+        "CAMP_75FBEEBC",
+        "CAMP_DDBFC6D9",
+        "CAMP_10407C1A",
+        "CAMP_D8605E81",
+        "CAMP_DAE35509",
+        "CAMP_E449E81D",
+        "CAMP_6371D7E5",
+        "CAMP_436330B7",
+        "CAMP_F51E9C79",
+        "CAMP_38EBD436",
+        "CAMP_71320238",
+        "CAMP_2845679C",
+        "CAMP_835F5335",
+        "CAMP_BB680773",
+        "CAMP_F4E63855",
+        "CAMP_E8E9F042",
+        "CAMP_6988F109",
+        "CAMP_5A4539E8"
+      ],
+      "SESSION::SCN-NMAP-001::192.168.56.106->192.168.56.105": [
+        "CAMP_7331E223",
+        "CAMP_9669CA33",
+        "CAMP_B39F5C0A",
+        "CAMP_947A7084",
+        "CAMP_67FCB361",
+        "CAMP_427A075C",
+        "CAMP_99EE7A64",
+        "CAMP_5D691192",
+        "CAMP_0CCD0071",
+        "CAMP_77263583",
+        "CAMP_BB19A996",
+        "CAMP_8FF3B37F",
+        "CAMP_B3CDBFA1",
+        "CAMP_86D5837D",
+        "CAMP_15E98B82",
+        "CAMP_B177634A",
+        "CAMP_1B8E9033"
+      ]
+    }
+  },
+  "ground_truth_review_status": "AUTO_PROPOSED",
+  "dataset_name": "campaign_correlation_v0",
+  "method": "Pairwise precision/recall/F1, cluster purity, Adjusted Rand Index, and Adjusted Mutual Information between an independent SESSION::<scenario>::<attacker>-><victim> grouping key and CYUKTI's own real Campaign.campaign_id, read live from Neo4j at evaluation time.",
+  "limitations": [
+    "Small n (few independently-defined session boundaries exist in this project's real lab history) -- see the report's Wilson-interval-equivalent caveat for pairwise metrics at this scale.",
+    "This ground truth can only detect FRAGMENTATION (one real session split into multiple CYUKTI campaigns) -- it cannot detect the opposite failure (two DIFFERENT real sessions wrongly merged into one CYUKTI campaign), because only attacker+victim-distinct scenarios were registered. A true over-merging test would require two scenarios sharing the same attacker+victim pair but a different real-world session/objective, which does not exist in this project's registry yet.",
+    "Ground truth is AUTO_PROPOSED unless ground_truth_review_status says otherwise."
+  ],
+  "reason": ""
+}

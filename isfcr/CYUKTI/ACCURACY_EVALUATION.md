@@ -1,5 +1,7 @@
 # CYUKTI Accuracy / Evaluation Framework
 
+> **Update, 2026-09-26**: an independent evaluation framework (`evaluation/`) now exists and has produced real, preliminary (AI-assisted, not yet human-reviewed) measurements for MITRE mapping, threat qualification, campaign correlation, and attribution — see `review/paper_metrics_source_of_truth.md` for the authoritative current status of each row below and `review/evaluation_implementation_report.md` for full methodology. The (A)/(B)/(C) labels below are left as originally written; the new results are a **(B-preliminary)** category this task introduces, not a clean upgrade to (A), because the ground truth is independent of CYUKTI's code but not independent of a certified human reviewer.
+
 ## The honest starting point
 
 CYUKTI has multiple distinct tasks, each requiring its own metric — and, critically, **independently-verified ground truth is not equally available for all of them in this environment.** Every task below is labeled:

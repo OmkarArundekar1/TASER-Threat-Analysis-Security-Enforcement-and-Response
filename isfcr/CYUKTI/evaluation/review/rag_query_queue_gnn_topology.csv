@@ -1,0 +1,3 @@
+query_id,query_text,"relevant_ids (fill in, comma-separated doc/campaign ids actually relevant)",reviewer
+GNN_TOPOLOGY-Q01,campaign topologically similar to CAMP_D8605E81 (brute force),,
+GNN_TOPOLOGY-Q02,campaign topologically similar to CAMP_1429ADB4 (mixed exploitation),,

@@ -1,0 +1,145 @@
+{
+  "manifest": {
+    "timestamp": "2026-09-26T05:16:01.421907+00:00",
+    "git_commit": "d2ec0e0e0a044f4b8f1870bb55f330c3e7297437",
+    "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "package_versions": {
+      "neo4j": "6.2.0"
+    },
+    "neo4j_server_version": "5.26.27",
+    "dataset_versions": {
+      "mitre_mapping_v0": "AUTO_PROPOSED",
+      "threat_qualification_v0": "AUTO_PROPOSED",
+      "campaign_correlation_v0": "AUTO_PROPOSED",
+      "attribution_v0": "AUTO_PROPOSED"
+    },
+    "n_samples": {
+      "mitre_mapping": 100,
+      "prediction": 12,
+      "attribution": 43,
+      "campaign_correlation": 46,
+      "threat_qualification": 24,
+      "rag_mitre_semantic": 0,
+      "rag_campaign_narrative": 0,
+      "rag_gnn_topology": 0,
+      "investigation": 0
+    },
+    "duration_seconds": 6.404146194458008,
+    "failures": [],
+    "skipped": [
+      "rag_mitre_semantic: No independently-judged query set exists at evaluation/queries/rag_queries_mitre_semantic.json. Building one requires a human reviewer to judge relevant documents for a real incident context per query (see evaluation/review/export_review_queue.py for the mechanism to produce this) -- fabricating relevance judgments here would defeat the purpose of an independent evaluation, so this is honestly reported as not yet measured rather than guessed.",
+      "rag_campaign_narrative: No independently-judged query set exists at evaluation/queries/rag_queries_campaign_narrative.json. Building one requires a human reviewer to judge relevant documents for a real incident context per query (see evaluation/review/export_review_queue.py for the mechanism to produce this) -- fabricating relevance judgments here would defeat the purpose of an independent evaluation, so this is honestly reported as not yet measured rather than guessed.",
+      "rag_gnn_topology: No independently-judged query set exists at evaluation/queries/rag_queries_gnn_topology.json. Building one requires a human reviewer to judge relevant documents for a real incident context per query (see evaluation/review/export_review_queue.py for the mechanism to produce this) -- fabricating relevance judgments here would defeat the purpose of an independent evaluation, so this is honestly reported as not yet measured rather than guessed.",
+      "investigation: No independent analyst verdicts exist at evaluation/labels/investigation_verdicts.json. CYUKTI's investigation loop has been run against real campaigns (Phase 21/22, review/phase21_real_investigation_validation.md), but no human has independently judged whether the resulting top hypothesis was actually correct for any of those runs. Building this requires a reviewer to read the real evidence trail and judge it -- see evaluation/review/export_review_queue.py."
+    ]
+  },
+  "results": {
+    "mitre_mapping": {
+      "task": "mitre_mapping_accuracy",
+      "status": "MEASURED_PRELIMINARY",
+      "n": 100,
+      "ground_truth_review_status": "AUTO_PROPOSED",
+      "dataset_name": "mitre_mapping_v0",
+      "method": "Independent ground truth (see scenarios/scenarios.json) vs. live mitre_resolver.resolve_mitre() called at evaluation time against the frozen raw alert. Multi-label precision/recall/F1 computed over technique-set membership; exact_match_ratio requires the full predicted set to equal the full expected set.",
+      "limitations": [
+        "Ground truth is AUTO_PROPOSED (AI-assisted, not human-reviewed) unless ground_truth_review_status says otherwise -- see review/paper_metrics_source_of_truth.md.",
+        "n=100 is small; see the Wilson confidence interval in the summary report before citing this as precise."
+      ],
+      "reason": ""
+    },
+    "prediction": {
+      "task": "prediction_accuracy",
+      "status": "UNMEASURABLE",
+      "n": 12,
+      "ground_truth_review_status": "",
+      "dataset_name": "NEXT_TECHNIQUE (live Neo4j graph)",
+      "method": "predict_next_readonly()'s real prediction target (learned NEXT_TECHNIQUE transitions) is unchanged in scale since Phase 18's real dataset rebuild (still <= 3 edges) -- there is no new held-out sequential data to generate a fresh prediction opportunity from, so the honest result is UNMEASURABLE for NEW data, reporting the historical real measurement instead of fabricating a new one.",
+      "limitations": [
+        "No live retrospective re-scoring was performed this session -- the reused Phase 18 number is the last real measurement of this exact target, not re-verified against fresh data because no fresh data exists to re-verify it against."
+      ],
+      "reason": "Live NEXT_TECHNIQUE graph has 3 edges (same order of magnitude as Phase 18's 3); no new attack sessions have been ingested that would create additional distinct technique transitions to retrospectively score. Historical real result reused: 4/12 (33.3%), verdict INSUFFICIENT_FOR_SUPERVISED_ML."
+    },
+    "attribution": {
+      "task": "attribution_accuracy",
+      "status": "MEASURED_PRELIMINARY",
+      "n": 43,
+      "ground_truth_review_status": "AUTO_PROPOSED",
+      "dataset_name": "attribution_v0",
+      "method": "Ground truth = each real campaign's own directly-observed attacker_ip (raw network fact). System prediction = threat_attribution_engine.ThreatAttributionEngine.attribute()'s top-ranked historical-campaign candidate, called at evaluation time against a real (but minimally reconstructed) CampaignContext, then mapped back to that candidate's own real attacker_ip. 'Correct' = same real attacker_ip. This measures whether attribution's technique-similarity ranking tends to surface campaigns from the SAME real attacker first -- a coarse proxy for attribution accuracy, not identity-level ground truth in the strict sense the task brief asks for (no independently-labeled, human-confirmed 'this campaign belongs to named threat actor X' dataset exists in this lab -- see limitations).",
+      "limitations": [
+        "This evaluates attribution's RANKING behavior against a coarse IP-based proxy for 'attacker identity', not a true named-threat-actor ground truth (no such independent human labels exist in this lab).",
+        "Small n -- see the reported Wilson 95% interval before citing this as precise.",
+        "Ground truth is AUTO_PROPOSED unless ground_truth_review_status says otherwise."
+      ],
+      "reason": ""
+    },
+    "campaign_correlation": {
+      "task": "campaign_correlation_accuracy",
+      "status": "MEASURED_PRELIMINARY",
+      "n": 46,
+      "ground_truth_review_status": "AUTO_PROPOSED",
+      "dataset_name": "campaign_correlation_v0",
+      "method": "Pairwise precision/recall/F1, cluster purity, Adjusted Rand Index, and Adjusted Mutual Information between an independent SESSION::<scenario>::<attacker>-><victim> grouping key and CYUKTI's own real Campaign.campaign_id, read live from Neo4j at evaluation time.",
+      "limitations": [
+        "Small n (few independently-defined session boundaries exist in this project's real lab history) -- see the report's Wilson-interval-equivalent caveat for pairwise metrics at this scale.",
+        "This ground truth can only detect FRAGMENTATION (one real session split into multiple CYUKTI campaigns) -- it cannot detect the opposite failure (two DIFFERENT real sessions wrongly merged into one CYUKTI campaign), because only attacker+victim-distinct scenarios were registered. A true over-merging test would require two scenarios sharing the same attacker+victim pair but a different real-world session/objective, which does not exist in this project's registry yet.",
+        "Ground truth is AUTO_PROPOSED unless ground_truth_review_status says otherwise."
+      ],
+      "reason": ""
+    },
+    "threat_qualification": {
+      "task": "threat_qualification_accuracy",
+      "status": "MEASURED_PRELIMINARY",
+      "n": 24,
+      "ground_truth_review_status": "AUTO_PROPOSED",
+      "dataset_name": "threat_qualification_v0",
+      "method": "Scenario-declared expected_threat_status (AI-assisted analyst judgment, not CYUKTI's own classification) vs. live Campaign.cti_score re-fetched from Neo4j at evaluation time, classified via cti_confidence_engine.py's own published PUBLISH_THRESHOLD/NOT_THREAT_THRESHOLD constants.",
+      "limitations": [
+        "Ground truth is AUTO_PROPOSED (AI-assisted, not human-reviewed) -- see review/paper_metrics_source_of_truth.md.",
+        "expected_threat_status was judged per-SCENARIO (one label for all campaigns matching that attacker/victim pair), not per-individual-campaign, so disagreement may reflect legitimate campaign-to-campaign variation within a scenario, not necessarily a CYUKTI error."
+      ],
+      "reason": ""
+    },
+    "rag_mitre_semantic": {
+      "task": "rag_retrieval_mitre_semantic",
+      "status": "NOT_MEASURED",
+      "n": 0,
+      "ground_truth_review_status": "",
+      "dataset_name": "",
+      "method": "",
+      "limitations": [],
+      "reason": "No independently-judged query set exists at evaluation/queries/rag_queries_mitre_semantic.json. Building one requires a human reviewer to judge relevant documents for a real incident context per query (see evaluation/review/export_review_queue.py for the mechanism to produce this) -- fabricating relevance judgments here would defeat the purpose of an independent evaluation, so this is honestly reported as not yet measured rather than guessed."
+    },
+    "rag_campaign_narrative": {
+      "task": "rag_retrieval_campaign_narrative",
+      "status": "NOT_MEASURED",
+      "n": 0,
+      "ground_truth_review_status": "",
+      "dataset_name": "",
+      "method": "",
+      "limitations": [],
+      "reason": "No independently-judged query set exists at evaluation/queries/rag_queries_campaign_narrative.json. Building one requires a human reviewer to judge relevant documents for a real incident context per query (see evaluation/review/export_review_queue.py for the mechanism to produce this) -- fabricating relevance judgments here would defeat the purpose of an independent evaluation, so this is honestly reported as not yet measured rather than guessed."
+    },
+    "rag_gnn_topology": {
+      "task": "rag_retrieval_gnn_topology",
+      "status": "NOT_MEASURED",
+      "n": 0,
+      "ground_truth_review_status": "",
+      "dataset_name": "",
+      "method": "",
+      "limitations": [],
+      "reason": "No independently-judged query set exists at evaluation/queries/rag_queries_gnn_topology.json. Building one requires a human reviewer to judge relevant documents for a real incident context per query (see evaluation/review/export_review_queue.py for the mechanism to produce this) -- fabricating relevance judgments here would defeat the purpose of an independent evaluation, so this is honestly reported as not yet measured rather than guessed."
+    },
+    "investigation": {
+      "task": "investigation_confidence_accuracy",
+      "status": "NOT_MEASURED",
+      "n": 0,
+      "ground_truth_review_status": "",
+      "dataset_name": "",
+      "method": "",
+      "limitations": [],
+      "reason": "No independent analyst verdicts exist at evaluation/labels/investigation_verdicts.json. CYUKTI's investigation loop has been run against real campaigns (Phase 21/22, review/phase21_real_investigation_validation.md), but no human has independently judged whether the resulting top hypothesis was actually correct for any of those runs. Building this requires a reviewer to read the real evidence trail and judge it -- see evaluation/review/export_review_queue.py."
+    }
+  }
+}

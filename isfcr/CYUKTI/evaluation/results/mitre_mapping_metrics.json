@@ -1,0 +1,1177 @@
+{
+  "task": "mitre_mapping_accuracy",
+  "status": "MEASURED_PRELIMINARY",
+  "n": 100,
+  "metrics": {
+    "n": 100,
+    "skipped_no_raw_alert": 0,
+    "exact_match_ratio": 0.5,
+    "precision": 1.0,
+    "recall": 0.6666666666666666,
+    "f1": 0.8,
+    "unknown_rate": 0.0,
+    "provenance_distribution": {
+      "NATIVE_WAZUH": 100
+    },
+    "per_record": [
+      {
+        "sample_id": "SCN-SSHBRUTE-001-000",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-001",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-002",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-003",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-004",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-005",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-006",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-007",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-008",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-009",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-010",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-011",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-012",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-013",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-014",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-015",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-016",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-017",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-018",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-019",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-020",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-021",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-022",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-023",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-024",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-025",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-026",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-027",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-028",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-029",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-030",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-031",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-032",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-033",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-034",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-035",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-036",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-037",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-038",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-039",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-040",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-041",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-042",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-043",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-044",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-045",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-046",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-047",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-048",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-SSHBRUTE-001-049",
+        "expected": [
+          "T1110",
+          "T1110.001"
+        ],
+        "actual": [
+          "T1110.001"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": false
+      },
+      {
+        "sample_id": "SCN-NMAP-001-000",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-001",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-002",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-003",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-004",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-005",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-006",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-007",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-008",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-009",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-010",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-011",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-012",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-013",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-014",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-015",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-016",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-017",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-018",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-019",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-020",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-021",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-022",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-023",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-024",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-025",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-026",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-027",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-028",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-029",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-030",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-031",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-032",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-033",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-034",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-035",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-036",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-037",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-038",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-039",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-040",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-041",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-042",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-043",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-044",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-045",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-046",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-047",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-048",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      },
+      {
+        "sample_id": "SCN-NMAP-001-049",
+        "expected": [
+          "T1595"
+        ],
+        "actual": [
+          "T1595"
+        ],
+        "provenance": "NATIVE_WAZUH",
+        "exact_match": true
+      }
+    ]
+  },
+  "ground_truth_review_status": "AUTO_PROPOSED",
+  "dataset_name": "mitre_mapping_v0",
+  "method": "Independent ground truth (see scenarios/scenarios.json) vs. live mitre_resolver.resolve_mitre() called at evaluation time against the frozen raw alert. Multi-label precision/recall/F1 computed over technique-set membership; exact_match_ratio requires the full predicted set to equal the full expected set.",
+  "limitations": [
+    "Ground truth is AUTO_PROPOSED (AI-assisted, not human-reviewed) unless ground_truth_review_status says otherwise -- see review/paper_metrics_source_of_truth.md.",
+    "n=100 is small; see the Wilson confidence interval in the summary report before citing this as precise."
+  ],
+  "reason": ""
+}

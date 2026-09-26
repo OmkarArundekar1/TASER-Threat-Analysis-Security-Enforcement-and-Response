@@ -1,0 +1,330 @@
+{
+  "task": "attribution_accuracy",
+  "status": "MEASURED_PRELIMINARY",
+  "n": 43,
+  "metrics": {
+    "n": 43,
+    "skipped_no_context": 3,
+    "correct": 32,
+    "unattributed": 0,
+    "accuracy": 0.7441860465116279,
+    "accuracy_95pct_wilson_interval": {
+      "point": 0.7441860465116279,
+      "low": 0.5976131013174514,
+      "high": 0.8507063412293445,
+      "n": 43
+    },
+    "per_record": [
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-001-CAMP_23FB320A",
+        "campaign_id": "CAMP_23FB320A",
+        "expected_attacker_ip": "192.168.56.105",
+        "top_candidate_attacker_ip": "192.168.56.105",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-001-CAMP_1429ADB4",
+        "campaign_id": "CAMP_1429ADB4",
+        "expected_attacker_ip": "192.168.56.105",
+        "top_candidate_attacker_ip": "192.168.56.105",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-001-CAMP_F91A7652",
+        "campaign_id": "CAMP_F91A7652",
+        "expected_attacker_ip": "192.168.56.105",
+        "top_candidate_attacker_ip": "pes1ug23cs411-VirtualBox",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-001-CAMP_066240B7",
+        "campaign_id": "CAMP_066240B7",
+        "expected_attacker_ip": "192.168.56.105",
+        "top_candidate_attacker_ip": "192.168.56.105",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_5DD3F083",
+        "campaign_id": "CAMP_5DD3F083",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "pes1ug23cs411-VirtualBox",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_A93237FD",
+        "campaign_id": "CAMP_A93237FD",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "pes1ug23cs411-VirtualBox",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_B12C16D4",
+        "campaign_id": "CAMP_B12C16D4",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_1627943B",
+        "campaign_id": "CAMP_1627943B",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_BB9A0F28",
+        "campaign_id": "CAMP_BB9A0F28",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "pes1ug23cs411-VirtualBox",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_0E9C0284",
+        "campaign_id": "CAMP_0E9C0284",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_C6E494CF",
+        "campaign_id": "CAMP_C6E494CF",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "pes1ug23cs411-VirtualBox",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_75FBEEBC",
+        "campaign_id": "CAMP_75FBEEBC",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_DDBFC6D9",
+        "campaign_id": "CAMP_DDBFC6D9",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_10407C1A",
+        "campaign_id": "CAMP_10407C1A",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_D8605E81",
+        "campaign_id": "CAMP_D8605E81",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "pes1ug23cs411-VirtualBox",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_DAE35509",
+        "campaign_id": "CAMP_DAE35509",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "pes1ug23cs411-VirtualBox",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_E449E81D",
+        "campaign_id": "CAMP_E449E81D",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "pes1ug23cs411-VirtualBox",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_6371D7E5",
+        "campaign_id": "CAMP_6371D7E5",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_436330B7",
+        "campaign_id": "CAMP_436330B7",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_F51E9C79",
+        "campaign_id": "CAMP_F51E9C79",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_38EBD436",
+        "campaign_id": "CAMP_38EBD436",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_71320238",
+        "campaign_id": "CAMP_71320238",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "pes1ug23cs411-VirtualBox",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_2845679C",
+        "campaign_id": "CAMP_2845679C",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.105",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_835F5335",
+        "campaign_id": "CAMP_835F5335",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_BB680773",
+        "campaign_id": "CAMP_BB680773",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-SESSION-BOUNDARY-002-CAMP_E8E9F042",
+        "campaign_id": "CAMP_E8E9F042",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "pes1ug23cs411-VirtualBox",
+        "correct": false
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_7331E223",
+        "campaign_id": "CAMP_7331E223",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_9669CA33",
+        "campaign_id": "CAMP_9669CA33",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_B39F5C0A",
+        "campaign_id": "CAMP_B39F5C0A",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_947A7084",
+        "campaign_id": "CAMP_947A7084",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_67FCB361",
+        "campaign_id": "CAMP_67FCB361",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_427A075C",
+        "campaign_id": "CAMP_427A075C",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_99EE7A64",
+        "campaign_id": "CAMP_99EE7A64",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_5D691192",
+        "campaign_id": "CAMP_5D691192",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_0CCD0071",
+        "campaign_id": "CAMP_0CCD0071",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_77263583",
+        "campaign_id": "CAMP_77263583",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_BB19A996",
+        "campaign_id": "CAMP_BB19A996",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_8FF3B37F",
+        "campaign_id": "CAMP_8FF3B37F",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_B3CDBFA1",
+        "campaign_id": "CAMP_B3CDBFA1",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_86D5837D",
+        "campaign_id": "CAMP_86D5837D",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_15E98B82",
+        "campaign_id": "CAMP_15E98B82",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_B177634A",
+        "campaign_id": "CAMP_B177634A",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      },
+      {
+        "sample_id": "ATTR-SCN-NMAP-001-CAMP_1B8E9033",
+        "campaign_id": "CAMP_1B8E9033",
+        "expected_attacker_ip": "192.168.56.106",
+        "top_candidate_attacker_ip": "192.168.56.106",
+        "correct": true
+      }
+    ]
+  },
+  "ground_truth_review_status": "AUTO_PROPOSED",
+  "dataset_name": "attribution_v0",
+  "method": "Ground truth = each real campaign's own directly-observed attacker_ip (raw network fact). System prediction = threat_attribution_engine.ThreatAttributionEngine.attribute()'s top-ranked historical-campaign candidate, called at evaluation time against a real (but minimally reconstructed) CampaignContext, then mapped back to that candidate's own real attacker_ip. 'Correct' = same real attacker_ip. This measures whether attribution's technique-similarity ranking tends to surface campaigns from the SAME real attacker first -- a coarse proxy for attribution accuracy, not identity-level ground truth in the strict sense the task brief asks for (no independently-labeled, human-confirmed 'this campaign belongs to named threat actor X' dataset exists in this lab -- see limitations).",
+  "limitations": [
+    "This evaluates attribution's RANKING behavior against a coarse IP-based proxy for 'attacker identity', not a true named-threat-actor ground truth (no such independent human labels exist in this lab).",
+    "Small n -- see the reported Wilson 95% interval before citing this as precise.",
+    "Ground truth is AUTO_PROPOSED unless ground_truth_review_status says otherwise."
+  ],
+  "reason": ""
+}

@@ -1,6 +1,6 @@
 # CYUKTI — Results, Metrics, and Dataset Evidence
 
-> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date. The original 2026-08-31 extraction date below is preserved for the sections that describe the frozen ML dataset and its Phase 17/18 analyses (those numbers are unchanged by design); the test-suite and live-Neo4j sections have been refreshed to 2026-09-25.
+> Last verified: 2026-09-26. **New independent evaluation**: MITRE mapping accuracy, threat qualification accuracy, campaign correlation, and attribution accuracy are no longer purely `NOT MEASURED / NOT AVAILABLE` — see `review/evaluation_results.md` and `review/paper_metrics_source_of_truth.md` for real (preliminary, AI-assisted-not-human-reviewed) numbers from the new `evaluation/` framework. The original 2026-08-31 extraction date below is preserved for the sections that describe the frozen ML dataset and its Phase 17/18 analyses (those numbers are unchanged by design); the test-suite and live-Neo4j sections have been refreshed to 2026-09-25.
 
 All values below were extracted from live queries, fresh test runs, or repository files on **2026-08-31**, except where marked as re-verified 2026-09-25. Every entry states its source explicitly. Entries with no repository evidence are marked `NOT MEASURED / NOT AVAILABLE`.
 
