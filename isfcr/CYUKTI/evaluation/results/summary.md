@@ -1,6 +1,6 @@
 # CYUKTI Evaluation Run Summary
 
-Run at 2026-09-26T05:16:01.421907+00:00 | commit `d2ec0e0e0a04` | Neo4j 5.26.27 | duration 6.4s
+Run at 2026-09-26T05:47:53.661631+00:00 | commit `f8bdf07e10d0` | Neo4j 5.26.27 | duration 2.5s
 
 | Task | Status | n | Headline metric |
 |---|---|---|---|

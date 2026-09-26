@@ -1,6 +1,6 @@
 # CYUKTI — Results Package Audit
 
-> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+> Last verified: 2026-09-26. Counts reflect live Neo4j query and pytest run from this date. **New**: attribution accuracy, MITRE mapping accuracy, campaign correlation, and threat qualification now have real PRELIMINARY (AI-built ground truth, human review pending) numbers from `evaluation/` — see `review/paper_metrics_source_of_truth.md`. Do not cite these as audited/verified until a human reviewer fills in the exported queues in `evaluation/review/`.
 
 Audits `review/quantitative_results.md`, `review/slide_ready_metrics.md`, and `review/quantitative_results.csv` against actual repository artifacts. Re-verified 2026-09-14: all cited test files, scripts, and the dataset CSV exist and are unchanged (150/150 tests still pass, dataset still 60 rows). **Re-verified again 2026-09-25**: backend test suite has grown to 689/689 (65 files; frontend adds 109/109 across 17 files, 798 total), and the live Neo4j graph has grown to 111 Campaigns / 212 AttackEvents / 858 Technique / 9 Attacker / 12 Host / 50 Operation (2,539 total nodes, 20,804 total relationships) — see `review/paper_submission_status.md` for the consolidated current-numbers list.
 

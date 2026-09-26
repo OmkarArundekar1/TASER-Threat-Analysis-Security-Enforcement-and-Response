@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-09-26T05:16:01.421907+00:00",
-  "git_commit": "d2ec0e0e0a044f4b8f1870bb55f330c3e7297437",
+  "timestamp": "2026-09-26T05:47:53.661631+00:00",
+  "git_commit": "f8bdf07e10d070c6d6f34cea377d1b086d57004a",
   "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
   "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
   "package_versions": {
@@ -24,7 +24,7 @@
     "rag_gnn_topology": 0,
     "investigation": 0
   },
-  "duration_seconds": 6.404146194458008,
+  "duration_seconds": 2.530486583709717,
   "failures": [],
   "skipped": [
     "rag_mitre_semantic: No independently-judged query set exists at evaluation/queries/rag_queries_mitre_semantic.json. Building one requires a human reviewer to judge relevant documents for a real incident context per query (see evaluation/review/export_review_queue.py for the mechanism to produce this) -- fabricating relevance judgments here would defeat the purpose of an independent evaluation, so this is honestly reported as not yet measured rather than guessed.",

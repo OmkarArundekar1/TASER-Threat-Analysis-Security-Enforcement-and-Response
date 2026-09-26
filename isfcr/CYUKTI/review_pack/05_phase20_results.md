@@ -1,6 +1,6 @@
 # CYUKTI — Phase 20 MITRE Resolution: Verified Results
 
-> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date. The Phase 20 progression/discrepancy narrative below (239→391 alerts) is preserved as a historical record; a newer post-rule-fix, post-reboot coverage snapshot has been added as its own section rather than overwriting the Phase 20 numbers, consistent with this document's own practice of disclosing snapshot-to-snapshot discrepancies rather than silently replacing them.
+> Last verified: 2026-09-26. Counts reflect live Neo4j query and pytest run from this date. **New**: an independent MITRE-mapping accuracy evaluation now exists (`evaluation/`), n=100 real alerts, P=1.00/R=0.667/F1=0.80 — PRELIMINARY, human review pending. See `review/paper_metrics_source_of_truth.md`. The Phase 20 progression/discrepancy narrative below (239→391 alerts) is preserved as a historical record; a newer post-rule-fix, post-reboot coverage snapshot has been added as its own section rather than overwriting the Phase 20 numbers, consistent with this document's own practice of disclosing snapshot-to-snapshot discrepancies rather than silently replacing them.
 
 ## Newest snapshot (2026-09-25, post rule-fix + reboot) — see also `journal_ready_data.md` Section 24
 

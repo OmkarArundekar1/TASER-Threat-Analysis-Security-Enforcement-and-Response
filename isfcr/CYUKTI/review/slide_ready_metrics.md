@@ -1,6 +1,6 @@
 # CYUKTI — Quantitative Results
 
-> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+> Last verified: 2026-09-26. Counts reflect live Neo4j query and pytest run from this date. **New, preliminary only**: attribution 74.4% (n=43), MITRE mapping F1=0.80 (n=100) — both from independent AI-built ground truth, human review pending (`review/paper_metrics_source_of_truth.md`). Not slide-ready yet as "verified" numbers — present them explicitly as preliminary if used.
 
 17 strongest numbers for a presentation slide, each with a qualifier. Every number below is traceable to `quantitative_results.md`/`.csv`/`paper_submission_status.md` — none were invented for this list.
 

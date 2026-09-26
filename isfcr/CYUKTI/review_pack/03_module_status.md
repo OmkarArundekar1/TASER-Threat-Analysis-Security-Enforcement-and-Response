@@ -1,6 +1,6 @@
 # CYUKTI — Module-by-Module Implementation Status
 
-> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+> Last verified: 2026-09-26. Counts reflect live Neo4j query and pytest run from this date. **New module**: `evaluation/` (independent ground-truth + evaluator framework, 7 categories, 54 tests) — status **B** (complete + tested, real preliminary results produced for 4/7 categories; see `review/paper_metrics_source_of_truth.md`), not yet **A** since no dataset has been human-reviewed/locked.
 
 Status codes: **A** = Complete + validated (tests + live evidence) · **B** = Complete + partially validated (tests only, or live but not both) · **C** = Implemented, not experimentally validated · **D** = In progress · **E** = Planned · **F** = Blocked
 

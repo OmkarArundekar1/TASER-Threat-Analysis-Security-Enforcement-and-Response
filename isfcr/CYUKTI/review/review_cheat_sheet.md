@@ -1,6 +1,6 @@
 # CYUKTI — One-Page Review Cheat Sheet
 
-> Last verified: 2026-09-25. Counts reflect live Neo4j query and pytest run from this date.
+> Last verified: 2026-09-26. Counts reflect live Neo4j query and pytest run from this date. **New**: if asked about attribution/MITRE/campaign-correlation/threat-qualification accuracy, the honest answer is "preliminary, n=24-100, independent of CYUKTI's code but built by an AI assistant, human review pending" — see `review/paper_metrics_source_of_truth.md`. Never say "measured" or "verified" for these four.
 
 ## CYUKTI in one sentence
 CYUKTI ingests real Wazuh security telemetry into a Neo4j campaign graph and resolves MITRE ATT&CK attribution through a provenance-tracked, four-tier resolver that preserves unattributable evidence as an explicit, structurally-isolated UNKNOWN state instead of discarding or fabricating it.
