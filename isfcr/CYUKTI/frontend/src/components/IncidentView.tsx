@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
-  ShieldAlert, Clock, GitBranch, X, ArrowLeft, RefreshCw,
+  ShieldAlert, Clock, GitBranch, X,
   CheckCircle2, XCircle, HelpCircle, Award, ChevronRight, ChevronDown,
   Radar, Fingerprint, Layers, SearchCheck, Gauge, Send, FileJson,
 } from 'lucide-react';
@@ -488,70 +488,36 @@ function PlaybookMemorySection({ campaignId }: { campaignId: string }) {
 // ---------------------------------------------------------------- Main page
 
 export function IncidentView() {
-  const { campaigns, selectedCampaign, selectCampaign, setActiveView } = useDashboard();
+  const { campaigns, selectedCampaign, selectCampaign } = useDashboard();
   const [overview, setOverview] = useState<IncidentOverview | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadOverview = useCallback(() => {
+  useEffect(() => {
     if (!selectedCampaign) {
       setOverview(null);
-      setError(null);
       return;
     }
     setLoading(true);
     setError(null);
-    // Never keep the previous campaign's overview mounted while the next
-    // one loads -- the loading branch below takes priority over the
-    // `overview` branch, but clearing it here too means a stale
-    // Campaign A can never render, even momentarily, while Campaign B
-    // is in flight.
-    setOverview(null);
     api.incidentOverview(selectedCampaign)
       .then(setOverview)
       .catch((err) => setError(err.message || 'Failed to load incident overview'))
       .finally(() => setLoading(false));
   }, [selectedCampaign]);
 
-  useEffect(() => { loadOverview(); }, [loadOverview]);
-
   const ragQuery = overview?.mitre[0]?.technique_name || null;
-  // The backend's own 404 body is `Campaign <id> not found` (see
-  // /api/incidents/<campaign_id>/overview) -- surfacing that real
-  // message directly is more honest than inventing separate wording,
-  // while still letting us distinguish "wrong/stale campaign id" from
-  // an actual backend/network failure for the generic message below.
-  const isNotFound = error !== null && error.toLowerCase().includes('not found');
 
   return (
     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 bg-[#060a13]">
-      <div className="max-w-6xl mx-auto space-y-4">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
-              <ShieldAlert className="w-6 h-6 text-cyan-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">Incidents</h1>
-              <p className="text-xs text-slate-500 mt-0.5">What happened, why it matters, and what to do next — in one place.</p>
-            </div>
+      <div className="max-w-5xl mx-auto space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+            <ShieldAlert className="w-6 h-6 text-cyan-400" />
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => setActiveView('dashboard')}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-[#131c2e] text-slate-300 border border-[#1e2d4a] hover:bg-[#1a2540] transition-colors"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Back to Overview
-            </button>
-            {selectedCampaign && (
-              <button
-                onClick={loadOverview}
-                disabled={loading}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md bg-[#131c2e] text-slate-300 border border-[#1e2d4a] hover:bg-[#1a2540] transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
-              </button>
-            )}
+          <div>
+            <h1 className="text-xl font-bold text-white">Incidents</h1>
+            <p className="text-xs text-slate-500 mt-0.5">What happened, why it matters, and what to do next — in one place.</p>
           </div>
         </div>
 
@@ -572,58 +538,36 @@ export function IncidentView() {
         {!selectedCampaign ? (
           <div className="glass-card p-8 text-center text-slate-500 text-sm">Select an incident above to see its full story.</div>
         ) : loading ? (
-          <div className="glass-card p-8 text-center text-cyan-400 text-sm animate-pulse">Loading investigation...</div>
+          <div className="glass-card p-8 text-center text-cyan-400 text-sm animate-pulse">Loading incident overview...</div>
         ) : error ? (
-          <div className="glass-card p-8 text-center text-sm">
-            <p className={`mb-3 ${isNotFound ? 'text-slate-400' : 'text-red-400'}`}>
-              {isNotFound ? error : 'Unable to load investigation data.'}
-            </p>
-            <button
-              onClick={loadOverview}
-              className="text-xs font-semibold px-3 py-1.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/20 transition-colors"
-            >
-              Retry
-            </button>
-          </div>
+          <div className="glass-card p-8 text-center text-red-400 text-sm">{error}</div>
         ) : overview ? (
           <>
             <IncidentHeader overview={overview} />
+            <AttackStoryTimeline overview={overview} campaignId={selectedCampaign} onStepClick={() => {}} />
+            <CurrentAssessment overview={overview} />
+            <EvidenceSummaryCard campaignId={selectedCampaign} />
 
-            {/* Two-column desktop layout: left = attack story / investigation
-                path, right = assessment / evidence (stays visible while
-                scrolling the longer left column). Collapses to a single
-                column below the lg breakpoint. */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 items-start">
-              <div className="space-y-4 min-w-0">
-                <AttackStoryTimeline overview={overview} campaignId={selectedCampaign} onStepClick={() => {}} />
-
-                <div className="glass-card p-4">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
-                    <GitBranch className="w-3.5 h-3.5" /> Campaign Selection
-                  </h2>
-                  <SelectionTree selection={overview.campaign_selection} />
-                </div>
-
-                <div className="glass-card p-4">
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Multi-RAG</h2>
-                  <MultiRagSection campaignId={selectedCampaign} query={ragQuery} />
-                </div>
-
-                <ResponseSection campaignId={selectedCampaign} />
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <ShuffleStatus overview={overview} />
-                  <MispStatus overview={overview} />
-                </div>
-
-                <PlaybookMemorySection campaignId={selectedCampaign} />
-              </div>
-
-              <div className="space-y-4 min-w-0 lg:sticky lg:top-4">
-                <CurrentAssessment overview={overview} />
-                <EvidenceSummaryCard campaignId={selectedCampaign} />
-              </div>
+            <div className="glass-card p-4">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+                <GitBranch className="w-3.5 h-3.5" /> Campaign Selection
+              </h2>
+              <SelectionTree selection={overview.campaign_selection} />
             </div>
+
+            <div className="glass-card p-4">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Multi-RAG</h2>
+              <MultiRagSection campaignId={selectedCampaign} query={ragQuery} />
+            </div>
+
+            <ResponseSection campaignId={selectedCampaign} />
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <ShuffleStatus overview={overview} />
+              <MispStatus overview={overview} />
+            </div>
+
+            <PlaybookMemorySection campaignId={selectedCampaign} />
           </>
         ) : null}
       </div>

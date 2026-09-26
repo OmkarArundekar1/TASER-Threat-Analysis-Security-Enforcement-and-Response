@@ -297,13 +297,9 @@ export function EvidenceInvestigation() {
                 Evidence ({result.total_evidence})
               </div>
               <MultiRagSourceBar evidence={result.evidence} />
-              {result.evidence.length === 0 ? (
-                <p className="text-xs text-slate-500 italic">No investigation evidence available.</p>
-              ) : (
-                <div className="space-y-1">
-                  {result.evidence.map((e) => <EvidenceCard key={e.evidence_id} e={e} />)}
-                </div>
-              )}
+              <div className="space-y-1">
+                {result.evidence.map((e) => <EvidenceCard key={e.evidence_id} e={e} />)}
+              </div>
             </div>
           )}
         </div>
