@@ -19,6 +19,7 @@ vi.mock('../services/api', () => ({
 const mockUseDashboard = vi.mocked(useDashboard);
 const mockApi = vi.mocked(api);
 const selectCampaign = vi.fn();
+const setActiveView = vi.fn();
 
 const campaigns = [
   { campaign_id: 'CAMP_1', campaign_label: 'Campaign #1', attacker_ip: '1.1.1.1', victim_ip: '2.2.2.2', first_seen: 't', last_seen: 't', event_count: 3, risk_score: 10, risk_level: 'LOW' as const, latest_technique: 'T1078' },
@@ -26,7 +27,7 @@ const campaigns = [
 
 function setDashboard(selectedCampaign: string | null) {
   mockUseDashboard.mockReturnValue({
-    campaigns, selectedCampaign, selectCampaign,
+    campaigns, selectedCampaign, selectCampaign, setActiveView,
     investigationResult: null, isInvestigating: false, runInvestigation: vi.fn(),
   } as unknown as ReturnType<typeof useDashboard>);
 }
@@ -162,10 +163,74 @@ it('expands an attack-story step to show real detail on click', async () => {
   await waitFor(() => expect(screen.getByText(/tactic unknown|Credential Access/)).toBeInTheDocument());
 });
 
-it('shows an error state when the overview request fails', async () => {
+it('shows a generic failure message (not the raw error) plus a Retry action for a non-404 failure', async () => {
   setDashboard('CAMP_1');
   mockApi.incidentOverview.mockRejectedValue(new Error('boom'));
 
   render(<IncidentView />);
-  await waitFor(() => expect(screen.getByText('boom')).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByText('Unable to load investigation data.')).toBeInTheDocument());
+  expect(screen.queryByText('boom')).not.toBeInTheDocument();
+
+  mockApi.incidentOverview.mockResolvedValueOnce(sampleOverview as any);
+  fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+  await waitFor(() => expect(screen.getByText('CRITICAL SEVERITY')).toBeInTheDocument());
+});
+
+it('shows the real backend "not found" message for an invalid/stale campaign id, not a generic failure', async () => {
+  setDashboard('CAMP_GHOST');
+  mockApi.incidentOverview.mockRejectedValue(new Error('Campaign CAMP_GHOST not found'));
+
+  render(<IncidentView />);
+  await waitFor(() => expect(screen.getByText('Campaign CAMP_GHOST not found')).toBeInTheDocument());
+  expect(screen.queryByText('Unable to load investigation data.')).not.toBeInTheDocument();
+});
+
+it('the Back to Overview button switches the active view back to the dashboard', async () => {
+  setDashboard('CAMP_1');
+  mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
+
+  render(<IncidentView />);
+  await waitFor(() => expect(screen.getByText('CRITICAL SEVERITY')).toBeInTheDocument());
+
+  fireEvent.click(screen.getByRole('button', { name: /Back to Overview/ }));
+  expect(setActiveView).toHaveBeenCalledWith('dashboard');
+});
+
+it('the Refresh button re-fetches the overview for the current campaign', async () => {
+  setDashboard('CAMP_1');
+  mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
+
+  render(<IncidentView />);
+  await waitFor(() => expect(screen.getByText('CRITICAL SEVERITY')).toBeInTheDocument());
+  const callsBeforeRefresh = mockApi.incidentOverview.mock.calls.length;
+
+  fireEvent.click(screen.getByRole('button', { name: /Refresh/ }));
+  await waitFor(() => expect(mockApi.incidentOverview.mock.calls.length).toBeGreaterThan(callsBeforeRefresh));
+  expect(mockApi.incidentOverview).toHaveBeenLastCalledWith('CAMP_1');
+});
+
+it('never shows Campaign A\'s data while Campaign B is loading or after Campaign B is selected', async () => {
+  setDashboard('CAMP_1');
+  mockApi.incidentOverview.mockResolvedValue(sampleOverview as any);
+
+  const { rerender } = render(<IncidentView />);
+  await waitFor(() => expect(screen.getByText('1.2.3.4')).toBeInTheDocument());
+
+  const campaignBOverview = {
+    ...sampleOverview,
+    campaign: { ...sampleOverview.campaign, campaign_id: 'CAMP_2', attacker_ip: '9.9.9.9' },
+  };
+  let resolveSecond: (v: any) => void = () => {};
+  mockApi.incidentOverview.mockReturnValue(new Promise((resolve) => { resolveSecond = resolve; }));
+  setDashboard('CAMP_2');
+  rerender(<IncidentView />);
+
+  // While CAMP_2's request is in flight, CAMP_1's attacker IP must not
+  // still be on screen (the loading branch must fully replace it).
+  await waitFor(() => expect(screen.getByText('Loading investigation...')).toBeInTheDocument());
+  expect(screen.queryByText('1.2.3.4')).not.toBeInTheDocument();
+
+  resolveSecond(campaignBOverview);
+  await waitFor(() => expect(screen.getByText('9.9.9.9')).toBeInTheDocument());
+  expect(screen.queryByText('1.2.3.4')).not.toBeInTheDocument();
 });

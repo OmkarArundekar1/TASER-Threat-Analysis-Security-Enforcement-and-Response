@@ -5,6 +5,7 @@ import type {
   HealthStatus, OverviewMetrics, AlertEvent, GraphData,
   Campaign, Prediction, RecommendationGroup, Attacker
 } from '../types';
+import type { TopLevelView } from '../components/TopNavBar';
 
 interface DashboardState {
   health: HealthStatus | null;
@@ -26,6 +27,7 @@ interface DashboardState {
   loading: boolean;
   error: string | null;
   isPathExplorerOpen: boolean;
+  activeView: TopLevelView;
 }
 
 interface DashboardContextType extends DashboardState {
@@ -36,6 +38,8 @@ interface DashboardContextType extends DashboardState {
   setGraphLayer: (layer: 'campaign' | 'investigation' | 'threat_intel') => void;
   setEventsPage: (page: number) => void;
   setPathExplorerOpen: (isOpen: boolean) => void;
+  setActiveView: (view: TopLevelView) => void;
+  openExplorePath: (campaignId: string) => void;
   resetDashboard: () => void;
   refreshAll: () => Promise<void>;
   refreshEvents: () => Promise<void>;
@@ -57,7 +61,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     graphData: null, campaigns: [], predictions: [], recommendations: [],
     attackers: [], selectedCampaign: null, selectedAttacker: null,
     selectedTechnique: null, globalTimeRange: '24h', graphLayer: 'campaign', resetKey: 0, loading: true, error: null,
-    isPathExplorerOpen: false,
+    isPathExplorerOpen: false, activeView: 'dashboard',
   });
 
   const selectCampaign = useCallback((id: string | null) => {
@@ -93,6 +97,18 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const setPathExplorerOpen = useCallback((isOpen: boolean) => {
     setState(s => ({ ...s, isPathExplorerOpen: isOpen }));
+  }, []);
+
+  const setActiveView = useCallback((view: TopLevelView) => {
+    setState(s => ({ ...s, activeView: view }));
+  }, []);
+
+  // "Open Explore Path": select the campaign and land on the existing
+  // Incidents investigation workspace in one step, so the analyst never
+  // sees an intermediate state where the campaign is selected but the
+  // wrong view is showing (or vice versa).
+  const openExplorePath = useCallback((campaignId: string) => {
+    setState(s => ({ ...s, selectedCampaign: campaignId, activeView: 'incident' }));
   }, []);
 
   const resetDashboard = useCallback(() => {
@@ -205,7 +221,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   return (
     <DashboardContext.Provider value={{
       ...state, selectCampaign, selectAttacker, selectTechnique, setGlobalTimeRange, setGraphLayer, resetDashboard,
-      setEventsPage, setPathExplorerOpen, refreshAll, refreshEvents, refreshGraph, addEvents,
+      setEventsPage, setPathExplorerOpen, setActiveView, openExplorePath, refreshAll, refreshEvents, refreshGraph, addEvents,
     }}>
       {children}
     </DashboardContext.Provider>

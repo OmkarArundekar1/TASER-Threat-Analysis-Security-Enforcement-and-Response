@@ -1,11 +1,11 @@
 import { useDashboard } from '../context/DashboardContext';
-import { Target, Clock, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Target, Clock, ArrowLeft, ArrowRight, ShieldCheck, Compass } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { CampaignId } from './CampaignId';
 
 export function CampaignIntelligence() {
-  const { campaigns, selectedCampaign, selectCampaign, predictions, recommendations } = useDashboard();
+  const { campaigns, selectedCampaign, selectCampaign, predictions, recommendations, openExplorePath } = useDashboard();
 
   const getRiskClass = (risk: string) => {
     switch (risk) {
@@ -42,7 +42,7 @@ export function CampaignIntelligence() {
       <div className="glass-card flex flex-col h-full overflow-hidden animate-slide-in">
         <div className="p-4 border-b border-[#1e2d4a] flex items-center justify-between bg-[#131c2e]/50">
           <h2 className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
-            <button onClick={() => selectCampaign(null)} className="p-1 hover:bg-[#1a2540] rounded mr-1 transition-colors">
+            <button onClick={() => selectCampaign(null)} aria-label="Back to campaign list" className="p-1 hover:bg-[#1a2540] rounded mr-1 transition-colors">
               <ArrowLeft className="w-4 h-4 text-slate-400 hover:text-white" />
             </button>
             <Target className="w-4 h-4 text-orange-400" />
@@ -61,7 +61,7 @@ export function CampaignIntelligence() {
                   {camp.risk_score}/100 · {camp.risk_level}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+              <div className="grid grid-cols-2 gap-2 text-xs font-mono mb-3">
                 <div className="bg-[#131c2e] p-2 rounded border border-[#1e2d4a]">
                   <div className="text-[9px] text-slate-500 mb-1">Attacker</div>
                   <div className="text-red-400">{camp.attacker_ip}</div>
@@ -71,6 +71,12 @@ export function CampaignIntelligence() {
                   <div className="text-blue-400">{camp.victim_ip}</div>
                 </div>
               </div>
+              <button
+                onClick={() => openExplorePath(camp.campaign_id)}
+                className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/20 transition-colors"
+              >
+                <Compass className="w-3.5 h-3.5" /> Open Explore Path
+              </button>
             </div>
           )}
 

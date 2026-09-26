@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { DashboardProvider, useDashboard } from './context/DashboardContext';
-import { TopNavBar, type TopLevelView } from './components/TopNavBar';
+import { TopNavBar } from './components/TopNavBar';
 import { SecurityOverview } from './components/SecurityOverview';
 import { LiveEventsFeed } from './components/LiveEventsFeed';
 import { AttackGraph } from './components/AttackGraph';
@@ -19,8 +18,7 @@ import { SOARPage } from './components/SOARPage';
 import { IncidentView } from './components/IncidentView';
 
 function DashboardLayout() {
-  const { isPathExplorerOpen } = useDashboard();
-  const [activeView, setActiveView] = useState<TopLevelView>('dashboard');
+  const { isPathExplorerOpen, activeView, setActiveView } = useDashboard();
 
   return (
     <div className="h-screen flex flex-col bg-[#060a13] text-slate-200 overflow-hidden">

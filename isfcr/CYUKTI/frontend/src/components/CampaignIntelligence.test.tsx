@@ -18,10 +18,11 @@ const mockUseDashboard = vi.mocked(useDashboard);
 const mockApi = vi.mocked(api);
 
 const selectCampaign = vi.fn();
+const openExplorePath = vi.fn();
 
 function setState(overrides: Partial<ReturnType<typeof useDashboard>>) {
   mockUseDashboard.mockReturnValue({
-    campaigns: [], selectedCampaign: null, selectCampaign, predictions: [], recommendations: [],
+    campaigns: [], selectedCampaign: null, selectCampaign, predictions: [], recommendations: [], openExplorePath,
     ...overrides,
   } as ReturnType<typeof useDashboard>);
 }
@@ -74,6 +75,20 @@ describe('CampaignIntelligence -- detail view', () => {
     await waitFor(() => expect(mockApi.campaignTimeline).toHaveBeenCalledWith(campaignFixture.campaign_id));
   });
 
+  it('opens the Explore Path investigation workspace for this campaign when clicked', async () => {
+    setState({
+      campaigns: [campaignFixture],
+      selectedCampaign: campaignFixture.campaign_id,
+      predictions: [],
+      recommendations: [],
+    });
+    render(<CampaignIntelligence />);
+    await waitFor(() => expect(mockApi.campaignTimeline).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole('button', { name: /Open Explore Path/ }));
+    expect(openExplorePath).toHaveBeenCalledWith(campaignFixture.campaign_id);
+  });
+
   it('renders the observed timeline once it loads', async () => {
     mockApi.campaignTimeline.mockResolvedValue({
       events: [{ first_seen: '2026-01-15T10:00:00Z', occurrences: 3, technique_name: 'Brute Force', technique_id: 'T1110', stage: 'Credential Access' }],
@@ -90,7 +105,7 @@ describe('CampaignIntelligence -- detail view', () => {
     setState({ campaigns: [campaignFixture], selectedCampaign: campaignFixture.campaign_id });
     render(<CampaignIntelligence />);
     await waitFor(() => expect(mockApi.campaignTimeline).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button')); // ArrowLeft back button is the first/only button in this header
+    fireEvent.click(screen.getByRole('button', { name: 'Back to campaign list' }));
     expect(selectCampaign).toHaveBeenCalledWith(null);
   });
 
