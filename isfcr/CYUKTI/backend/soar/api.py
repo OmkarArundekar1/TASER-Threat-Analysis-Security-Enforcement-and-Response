@@ -44,6 +44,42 @@ def _load_context_or_error(campaign_id: str):
     return _try_load_campaign_context(campaign_id)
 
 
+_RESPONSE_STATE_EVENT_ORDER = [
+    "PLAYBOOK_APPROVAL_REQUESTED", "PLAYBOOK_APPROVED", "PLAYBOOK_REJECTED",
+    "PLAYBOOK_EXECUTION_STARTED", "CONTAINMENT_REQUESTED", "CONTAINMENT_EXECUTED",
+    "CONTAINMENT_FAILED", "CONTAINMENT_VERIFIED", "CONTAINMENT_NOT_VERIFIED",
+    "ROLLBACK_REQUESTED", "ROLLBACK_VERIFIED", "PLAYBOOK_EXECUTION_COMPLETED",
+    "PLAYBOOK_EXECUTION_FAILED",
+]
+
+
+@soar_bp.route("/response-state/<correlation_id>")
+def response_state(correlation_id: str):
+    """Read-only dashboard endpoint (GET only -- there is deliberately
+    no POST/PUT route anywhere in this blueprint or active_response/
+    that lets a caller REQUEST or TRIGGER containment over HTTP; the
+    only way to invoke ClientResponseAgent is as an in-process Python
+    library call, never a network-exposed action -- see
+    review/phaseZ_final_integration_audit.md Section N). Derives a
+    single "current state" label from the most recent recognized event
+    in this correlation_id's real audit trail -- never fabricates a
+    state when the trail is empty (returns "NO_RESPONSE_ACTIVITY",
+    not "OBSERVE" or any state implying something happened)."""
+    from active_response.audit import audit_trail_for_correlation
+    events = audit_trail_for_correlation(correlation_id)
+    if not events:
+        current_state = "NO_RESPONSE_ACTIVITY"
+    else:
+        recognized = [e for e in events if e["event_type"] in _RESPONSE_STATE_EVENT_ORDER]
+        current_state = recognized[0]["event_type"] if recognized else "UNKNOWN_EVENT_TYPE"
+    return jsonify({
+        "correlation_id": correlation_id,
+        "current_state": current_state,
+        "event_count": len(events),
+        "events": events,
+    })
+
+
 @soar_bp.route("/response-audit/<correlation_id>")
 def response_audit_trail(correlation_id: str):
     """Active-containment dashboard data source (backend/active_response/,

@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
 import {
   Bot, ShieldCheck, ShieldAlert, ShieldOff, BookOpen, Activity, History as HistoryIcon,
-  BarChart3, CheckCircle2, XCircle, RefreshCw, Sparkles,
+  BarChart3, CheckCircle2, XCircle, RefreshCw, Sparkles, Radio, AlertTriangle,
 } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { api } from '../services/api';
 import type {
   HistoricalPlaybookMatch, Playbook, PlaybookAction, PlaybookEffectiveness,
-  PlaybookExecution, SoarStatus,
+  PlaybookExecution, SoarStatus, ResponseStateResponse,
 } from '../types';
 
-type SoarTab = 'recommendations' | 'library' | 'active' | 'history' | 'effectiveness';
+type SoarTab = 'recommendations' | 'library' | 'active' | 'history' | 'effectiveness' | 'response';
 
 const TABS: { id: SoarTab; label: string; icon: typeof BookOpen }[] = [
   { id: 'recommendations', label: 'Recommendations', icon: Sparkles },
@@ -18,7 +18,36 @@ const TABS: { id: SoarTab; label: string; icon: typeof BookOpen }[] = [
   { id: 'active', label: 'Active Executions', icon: Activity },
   { id: 'history', label: 'History', icon: HistoryIcon },
   { id: 'effectiveness', label: 'Effectiveness', icon: BarChart3 },
+  { id: 'response', label: 'Active Response', icon: Radio },
 ];
+
+// Every state the backend's ResponseState enum / audit event types can
+// report, mapped to a color -- deliberately NO color/label implies
+// "blocked" or "safe" unless the state is exactly VERIFIED. An
+// unrecognized or absent state renders as neutral gray, never green.
+const RESPONSE_STATE_STYLE: Record<string, { label: string; className: string }> = {
+  NO_RESPONSE_ACTIVITY: { label: 'No response activity', className: 'text-slate-500 border-slate-700 bg-slate-800/30' },
+  CONTAINMENT_REQUESTED: { label: 'Containment requested', className: 'text-amber-400 border-amber-500/40 bg-amber-500/10' },
+  CONTAINMENT_EXECUTED: { label: 'Containment executed (not yet verified)', className: 'text-amber-400 border-amber-500/40 bg-amber-500/10' },
+  CONTAINMENT_FAILED: { label: 'Containment FAILED', className: 'text-red-400 border-red-500/40 bg-red-500/10' },
+  CONTAINMENT_NOT_VERIFIED: { label: 'Containment NOT verified', className: 'text-red-400 border-red-500/40 bg-red-500/10' },
+  CONTAINMENT_VERIFIED: { label: 'CONTAINMENT VERIFIED', className: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10' },
+  ROLLBACK_REQUESTED: { label: 'Rollback requested', className: 'text-cyan-400 border-cyan-500/40 bg-cyan-500/10' },
+  ROLLBACK_VERIFIED: { label: 'Rolled back (verified)', className: 'text-cyan-400 border-cyan-500/40 bg-cyan-500/10' },
+  PLAYBOOK_APPROVAL_REQUESTED: { label: 'Awaiting analyst approval', className: 'text-amber-400 border-amber-500/40 bg-amber-500/10' },
+  PLAYBOOK_REJECTED: { label: 'Rejected by analyst', className: 'text-slate-400 border-slate-600 bg-slate-800/30' },
+  UNKNOWN_EVENT_TYPE: { label: 'Unrecognized event', className: 'text-slate-400 border-slate-600 bg-slate-800/30' },
+};
+
+function ResponseStateBadge({ state }: { state: string }) {
+  const style = RESPONSE_STATE_STYLE[state] ?? { label: state, className: 'text-slate-400 border-slate-600 bg-slate-800/30' };
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase px-3 py-1.5 rounded border ${style.className}`}>
+      {state === 'CONTAINMENT_VERIFIED' ? <ShieldCheck className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+      {style.label}
+    </span>
+  );
+}
 
 function ActionBadge({ action }: { action: PlaybookAction }) {
   if (action.destructive) {
@@ -149,6 +178,8 @@ export function SOARPage() {
   const [matches, setMatches] = useState<HistoricalPlaybookMatch[]>([]);
   const [loading, setLoading] = useState(false);
   const [executing, setExecuting] = useState<string | null>(null);
+  const [responseState, setResponseState] = useState<ResponseStateResponse | null>(null);
+  const [responseStateLoading, setResponseStateLoading] = useState(false);
 
   useEffect(() => {
     api.soarStatus().then(setStatus).catch(() => setStatus(null));
@@ -163,6 +194,20 @@ export function SOARPage() {
     if (tab === 'active' || tab === 'history') refreshExecutions();
     if (tab === 'effectiveness') refreshEffectiveness();
   }, [tab]);
+
+  useEffect(() => {
+    // Response's correlation_id == the campaign_id itself, by design --
+    // see backend/active_response/correlation.py's reuse strategy.
+    if (tab !== 'response' || !selectedCampaign) {
+      setResponseState(null);
+      return;
+    }
+    setResponseStateLoading(true);
+    api.responseState(selectedCampaign)
+      .then(setResponseState)
+      .catch(() => setResponseState(null))
+      .finally(() => setResponseStateLoading(false));
+  }, [tab, selectedCampaign]);
 
   useEffect(() => {
     if (tab !== 'recommendations' || !selectedCampaign) {
@@ -347,6 +392,77 @@ export function SOARPage() {
                   </div>
                 </div>
               ))
+            )}
+          </div>
+        )}
+
+        {tab === 'response' && (
+          <div className="space-y-4">
+            <div className="glass-card p-3 flex items-center gap-3">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider shrink-0">Campaign</label>
+              <select
+                value={selectedCampaign || ''}
+                onChange={(e) => selectCampaign(e.target.value || null)}
+                className="flex-1 bg-[#0a0e17] text-sm text-slate-200 font-mono border border-[#1e2d4a] rounded px-2 py-1.5 outline-none focus:border-indigo-500"
+              >
+                <option value="">Select a campaign...</option>
+                {campaigns.map((c) => (
+                  <option key={c.campaign_id} value={c.campaign_id}>{c.campaign_label || c.campaign_id}</option>
+                ))}
+              </select>
+            </div>
+
+            {!selectedCampaign ? (
+              <div className="glass-card p-8 text-center text-slate-500 text-sm">Select a campaign to see its active-response lifecycle.</div>
+            ) : responseStateLoading ? (
+              <div className="glass-card p-8 text-center text-cyan-400 text-sm animate-pulse">Loading response state...</div>
+            ) : !responseState ? (
+              <div className="glass-card p-8 text-center text-slate-500 text-sm">Could not load response state for this campaign.</div>
+            ) : (
+              <>
+                <div className="glass-card p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-slate-500 font-mono">correlation_id: {responseState.correlation_id}</span>
+                    <ResponseStateBadge state={responseState.current_state} />
+                  </div>
+                  {responseState.current_state === 'NO_RESPONSE_ACTIVITY' && (
+                    <p className="text-[11px] text-slate-500">
+                      No containment has been requested for this campaign. This is the normal state for the
+                      large majority of campaigns -- containment is gated by ResponsePolicyEngine and, in
+                      production, requires AUTO_CONTAIN=true plus an eligible QUALIFIED_THREAT classification.
+                    </p>
+                  )}
+                  {(responseState.current_state === 'CONTAINMENT_EXECUTED') && (
+                    <p className="text-[11px] text-amber-400/80">
+                      A containment action executed but has not yet been independently verified -- this is
+                      deliberately never shown as "blocked" until CONTAINMENT_VERIFIED appears.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">
+                    Audit trail ({responseState.event_count} event{responseState.event_count === 1 ? '' : 's'})
+                  </h2>
+                  {responseState.events.length === 0 ? (
+                    <div className="glass-card p-6 text-center text-slate-500 text-sm">No response events recorded yet.</div>
+                  ) : (
+                    <div className="glass-card divide-y divide-[#1e2d4a]">
+                      {responseState.events.map((e, i) => (
+                        <div key={i} className="p-3 flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-xs font-mono text-slate-200">{e.event_type}</div>
+                            <div className="text-[10px] text-slate-500 truncate">{e.timestamp}</div>
+                          </div>
+                          {typeof e.detail?.reason === 'string' && (
+                            <span className="text-[10px] text-slate-500 truncate max-w-xs" title={e.detail.reason}>{e.detail.reason}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}

@@ -458,6 +458,28 @@ export interface SoarStatus {
   stored_executions: number;
 }
 
+/* ── Active Response (backend/active_response/, Phase X/Z) ── */
+/* Read-only: this app never sends a request that triggers containment --
+   ClientResponseAgent is an in-process library, never network-exposed. */
+
+export interface ResponseAuditEvent {
+  event_type: string;
+  timestamp: string;
+  campaign_id: string | null;
+  operation_id: string | null;
+  investigation_id: string | null;
+  playbook_id: string | null;
+  execution_id: string | null;
+  detail: Record<string, unknown>;
+}
+
+export interface ResponseStateResponse {
+  correlation_id: string;
+  current_state: string;
+  event_count: number;
+  events: ResponseAuditEvent[];
+}
+
 /* ── Campaign Selection (backend/campaign_selection.py) ── */
 
 export interface CandidateSignals {

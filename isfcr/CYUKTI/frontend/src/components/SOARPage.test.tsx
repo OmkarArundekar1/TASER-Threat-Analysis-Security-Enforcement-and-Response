@@ -9,7 +9,7 @@ vi.mock('../services/api', () => ({
   api: {
     soarStatus: vi.fn(), listPlaybooks: vi.fn(), listExecutions: vi.fn(), soarEffectiveness: vi.fn(),
     soarRecommendations: vi.fn(), generatePlaybook: vi.fn(), executePlaybook: vi.fn(), adaptPlaybook: vi.fn(),
-    approveExecution: vi.fn(), rejectExecution: vi.fn(), pollExecution: vi.fn(),
+    approveExecution: vi.fn(), rejectExecution: vi.fn(), pollExecution: vi.fn(), responseState: vi.fn(),
   },
 }));
 
@@ -48,6 +48,9 @@ beforeEach(() => {
   mockApi.listPlaybooks.mockResolvedValue({ playbooks: [] });
   mockApi.listExecutions.mockResolvedValue({ executions: [] });
   mockApi.soarEffectiveness.mockResolvedValue({ effectiveness: [] });
+  mockApi.responseState.mockResolvedValue({
+    correlation_id: 'CAMP_1', current_state: 'NO_RESPONSE_ACTIVITY', event_count: 0, events: [],
+  });
 });
 
 it('shows the shuffle-not-configured indicator', async () => {
@@ -139,4 +142,47 @@ it('effectiveness tab shows success rate per playbook', async () => {
   render(<SOARPage />);
   fireEvent.click(screen.getByText('Effectiveness'));
   await waitFor(() => expect(screen.getByText('75%')).toBeInTheDocument());
+});
+
+it('response tab prompts for a campaign when none is selected', async () => {
+  setDashboard(null);
+  render(<SOARPage />);
+  fireEvent.click(screen.getByText('Active Response'));
+  await waitFor(() => expect(screen.getByText(/Select a campaign to see its active-response lifecycle/)).toBeInTheDocument());
+  expect(mockApi.responseState).not.toHaveBeenCalled();
+});
+
+it('response tab shows NO_RESPONSE_ACTIVITY honestly when nothing has happened', async () => {
+  setDashboard('CAMP_1');
+  render(<SOARPage />);
+  fireEvent.click(screen.getByText('Active Response'));
+  await waitFor(() => expect(mockApi.responseState).toHaveBeenCalledWith('CAMP_1'));
+  await waitFor(() => expect(screen.getByText(/No response activity/)).toBeInTheDocument());
+});
+
+it('response tab never renders an unverified containment as blocked', async () => {
+  setDashboard('CAMP_1');
+  mockApi.responseState.mockResolvedValue({
+    correlation_id: 'CAMP_1', current_state: 'CONTAINMENT_EXECUTED', event_count: 1,
+    events: [{ event_type: 'CONTAINMENT_EXECUTED', timestamp: 't', campaign_id: 'CAMP_1',
+               operation_id: null, investigation_id: null, playbook_id: null, execution_id: null, detail: {} }],
+  });
+
+  render(<SOARPage />);
+  fireEvent.click(screen.getByText('Active Response'));
+  await waitFor(() => expect(screen.getByText(/Containment executed \(not yet verified\)/)).toBeInTheDocument());
+  expect(screen.queryByText(/ATTACK BLOCKED/i)).not.toBeInTheDocument();
+});
+
+it('response tab shows CONTAINMENT VERIFIED only when the backend actually reports it', async () => {
+  setDashboard('CAMP_1');
+  mockApi.responseState.mockResolvedValue({
+    correlation_id: 'CAMP_1', current_state: 'CONTAINMENT_VERIFIED', event_count: 1,
+    events: [{ event_type: 'CONTAINMENT_VERIFIED', timestamp: 't', campaign_id: 'CAMP_1',
+               operation_id: null, investigation_id: null, playbook_id: null, execution_id: null, detail: {} }],
+  });
+
+  render(<SOARPage />);
+  fireEvent.click(screen.getByText('Active Response'));
+  await waitFor(() => expect(screen.getByText(/CONTAINMENT VERIFIED/)).toBeInTheDocument());
 });

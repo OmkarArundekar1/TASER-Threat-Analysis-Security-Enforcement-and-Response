@@ -26,6 +26,7 @@ such field anywhere in ContainmentRequest.
 
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -98,6 +99,21 @@ class ClientResponseAgent:
         self.authenticator = authenticator
         self.never_block_ips = never_block_ips
         self._seen_correlation_ids: set[str] = set()   # duplicate-request guard
+        self._seen_lock = threading.Lock()              # see _reserve_correlation_id
+
+    def _reserve_correlation_id(self, correlation_id: str) -> bool:
+        """Atomically check-and-reserve. A plain 'if in set: ... else:
+        set.add(...)' is a check-then-act race: two concurrent calls
+        for the same correlation_id could both observe 'not seen' before
+        either reserves it, and both would go on to execute a real
+        firewall block -- exactly the kind of duplicate-execution bug
+        Section 14's 'race conditions in state transitions' asks to be
+        checked for. Returns True iff THIS call is the one that reserved it."""
+        with self._seen_lock:
+            if correlation_id in self._seen_correlation_ids:
+                return False
+            self._seen_correlation_ids.add(correlation_id)
+            return True
 
     def handle(self, request: ContainmentRequest) -> ContainmentResult:
         now = datetime.now(timezone.utc)
@@ -108,7 +124,12 @@ class ClientResponseAgent:
         if not request.correlation_id:
             return self._rejected(request, now, "Missing correlation_id.")
 
-        if request.correlation_id in self._seen_correlation_ids:
+        # Reserve BEFORE any other check so two concurrent requests can
+        # never both pass this gate for the same correlation_id, even if
+        # a later check (allowlist, IP validation) would reject one of
+        # them anyway -- the reservation itself, not just the eventual
+        # containment call, is the race-sensitive resource.
+        if not self._reserve_correlation_id(request.correlation_id):
             return self._rejected(request, now, f"Duplicate request for correlation_id={request.correlation_id}.")
 
         if not is_executable(request.action):
@@ -122,8 +143,6 @@ class ClientResponseAgent:
             validate_ip(request.target_ip)
         except InvalidSourceIP as e:
             return self._rejected(request, now, str(e))
-
-        self._seen_correlation_ids.add(request.correlation_id)
 
         block_result = self.firewall.block(request.target_ip)
         # Never trust block()'s own success flag as final evidence --
