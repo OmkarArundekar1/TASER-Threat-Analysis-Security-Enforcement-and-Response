@@ -46,6 +46,9 @@ logic are all CYUKTI's own.
   `except`). Left untouched (out of scope to fix a Generation-2 file
   for this phase beyond the new SOAR layer; noted here for accuracy
   rather than silently building over it).
+  *Planned:* fix `realtime_socgraph.py` to read `config.SHUFFLE_WEBHOOK`
+  in a dedicated pass, once it's back in scope alongside the rest of
+  Generation-2 cleanup.
 - **Where the final investigation result becomes available**: 
   `dashboard_api.py`'s `/api/investigate/<campaign_id>` route, after
   `investigation.loop.run_investigation()` returns. `soar/generator.py`
@@ -120,6 +123,8 @@ Two real, distinct mechanisms (`soar/shuffle_client.py`):
    (`PlaybookExecutionService.poll_status`). Not usable in this
    environment (no base URL/API key configured) — reported as
    `not_configured`, never faked.
+   *Planned:* exercise this path once `SHUFFLE_BASE_URL`/`SHUFFLE_API_KEY`
+   are configured against a real Shuffle instance (see Section 20).
 
 No endpoint was invented; both are Shuffle's own documented mechanisms.
 Credentials only ever come from `config.py`/`.env`, are never logged,
@@ -217,6 +222,9 @@ are never altered.
   full lifecycle end-to-end; a real fix would check
   `memory_store.executions_for_campaign(campaign_id)` for an existing
   non-terminal execution of the same playbook before creating a new one.
+  *Planned:* implement that check in `request_execution()` in a
+  dedicated follow-up pass, with a regression test for the
+  quick-succession double-call case.
 
 ## 12. Dashboard changes
 
@@ -281,14 +289,18 @@ mocked anywhere in this test suite.
 ## 17. Remaining blockers
 
 - **SHUFFLE_INFRASTRUCTURE_BLOCKED** (Section 15) — no reachable Shuffle instance/webhook configured in this environment.
+  *Planned:* see Section 20's exact next action once a real Shuffle instance is reachable.
 - MISP publish remains credential-pending-restart per `FULL_SYSTEM_INTEGRATION_AUDIT.md` Section 6 (unrelated to this phase, noted for completeness since Playbook `create_incident`/`notify_soc` actions are conceptually adjacent).
+  *Planned:* reconfirm once `MISP_API_KEY` is configured and the MISP service is running for a verification session (see `MISP_PUBLICATION_POLICY.md`'s "Exact next action").
 
 ## 18. Remaining limitations
 
 - Duplicate/concurrent execution prevention not implemented (Section 11).
 - `shuffle_workflow_id`/`shuffle_workflow_version` on `Playbook` are real schema fields but nothing currently populates them automatically — an operator would set them manually per playbook once a specific Shuffle workflow is built for it, since this environment has no Shuffle workflows to introspect.
+  *Planned:* auto-populate these fields once real Shuffle workflows exist to introspect against.
 - Per-action result granularity from Shuffle depends entirely on that workflow's own webhook response shape; a `SYNCHRONOUS_RESULT` with no per-action breakdown is stored as one shared output attached to every action, honestly, not invented as separate results.
 - `PlaybookGenerator`'s action catalog (`enrich_ip`, `threat_intel_lookup`, `historical_campaign_search`, `collect_evidence`, `apply_mitigation`, `block_ip`, `isolate_host`, `create_incident`, `notify_soc`) is a generic contract for a Shuffle workflow to interpret — this environment has no configured Shuffle apps to verify those `action_type` strings map to a specific real integration (e.g., a specific firewall API); the workflow-side mapping is Shuffle's responsibility, consistent with the "Shuffle executes, CYUKTI decides" architecture.
+  *Planned:* verify the `action_type`-to-integration mapping once a real Shuffle instance with configured apps is available (see Section 20).
 
 ## 19. Exact end-to-end data flow
 

@@ -7,6 +7,8 @@ bugfixes (`_load_campaign_context`, `/api/query`'s driver-API mismatch)
 had dedicated tests. This documents what this session verified/fixed.
 **No load/performance testing was performed or is claimed** — that is
 explicitly deferred, per the mission for this phase.
+*Planned:* extend the benchmark harness to a sustained-load ingestion
+test once a suitable traffic generator is in place.
 
 ## API inventory
 
@@ -136,6 +138,8 @@ file in this session (this environment's npm fails on the WSL UNC
 path's `node_modules` — `EPERM`/`EISDIR` errors unrelated to this
 change); the edit was verified by inspection (additive interface
 fields only, syntactically valid TypeScript).
+*Planned:* re-run `tsc` mechanically once `npm install` succeeds in an
+environment without the WSL UNC path issue.
 
 ## Live verification
 
@@ -172,11 +176,21 @@ python -m pytest tests/ -q                                 # full backend suite 
 ## Remaining limitations
 
 Load/performance/throughput testing is explicitly out of scope for
-this phase (deferred, per the mission), not attempted. `frontend`
+this phase (deferred, per the mission), not attempted.
+*Planned:* extend the benchmark harness to a sustained-load ingestion
+test once a suitable traffic generator is in place.
+
+`frontend`
 TypeScript compilation could not be mechanically verified in this
-environment (see above) — verified by inspection instead. Several
+environment (see above) — verified by inspection instead.
+*Planned:* re-run `tsc` mechanically once `npm install` succeeds in an
+environment without the WSL UNC path issue.
+
+Several
 Neo4j-heavy routes (`/api/graph/paths`, `/api/analytics/paths`,
 `/api/query`'s general Cypher-console surface) received live smoke
 verification but not exhaustive parameter-combination coverage, in
 line with proportioning effort to value across 22 routes rather than
 exhaustively testing every one to the same depth.
+*Planned:* expand parameter-combination test coverage for these routes
+as time allows, prioritized by real usage.

@@ -35,6 +35,7 @@ Added this phase, purely additively:
 `GET /api/threat-qualification/<campaign_id>` reconstructs a qualification view for a campaign that's already been through the live pipeline, using **real, persisted** state (`Campaign.cti_score`/`cti_publish`, written by `neo4j_client.store_cti_confidence` during live alert processing) rather than requiring a live, in-memory `IncidentContext` (which only exists transiently during `realtime_socgraph.py`'s own processing and is never itself persisted). `threat_classification` is re-derived from the stored score using the exact same thresholds as `cti_confidence_engine.py` — not a new heuristic.
 
 **Known limitation**: a campaign that never went through live CTI-confidence computation (e.g. seeded directly into Neo4j, or processed before this field existed) has no stored `cti_score` — the endpoint honestly reports `NOT_THREAT` / "no CTI confidence computed yet" rather than fabricating a score.
+*Planned:* add a backfill utility that runs `cti_confidence_engine.py` against such campaigns on demand so this UNKNOWN state can be resolved without waiting for a new live event.
 
 ## Dashboard (added this phase)
 

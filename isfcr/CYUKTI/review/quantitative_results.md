@@ -147,14 +147,23 @@ This task's brief described the "current known state" as: Neo4j (`neo4j-soc`) do
 
 ### E. Not measured (no defensible quantitative result exists)
 - Threat attribution accuracy/precision/recall/F1/AUC.
+  *Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed.
 - RAG retrieval precision/recall.
+  *Planned:* construct a labeled query set to measure retrieval precision/recall directly.
 - GNN performance on real campaigns.
+  *Planned:* build a real-campaign benchmark once the Phase 19 dataset expansion provides enough real campaign graphs to make one meaningful.
 - SSL anomaly-detection accuracy/AUC on real attack traffic.
+  *Planned:* build a labeled real-attack-traffic benchmark for the SSL autoencoder once enough real anomalous traffic has been collected.
 - Held-out ML generalization accuracy, ROC-AUC, PR-AUC, cross-validation.
+  *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 - API/listener latency, throughput, memory utilization.
+  *Planned:* per-stage latency is now measured (see `BENCHMARKS.md`); sustained-load throughput and memory utilization remain to be added to the benchmark harness once a suitable traffic generator is in place.
 - Confirmed live MISP publication success (events published, IOCs enriched).
+  *Planned:* reconfirm once `MISP_API_KEY` is configured and the MISP service is running for a verification session.
 - Investigation-loop confidence precision/recall.
+  *Planned:* collect human verdicts against the exported review queue to measure investigation-confidence precision/recall directly.
 - Real XGBoost probabilities for the 3 named campaigns cited in earlier project history (not independently re-verified this session or the prior one).
+  *Planned:* re-verify these probabilities against a fresh live investigation run in the next verification session.
 
 ---
 
@@ -204,9 +213,11 @@ This task's brief described the "current known state" as: Neo4j (`neo4j-soc`) do
 
 ### Lack of attribution ground truth
 **Defensible answer**: "We don't have a labeled attacker-identity dataset, so we report attribution accuracy as NOT MEASURED rather than inventing a number. The attribution engine is implemented and exercised at the evidence-collector level, but we don't claim a performance result we can't support."
+*Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed.
 
 ### Absence of held-out ML evaluation
 **Defensible answer**: "The dataset currently has 60 campaigns from only 3 real attacker identities — our own validity-gate analysis concluded this isn't yet diverse enough to support a meaningful train/test split, so we report in-sample metrics only, labeled as such, rather than manufacturing a held-out split that wouldn't be statistically meaningful anyway."
+*Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 
 ---
 
@@ -222,17 +233,27 @@ This task's brief described the "current known state" as: Neo4j (`neo4j-soc`) do
 
 ### Partially demonstrated
 - XGBoost severity classification (in-sample metrics only, no held-out split).
+  *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 - NEXT_TECHNIQUE prediction (pipeline correct, but self-assessed as statistically insufficient — 12 evaluable samples).
+  *Planned:* the same Phase 19 dataset expansion is intended to accumulate enough real technique transitions to revisit this verdict.
 - Evidence-aware investigation architecture (25 tests pass; no live end-to-end investigation trace was freshly generated in this or the immediately preceding session).
+  *Planned:* schedule a fresh live end-to-end investigation trace against Neo4j in the next verification session.
 - RAG retrieval (corpus scale confirmed; retrieval quality unmeasured).
+  *Planned:* construct a labeled query set to measure retrieval precision/recall directly.
 - MISP integration (client code confirmed non-blocking and correctly gated; live publish success unmeasured because the MISP stack is currently absent).
+  *Planned:* reconfirm once `MISP_API_KEY` is configured and the MISP service is running for a verification session.
 
 ### Not yet demonstrated
 - Threat attribution accuracy (no ground-truth dataset).
+  *Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed.
 - GNN performance on real campaign graphs (synthetic-only tests).
+  *Planned:* build a real-campaign benchmark once the Phase 19 dataset expansion provides enough real campaign graphs to make one meaningful.
 - SSL/autoencoder anomaly-detection accuracy on real attack traffic.
+  *Planned:* build a labeled real-attack-traffic benchmark once enough real anomalous traffic has been collected.
 - Any latency, throughput, or memory benchmark.
+  *Planned:* per-stage latency is now measured (see `BENCHMARKS.md`); throughput and memory benchmarks remain to be added to the harness.
 - Held-out ML generalization of any kind.
+  *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 
 ### Overall maturity: **RESEARCH PROTOTYPE**
 

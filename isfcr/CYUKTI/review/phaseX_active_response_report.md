@@ -57,6 +57,7 @@ ResponsePolicyEngine.decide(PolicyInput) -> ResponseDecision
 ## H. Shuffle integration status
 
 **Reused, not rebuilt.** `soar.execution_service.PlaybookExecutionService` already implements exactly the contract Section 6 asks for: `ShuffleTriggerOutcome.NOT_CONFIGURED` → the execution is marked `FAILED` with an honest per-action error (`"Shuffle is not configured..."`), never silently succeeds. This was true before this phase and remains true — `SHUFFLE_WEBHOOK` is configured with a real URL (per `journal_ready_data.md` Section 19.7) but has never been live-triggered, in this phase or any prior one. **Status: BLOCKED_BY_ENVIRONMENT for live execution; the fail-closed contract itself is IMPLEMENTED, TESTED (pre-existing, `test_soar_execution_service.py`).**
+*Planned:* live-trigger Shuffle against the configured webhook in a future verification session.
 
 ## I. Verification mechanism
 
@@ -65,6 +66,7 @@ ResponsePolicyEngine.decide(PolicyInput) -> ResponseDecision
 ## J. Correlation-ID trace
 
 `correlation_id` is a first-class field on `ResponseDecision`, `ResponsePlan` (new), `ContainmentRequest`, `ContainmentResult`, `ContainmentVerification`, `RollbackRecord`, and every `active_response.audit.log_response_event()` call — `audit_trail_for_correlation()` reconstructs the full response-side lifecycle for one ID (tested end-to-end in `test_audit.py`, exposed via the new `GET /api/soar/response-audit/<correlation_id>` route, tested in `test_response_audit_api.py`). **Honest limitation, not fabricated as done**: this phase did **not** modify the upstream detection pipeline (`realtime_socgraph.py`, `campaign_manager.py`, `investigation/*.py`) to generate or thread a `correlation_id` from the original Wazuh alert onward — doing so would touch live production ingestion code, which was out of this phase's stated scope and carries real regression risk this late in the session. The practical bridge today: `campaign_id` (already a stable, real identifier threaded through the existing pipeline) is the natural `correlation_id` value a caller would pass in when invoking the policy engine from real campaign data — demonstrated in `test_response_plan_extension.py`, not yet wired as an automatic default anywhere in the live pipeline. **IMPLEMENTED + TESTED from ResponseDecision downstream; NOT_MEASURED/deferred upstream of it.**
+*Planned:* wire `correlation_id` generation into the live detection/ingestion pipeline itself in a future phase, once that change's regression risk can be scoped separately.
 
 ## K. Audit design
 
@@ -89,14 +91,17 @@ All of Section 16's list are covered except two not applicable to this architect
 ## P. Response latency metrics
 
 `active_response/metrics.py`'s `latency_stats()`/`rate_stats()`/`compute_lifecycle_latencies()` are real, tested (5 tests) pure functions — p50/p95/p99 via linear-interpolation percentiles, rates via `evaluation_metrics.wilson_confidence_interval` (reused, not duplicated). **Status: NOT_MEASURED against real data** — zero real containment actions have ever executed in this environment, so there are zero real timestamp pairs to compute a latency from. Reported honestly as `NOT_MEASURED` with the reason ("no observations recorded yet"), never a fabricated number.
+*Planned:* compute real latency once operator-driven lab access enables real containment executions to generate timestamp pairs.
 
 ## Q. Response-memory integration
 
-Light integration via the shared audit trail (Section K): querying `audit_trail_for_correlation()` for a past incident's `correlation_id` returns its full response history, which is the retrieval mechanism Section 18 asks for. **Not done this phase**: a dedicated `PlaybookEffectiveness`-style aggregate specifically over containment-verification outcomes (as opposed to Shuffle-execution outcomes, which `soar.memory.PlaybookMemoryStore.effectiveness()` already covers) — flagged as a real, disclosed follow-up rather than fabricated as complete. No failed/unverified action is silently recorded as a successful playbook memory: `soar.memory`'s existing `effectiveness()` only counts `ExecutionStatus.SUCCESS` as a success, and this phase's own audit events log `CONTAINMENT_FAILED`/verification outcomes as distinct, separately-queryable event types, never overwriting or reclassifying them.
+Light integration via the shared audit trail (Section K): querying `audit_trail_for_correlation()` for a past incident's `correlation_id` returns its full response history, which is the retrieval mechanism Section 18 asks for. **Not done this phase**: a dedicated `PlaybookEffectiveness`-style aggregate specifically over containment-verification outcomes (as opposed to Shuffle-execution outcomes, which `soar.memory.PlaybookMemoryStore.effectiveness()` already covers) — flagged as a real, disclosed follow-up rather than fabricated as complete.
+*Planned:* build the dedicated containment-effectiveness aggregate in a future phase once enough real containment outcomes exist to make one meaningful. No failed/unverified action is silently recorded as a successful playbook memory: `soar.memory`'s existing `effectiveness()` only counts `ExecutionStatus.SUCCESS` as a success, and this phase's own audit events log `CONTAINMENT_FAILED`/verification outcomes as distinct, separately-queryable event types, never overwriting or reclassifying them.
 
 ## R. Dashboard integration
 
 **Backend only, this phase**: `GET /api/soar/response-audit/<correlation_id>` (new), tested, returns the full structured audit trail a dashboard component would render. **No new frontend component was built** — this is a disclosed scope decision (this phase's budget went to the response architecture and its test coverage), not a claim of visual integration. The response states (`REQUESTED`/`EXECUTING`/`VERIFIED`/`FAILED`/`NOT_VERIFIED`/`BLOCKED_BY_ENVIRONMENT`) that a future dashboard view must visually distinguish are already the real, structured values (`ContainmentResult.containment_status`, `ContainmentVerification.status`) the new API route returns — the data contract is ready; the UI is not built. **NOT_MEASURED / deferred.**
+*Planned:* build the dashboard UI component against the existing API contract in a future phase (this was in fact completed in Phase Z, see `phaseZ_final_integration_audit.md`).
 
 ## S. Security/safety audit
 
@@ -105,13 +110,18 @@ Light integration via the shared audit trail (Section K): querying `audit_trail_
 ## T. Environment limitations
 
 1. No shell access to the Kali attacker VM or Ubuntu victim VM from this session — blocks Sections N, I's strongest evidence path, and any real `IptablesFirewallBackend` exercise.
+   *Planned:* obtain operator-driven access to both VMs in a future session to run one real attack and one real `BLOCK_SOURCE_IP` action.
 2. Shuffle has never been live-triggered in this project's history (pre-existing condition, unchanged by this phase).
+   *Planned:* live-trigger Shuffle against the configured webhook in a future verification session.
 3. No frontend build/UI work was attempted (scope decision, Section R).
+   *Planned:* build the dashboard UI component against the existing API contract in a future phase.
 4. Correlation-ID generation is not yet wired into the live detection pipeline upstream of `ResponseDecision` (Section J).
+   *Planned:* wire `correlation_id` generation into the live detection/ingestion pipeline in a future phase.
 
 ## U. Research limitations
 
 Response metrics are entirely `NOT_MEASURED` against real data (zero real executions exist to measure). The policy engine's `MIN_INVESTIGATION_CONFIDENCE_FOR_CONTAIN = 0.5` threshold is a reasonable, documented default, not empirically derived or validated against any labeled outcome set — a real, disclosed limitation for any paper claim about this specific number.
+*Planned:* revisit and empirically validate `MIN_INVESTIGATION_CONFIDENCE_FOR_CONTAIN` against a labeled outcome set once enough real containment outcomes have been collected.
 
 ## V. Exact status of every capability
 

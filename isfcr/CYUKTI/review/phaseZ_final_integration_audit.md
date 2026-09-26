@@ -37,7 +37,8 @@ Unchanged from Phase X's `ResponsePolicyEngine`/`ResponseDecision` — Section E
 
 ## H. Shuffle status
 
-**IMPLEMENTED, TESTED (pre-existing, reused) — LIVE-VERIFIED: NO.** Re-confirmed this phase (`test_06_shuffle_unavailable_fails_safely`) rather than re-implemented: authentication handling, request construction, timeout handling, and failure handling are `soar/shuffle_client.py`/`soar/execution_service.py`'s existing, unmodified responsibility. Correlation-ID propagation into a Shuffle payload was NOT added this phase (the existing trigger payload carries `execution_id`/`playbook_id`/`campaign_id`, not yet `correlation_id`) — a real, disclosed gap, not fabricated as closed. **Most important finding, explicitly verified**: `ShuffleTriggerOutcome`'s success path is completely disconnected from `ContainmentVerifier` — there is no code path anywhere by which a Shuffle HTTP acknowledgment can set `VerificationStatus.VERIFIED` (Section J proves this structurally, not just by inspection).
+**IMPLEMENTED, TESTED (pre-existing, reused) — LIVE-VERIFIED: NO.** Re-confirmed this phase (`test_06_shuffle_unavailable_fails_safely`) rather than re-implemented: authentication handling, request construction, timeout handling, and failure handling are `soar/shuffle_client.py`/`soar/execution_service.py`'s existing, unmodified responsibility. Correlation-ID propagation into a Shuffle payload was NOT added this phase (the existing trigger payload carries `execution_id`/`playbook_id`/`campaign_id`, not yet `correlation_id`) — a real, disclosed gap, not fabricated as closed.
+*Planned:* add `correlation_id` to the Shuffle trigger payload in a future phase. **Most important finding, explicitly verified**: `ShuffleTriggerOutcome`'s success path is completely disconnected from `ContainmentVerifier` — there is no code path anywhere by which a Shuffle HTTP acknowledgment can set `VerificationStatus.VERIFIED` (Section J proves this structurally, not just by inspection).
 
 ## I. Client-response status
 
@@ -58,10 +59,12 @@ Only real `pre_attack_reachable=True` + `post_attack_reachable=False` + independ
 ## L. Playbook-memory status
 
 Unchanged from Phase X: `soar.memory.PlaybookMemoryStore.effectiveness()` counts only `ExecutionStatus.SUCCESS` as a success; this phase's audit events (`CONTAINMENT_FAILED`, `CONTAINMENT_NOT_VERIFIED` types are reserved, loggable via `active_response.audit.log_response_event`) are logged as their own distinct types, never reclassified as success. Historical retrieval is via `audit_trail_for_correlation(correlation_id)` — real, tested, not a stub. A dedicated containment-specific effectiveness aggregate (as opposed to Shuffle-execution effectiveness, which already exists) was **not** built this phase — disclosed, not fabricated as done.
+*Planned:* build the dedicated containment-effectiveness aggregate in a future phase once enough real containment outcomes exist to make one meaningful.
 
 ## M. Evaluation integration
 
-**Schema/import-hook only, exactly as instructed — no evaluation was run, no label was fabricated.** `evaluation/evaluators/active_response_eval.py::evaluate()` returns `MetricStatus.BLOCKED_BY_ENVIRONMENT` with an honest reason (zero real containment events exist to build ground truth from) and documents which of the six requested fields (`detection_success`, `response_decision_correct`, `containment_executed`, `containment_verified`, `attack_recurrence`, `false_containment`) are independently labelable in principle (five are; `containment_verified` is noted as methodologically circular with the verifier's own evidence requirement — a real, disclosed nuance, not glossed over). `ActiveResponseGroundTruthSchema` exists, ready, unpopulated. **Confirmed via `git status`/`git diff`: zero lines changed in `evaluation/ground_truth/`, `evaluation/results/`, `evaluation/labels/`, `evaluation/queries/`, or any of the four frozen historical review docs.**
+**Schema/import-hook only, exactly as instructed — no evaluation was run, no label was fabricated.** `evaluation/evaluators/active_response_eval.py::evaluate()` returns `MetricStatus.BLOCKED_BY_ENVIRONMENT` with an honest reason (zero real containment events exist to build ground truth from) and documents which of the six requested fields (`detection_success`, `response_decision_correct`, `containment_executed`, `containment_verified`, `attack_recurrence`, `false_containment`) are independently labelable in principle (five are; `containment_verified` is noted as methodologically circular with the verifier's own evidence requirement — a real, disclosed nuance, not glossed over).
+*Planned:* design an independent labeling method for `containment_verified` (e.g. a separate observer) that does not reuse the verifier's own evidence, once real containment events exist to label. `ActiveResponseGroundTruthSchema` exists, ready, unpopulated. **Confirmed via `git status`/`git diff`: zero lines changed in `evaluation/ground_truth/`, `evaluation/results/`, `evaluation/labels/`, `evaluation/queries/`, or any of the four frozen historical review docs.**
 
 ## N. Security audit
 
@@ -69,7 +72,9 @@ Traced actual data flow (request → policy → action → client), not just pat
 - **Command injection**: none — `IptablesFirewallBackend` uses `subprocess.run` with a fixed argument list, never shell interpolation; `validate_ip()` runs before any value reaches it.
 - **Race condition — FOUND AND FIXED**: `ClientResponseAgent`'s duplicate-`correlation_id` guard was a check-then-act TOCTOU race (`if x in set: ... ; set.add(x)` with no lock). Fixed with `threading.Lock`-protected `_reserve_correlation_id()`; proven with a real 20-thread concurrent test that would have failed against the original code.
 - **Replay attacks — DISCLOSED, NOT FIXED THIS PHASE**: the duplicate-`correlation_id` guard is in-memory and per-process-lifetime only (resets on restart); `ContainmentRequest` has no request-level freshness timestamp/nonce independent of the correlation_id itself, so a captured valid `(auth_token, new correlation_id)` pair is not inherently prevented from being replayed as a "new" request. The shared static-token `Authenticator` has no per-request signature/nonce. This is a real scope limitation of Phase X's design, not a regression — flagged explicitly for anyone deploying this beyond a lab.
+  *Planned:* add a request-level freshness timestamp/nonce independent of `correlation_id` before this system is deployed beyond a lab.
 - **Authorization**: no RBAC — a single shared secret authenticates any containment request with no distinction between callers. Acceptable for this phase's stated scope (one trusted orchestrator), disclosed as a gap for any broader deployment.
+  *Planned:* add per-caller RBAC before this system is deployed with more than one trusted orchestrator.
 - **SSRF, unsafe deserialization, path traversal**: none found — no user-controlled URL, no pickle/eval/yaml.load, no user-controlled file path anywhere in the package.
 - **Secret leakage / unsafe logging**: `active_response.audit._scrub()` strips banned keys before persistence (tested, Phase X); `auth_token` is never passed into any logged `detail` dict anywhere in the new code (verified by direct code reading, not just the scrub test).
 - **Insecure Shuffle integration**: not deeply re-audited this phase (pre-existing, out of scope) — its fail-closed behavior was re-confirmed (Section H), not its internal HTTP/auth handling.
@@ -113,12 +118,19 @@ No overall ranking or "winner" is offered, per instruction. Implementation is no
 ## T. Known limitations
 
 1. Correlation-ID is not generated inside the live detection/ingestion pipeline itself — only from `ResponseDecision` downstream, bridged pragmatically via `campaign_id`.
+   *Planned:* wire `correlation_id` generation into the live detection/ingestion pipeline in a future phase.
 2. No live lab access — the entire active-response layer's real-world efficacy is unverified against a real host.
+   *Planned:* obtain operator-driven access to the Kali/Ubuntu VMs to run one real attack and one real containment/verification cycle, per Section V.
 3. Replay-attack surface disclosed in Section N, not closed this phase.
+   *Planned:* add a request-level freshness timestamp/nonce independent of `correlation_id` before broader deployment.
 4. No RBAC / multi-caller authorization model.
+   *Planned:* add per-caller RBAC before this system is deployed with more than one trusted orchestrator.
 5. Shuffle payload does not yet carry `correlation_id`.
+   *Planned:* add `correlation_id` to the Shuffle trigger payload in a future phase.
 6. Dedicated containment-effectiveness aggregate not built (only audit-trail retrieval).
+   *Planned:* build the dedicated containment-effectiveness aggregate once enough real containment outcomes exist.
 7. Evaluation ground truth (MITRE/attribution/campaign-correlation/threat-qualification) remains exactly as preliminary as before this phase — still `MEASURED_PRELIMINARY`, human review still required.
+   *Planned:* complete human review of all four ground-truth categories via the exported review queues, per Section V.
 
 ## U. Final system-status matrix
 

@@ -7,6 +7,7 @@ A real `nmap` scan from Kali (`192.168.56.106`) against `192.168.56.105` was ins
 ## Live activation status (this phase)
 
 Neo4j was found down at the start of this phase and was started (`docker start neo4j-soc`, no privileged access needed — the account is in the `docker` group). With Neo4j and the CYUKTI backend/listener running live, the Wazuh manager itself was confirmed **already running** (started 04:58 UTC), producing real alerts. The rule fixes below (committed to `backend/wazuh_rules/local_rules.xml` in a prior phase and copied to the live `/var/ossec/etc/rules/local_rules.xml`) predate that manager start, so **they are still not active in the live manager's in-memory ruleset** — confirmed by comparing the rule file's mtime (05:09:59) against the manager's `ActiveEnterTimestamp` (04:58:44). Activating them requires `sudo /var/ossec/bin/wazuh-control restart`, which requires an interactive password this environment does not provide non-interactively (`sudo -n`/`sudo -ln` both refused). **Not attempted further; not claimed as done.**
+*Planned:* have the operator run the manager restart with interactive sudo access in a maintenance window, then re-verify the rule fixes against live alert traffic.
 
 ## New finding this phase: a real STIX corpus data-quality issue
 
@@ -15,6 +16,7 @@ While building `enrich_technique_metadata()`'s live `/api/incidents/<id>/overvie
 Traced to the **root**: this is not an import bug in `mitre_import/mapper.py` (which correctly extracts every `phase_name` under `kill_chain_name: "mitre-attack"`, with no filtering logic that could be at fault) — the *raw, vendored* `backend/mitredata/attack-stix-data/enterprise-attack/enterprise-attack.json` file itself genuinely contains `{"kill_chain_name": "mitre-attack", "phase_name": "stealth"}` for T1562.001. That file is gitignored ("vendored external reference data — re-fetch, don't commit") and was not re-verified against MITRE's own GitHub source (`mitre-attack/attack-stix-data`) this phase.
 
 **Not silently corrected** — guessing a mapping from `"stealth"` → `"defense-evasion"` for 268 techniques without confirming the full scope/pattern of the discrepancy would itself be a fabrication. Flagged for the user: re-fetch the official bundle and diff, or confirm whether this vendored copy was intentionally customized for this lab. Until then, any `tactic` field surfaced via `enrich_technique_metadata()` (the Incident View header, `/api/incidents/<id>/overview`) should be read with this caveat — `mitre_id` and `technique_name` are unaffected and were spot-checked as correct throughout.
+*Planned:* re-fetch the official STIX bundle from `mitre-attack/attack-stix-data`, diff it against the vendored copy to confirm the scope of the discrepancy, and correct the affected `kill_chain_phases` values (or confirm the vendored copy was intentionally customized).
 
 ## Precedence (unchanged from Phase 20, `mitre_resolver.py`)
 
@@ -74,8 +76,13 @@ Also added `<mitre>` blocks to already-unique, already-firing rules where defens
 - bare `sudo` line → actually resolved to a *more specific native* Wazuh rule (`5403`, already carrying `T1548.003`) before ever reaching `210020` — a real, useful finding: `210020`'s bare-"sudo" match rarely fires in practice for realistic log lines, since native rules with narrower, more specific match conditions win first.
 - No collision warnings remain after the fix (previously six).
 
-**Not verified**: the dpkg-suppression fix's live effect (my synthetic test log line didn't match Wazuh's real dpkg decoder format — a test-input problem, not a rule-logic problem; the underlying mechanism, a level=0 rule matching an `if_sid`, is standard Wazuh behavior). **Also not done**: fixing rule `100510`'s description ("Multiple Failed Login Attempts") not matching its actual match logic (it has no `frequency`/`timeframe` repetition threshold — fires on any single `if_sid=5716` event) — out of scope for a MITRE-mapping pass; flagged here rather than silently rewritten, since changing detection thresholds is a different kind of change with different risk.
+**Not verified**: the dpkg-suppression fix's live effect (my synthetic test log line didn't match Wazuh's real dpkg decoder format — a test-input problem, not a rule-logic problem; the underlying mechanism, a level=0 rule matching an `if_sid`, is standard Wazuh behavior).
+*Planned:* construct a synthetic log line matching Wazuh's real dpkg decoder format and re-verify the suppression fix once one is available.
+
+**Also not done**: fixing rule `100510`'s description ("Multiple Failed Login Attempts") not matching its actual match logic (it has no `frequency`/`timeframe` repetition threshold — fires on any single `if_sid=5716` event) — out of scope for a MITRE-mapping pass; flagged here rather than silently rewritten, since changing detection thresholds is a different kind of change with different risk.
+*Planned:* add a `frequency`/`timeframe` repetition threshold to rule `100510` (or correct its description) in a dedicated detection-logic pass.
 
 **A manager restart (`sudo /var/ossec/bin/wazuh-control restart`) is required for the live alert-processing pipeline to load these changes** — `wazuh-logtest` re-reads the file fresh per invocation and was used for validation, but the running `wazuh-analysisd` daemon caches its ruleset in memory until restarted. This was not done by the agent (requires an interactive sudo password); the operator needs to run it themselves for real alerts to reflect these fixes.
+*Planned:* have the operator run the manager restart in a maintenance window and confirm the fixes are reflected in live alert processing.
 
 A backup of the pre-fix file and the curated new version are both committed at `backend/wazuh_rules/` for review/history (the live file itself, at `/var/ossec/etc/rules/`, is outside this git repository).

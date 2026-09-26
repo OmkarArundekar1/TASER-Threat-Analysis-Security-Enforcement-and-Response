@@ -130,9 +130,12 @@ This is a stronger result than "the resulting order never changed" — the under
 ## 14. Limitations
 
 - Only 3 real campaigns, and — as in Phase 21 — all 3 fully exhaust the same fixed 8-action menu within `max_steps=8`; the study cannot speak to a larger action universe or an investigation that stops early.
+  *Planned:* the Phase 19 dataset-expansion spec is expected to provide enough real campaigns to test a larger action universe and early-stopping cases.
 - The ablations are re-weightings of real, already-collected component values, not independent re-executions with alternate code — appropriate for isolating *which terms* can move ranking, but cannot test whether a differently-*structured* formula (e.g., one that reads `Evidence.confidence`/`Evidence.relevance` values directly into scoring, which none of the current terms do) would behave differently. That question is out of scope for an ablation of the *existing* formula.
+  *Planned:* prototype and re-evaluate a redesigned NBE formula that reads `Evidence.confidence`/`Evidence.relevance` directly, once that redesign is scoped.
 - `scipy.stats.kendalltau`/`spearmanr` return `nan` for single-element vectors (step 8, 1 remaining candidate); those 24/192 comparisons are correctly excluded from the tau statistics rather than treated as agreement, and are called out explicitly rather than silently dropped.
 - No claim is made here about whether this is a *problem* worth fixing immediately — that judgment belongs to Section "Recommended next step," not this results section.
+  *Planned:* revisit the NBE scoring formula (Section 16's proposed content-sensitive redesign) so adaptive terms can encode evidence content rather than only action-type sequence.
 
 ## 15. Conclusion
 

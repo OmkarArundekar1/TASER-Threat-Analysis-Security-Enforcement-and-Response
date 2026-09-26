@@ -30,10 +30,15 @@ CYUKTI ingests real Wazuh security telemetry into a Neo4j campaign graph and res
 
 ## 5 biggest limitations
 1. No held-out ML evaluation exists anywhere in the repository.
+   *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 2. No ground-truth attribution dataset — attribution accuracy is `NOT MEASURED`.
+   *Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed.
 3. Real dataset diversity is limited: 3 attackers, 2 victims, 0 High-severity examples.
+   *Planned:* the Phase 19 dataset-expansion spec directly targets these gaps — more attackers/victims and real High-severity examples.
 4. One disclosed, unfixed live defect (maintenance-thread `last_seen=None` exception) — non-blocking.
+   *Planned fix:* initialize `context.last_seen` in `create_campaign_context()` (or guard `expire_active_campaigns()` against `None`) once `campaign_manager.py` is back in scope; add a regression test for the UNKNOWN-first-event path.
 5. No latency, throughput, or RAG-retrieval-quality benchmark exists.
+   *Planned:* per-stage latency is now measured (see `BENCHMARKS.md`); throughput and RAG-retrieval-quality benchmarks remain to be added.
 
 ## 5 difficult questions + answers
 1. **"Isn't 90% UNKNOWN bad?"** → It's the correct outcome of refusing to fabricate attribution — the real question is contamination, and we can show 0%.
@@ -44,12 +49,14 @@ CYUKTI ingests real Wazuh security telemetry into a Neo4j campaign graph and res
 
 ## One sentence on ML
 The ML pipeline (XGBoost severity, SSL autoencoder, GNN) is real, trained, and tested end-to-end, but every reported metric is in-sample or synthetic-only — no held-out generalization claim exists yet, by deliberate, evidence-based choice.
+*Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation and a real-campaign GNN benchmark.
 
 ## One sentence on UNKNOWN handling
 UNKNOWN is a first-class, provenance-tracked outcome — not a failure or a discard — verified live to preserve full raw evidence while being structurally incapable of touching technique attribution, attack-chain learning, prediction, or risk scoring.
 
 ## One sentence on attribution
 Threat attribution is implemented and unit-tested at the evidence-collector level, but has zero quantitative accuracy measurement because no ground-truth attacker-identity dataset currently exists.
+*Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed.
 
 ## One sentence on future work
 The single highest-leverage next step is deliberate, diversity-targeted real-data expansion (more attacker/victim identities, at least one real High-severity example) — not more data volume — because it simultaneously unblocks a meaningful ML held-out evaluation and a first attribution benchmark.

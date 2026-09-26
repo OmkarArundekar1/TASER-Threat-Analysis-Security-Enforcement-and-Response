@@ -94,4 +94,6 @@ chain_updater  prediction  correlation  ML feature
 - No LLM/semantic-similarity component in the MITRE resolver (explicitly excluded by design).
 - No live internet dependency for ATT&CK metadata (vendored STIX snapshot, `backend/mitredata/attack-stix-data/enterprise-attack/enterprise-attack.json`, ATT&CK Enterprise v19.1, 25,843 objects).
 - `DETERMINISTIC_INFERENCE` tier exists as infrastructure with **zero live rules** — not currently contributing to resolution.
+  *Planned:* populate this tier with rules as new, confirmed deterministic-mapping gaps (e.g. the disclosed `T1548.003` gap) are batched into a taxonomy update.
 - `REVIEWED_RULE_MAPPING` registry (`mitre_rule_registry.py`) is **empty** by design.
+  *Planned:* add entries as human-reviewed rule-to-technique mappings are confirmed, rather than pre-populating unverified ones.

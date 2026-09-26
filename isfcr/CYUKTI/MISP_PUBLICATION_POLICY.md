@@ -18,6 +18,7 @@ A more granular, explainable layer on top of the score gate, six independently-r
 ```
 
 `may_publish_to_misp` requires all six. Consumed by `ResponsePlan.misp_status` (`READY`/`BLOCKED`/`NOT_APPLICABLE`) and `GET /api/threat-qualification/<campaign_id>` — **advisory/dashboard-facing**, not yet wired into the live `should_publish()` gate itself (see `THREAT_QUALIFICATION.md` for why, and the next-action note below).
+*Planned:* wire the six-point checklist into `misp_sync.should_publish()` as an additional AND-condition once its behavior has been observed against real campaigns (see "Exact next action" step 3 below).
 
 ## MISP event content (unchanged from prior phases, `misp_event_generator.py`)
 
@@ -27,6 +28,7 @@ Campaign ID, operation ID, MITRE technique(s), attacker/victim IPs, detection so
 
 - **Threat-gate logic**: verified internally (unit + route tests) using both real stored scores and synthetic edge cases — `BENIGN → BLOCKED`, `SUSPICIOUS → BLOCKED`, `QUALIFIED_THREAT → READY`, exactly matching the required behavior.
 - **Live authenticated MISP round trip**: a real MISP admin auth key was configured in `backend/.env` in a prior phase of this session; a live listener process was observed attempting real publishes and getting HTTP 403, traced to a trailing-whitespace bug in the configured key (already fixed, pending a process restart to take effect — see that phase's summary). **Not re-verified live this phase** — Neo4j and a running listener were not both available simultaneously during this specific phase's work to observe a fresh end-to-end publish. No publication success is claimed.
+*Planned:* reconfirm once `MISP_API_KEY` is configured and the MISP service is running for a verification session (see "Exact next action" steps 1-2 below).
 - **API key exposure**: never observed in any response, log line, or Playbook Memory record, in this phase's tests or the prior phase's.
 
 ## Exact next action

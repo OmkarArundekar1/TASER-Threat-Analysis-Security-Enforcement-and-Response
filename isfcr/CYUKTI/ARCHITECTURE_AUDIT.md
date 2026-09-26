@@ -153,12 +153,12 @@ not an autonomous deletion.
 | Campaign identity / reconstruction | Yes | Yes | Yes | Yes | Yes (44-event repair, 0 orphans) | **A** |
 | Campaign Correlation / Operation matching | Yes | Yes | Yes | Yes (this project's session 4) | Yes | **A** |
 | Evidence-aware investigation loop (NBE, confidence, stopping) | Yes | Yes | Yes | Yes (extensive) | Yes (real campaigns, Phase 21) | **A**, with a frozen negative sub-finding (content-insensitivity of NBE ranking — see Detection Paradox section) |
-| Threat Attribution (campaign-similarity) | Yes | Yes | Yes | Yes (this project's session 4) | Yes | **A** for engineering correctness; **B** for accuracy (no ground-truth dataset, by design not attempted yet) |
+| Threat Attribution (campaign-similarity) | Yes | Yes | Yes | Yes (this project's session 4) | Yes | **A** for engineering correctness; **B** for accuracy (no ground-truth dataset, by design not attempted yet). *Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed. |
 | Threat Attribution (ThreatActor-node) | Yes | Yes | Yes (dashboard route + Neo4j write) | Partial (route tested; Cypher logic needs live Neo4j) | Yes (this session's `curl` check) | **B** |
-| MISP event generation / publish | Yes | Yes | Yes | Yes (this project's session 5) | Partial (connectivity live-verified; no API key to complete an authenticated publish) | **B/F** (infrastructure-blocked on a credential, not code) |
+| MISP event generation / publish | Yes | Yes | Yes | Yes (this project's session 5) | Partial (connectivity live-verified; no API key to complete an authenticated publish) | **B/F** (infrastructure-blocked on a credential, not code). *Planned:* reconfirm once `MISP_API_KEY` is configured and the MISP service is running for a verification session. |
 | Dashboard API (22 routes) | Yes | Yes | Yes | Yes (this project's session 6) | Yes (live Neo4j) | **A** |
 | React frontend | Yes | Yes | Yes | Yes (this project's session 7) | HTTP-boundary only (no browser automation in repo) | **B** |
-| ML — XGBoost severity | Yes | Yes | Yes | Yes | Yes (real artifact, real predictions) | **A** engineering; **B** accuracy (in-sample only, disclosed) |
+| ML — XGBoost severity | Yes | Yes | Yes | Yes | Yes (real artifact, real predictions) | **A** engineering; **B** accuracy (in-sample only, disclosed). *Planned:* introduce a held-out split once the Phase 19 dataset expansion provides enough campaigns to make one meaningful. |
 | ML — SSL autoencoder | Yes | Yes | Yes (feeds SSFT) | Yes | Real artifact trained on real CICIDS2017 | **A** |
 | ML — SSFT (self-supervised feature transform) | Yes | Yes, incl. a real single-window runtime path (`SSFTRuntimeTransformer`, added in the SSFT phase following this audit) | Batch + runtime paths integrated *within SSFT's own domain*; cross-domain integration into XGBoost/investigation is **Outcome C** (genuine architectural incompatibility — see `backend/SSFT_RUNTIME.md`), not attempted | Yes (round-trip + 7 new runtime/parity tests) | Real artifact exists | **A** for the transform itself; **C** (proven, documented incompatibility, not a gap) for feeding CYUKTI's live campaign-severity model |
 | ML — GNN model/training (`ml/gnn/model.py`, `train_gnn.py`) | Yes | Yes (hand-rolled GraphSAGE) | No | Yes (synthetic-graph unit tests only) | No | **D** — unchanged; a real dataset extractor now exists (see next row) but real training was not attempted, per `GNN_FEASIBILITY.md`'s evidence that current real data (71 campaigns, 3 of 4 severity classes observed, 70% single-event subgraphs) cannot support a defensible split |
@@ -688,9 +688,12 @@ Gaps below (updated).
    learning).
 2. **Attribution accuracy benchmark** — no ground-truth actor-identity
    dataset exists; building one is a data-collection/labeling
-   decision, not an engineering task.
+   decision, not an engineering task. *Planned:* build a ground-truth
+   attacker-identity benchmark dataset so a real attribution-accuracy
+   metric can be computed.
 3. **RAG retrieval-quality benchmark** (either source) — needs a
-   labeled query set that doesn't exist.
+   labeled query set that doesn't exist. *Planned:* construct a
+   labeled query set to measure retrieval precision/recall directly.
 4. **A third Multi-RAG source over CTI/MISP narratives** — engineering-only
    once a decision is made about which real CTI text field to index
    (MISP event descriptions require a live, authenticated MISP
@@ -705,7 +708,8 @@ Gaps below (updated).
 1. **MISP authenticated publish** — connectivity is live-verified; no
    API key exists in this environment's `.env` (confirmed by reading
    config, not assumed) to complete a real create/update/search round
-   trip.
+   trip. *Planned:* reconfirm once `MISP_API_KEY` is configured and the
+   MISP service is running for a verification session.
 2. **Real browser end-to-end frontend testing** — no Playwright/Cypress
    in this repository; not introduced (per explicit instruction not to
    add browser automation "unless genuinely necessary").
@@ -726,7 +730,9 @@ Gaps below (updated).
    are `{Low: 64, Medium: 3, Critical: 4, High: 0}` — no train/val
    split is defensible on that distribution regardless of extraction.
    Resolves only as CYUKTI accumulates more, more class-diverse real
-   campaigns — see `GNN_FEASIBILITY.md` Sections 9-11.
+   campaigns — see `GNN_FEASIBILITY.md` Sections 9-11. *Planned:* the
+   Phase 19 dataset expansion is designed to close exactly this gap
+   (more attackers/victims, real High-severity examples).
 
 ---
 
