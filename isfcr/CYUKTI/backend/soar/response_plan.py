@@ -17,7 +17,7 @@ honestly rather than fabricating the missing section.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from campaign_context import CampaignContext
@@ -43,6 +43,19 @@ class ResponsePlan:
     historical_playbook_executions: int
     misp_status: str  # "READY" | "BLOCKED" | "NOT_APPLICABLE"
     misp_reason: str
+    # Added for the active-containment layer (backend/active_response/) --
+    # all optional/defaulted so every pre-existing caller (test_soar_response_plan.py,
+    # test_determinism.py, test_final_trace.py, test_failure_injection.py) is unaffected.
+    correlation_id: str | None = None
+    incident_id: str | None = None
+    attack_event_id: str | None = None
+    operation_id: str | None = None
+    investigation_id: str | None = None
+    evidence_references: list[str] = field(default_factory=list)
+    selected_containment_action: str | None = None   # a ContainmentAction value, narrated only -- never decided here
+    approval_required: bool | None = None
+    priority: str | None = None                        # derived from severity, informational
+    expected_outcome: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -60,6 +73,16 @@ class ResponsePlan:
             "historical_playbook_executions": self.historical_playbook_executions,
             "misp_status": self.misp_status,
             "misp_reason": self.misp_reason,
+            "correlation_id": self.correlation_id,
+            "incident_id": self.incident_id,
+            "attack_event_id": self.attack_event_id,
+            "operation_id": self.operation_id,
+            "investigation_id": self.investigation_id,
+            "evidence_references": self.evidence_references,
+            "selected_containment_action": self.selected_containment_action,
+            "approval_required": self.approval_required,
+            "priority": self.priority,
+            "expected_outcome": self.expected_outcome,
         }
 
 
@@ -70,6 +93,13 @@ class ResponsePlanGenerator:
         playbook: Playbook | None = None,
         qualification: ThreatQualificationResult | None = None,
         selection: SelectionResult | None = None,
+        correlation_id: str | None = None,
+        incident_id: str | None = None,
+        attack_event_id: str | None = None,
+        operation_id: str | None = None,
+        investigation_id: str | None = None,
+        evidence_references: list[str] | None = None,
+        response_decision: Any | None = None,  # an active_response.decision.ResponseDecision, narrated only
     ) -> ResponsePlan:
         severity = severity_from_tps(campaign.risk_score)
         techniques = sorted(campaign.techniques) if campaign.techniques else (
@@ -116,6 +146,20 @@ class ResponsePlanGenerator:
         else:
             misp_status, misp_reason = "BLOCKED", qualification.reason
 
+        priority = {"CRITICAL": "P1", "HIGH": "P2", "MEDIUM": "P3", "LOW": "P4"}.get(severity, "P4")
+
+        selected_containment_action = None
+        approval_required = None
+        expected_outcome = None
+        if response_decision is not None:
+            selected_containment_action = (
+                response_decision.selected_action.value if response_decision.selected_action else None
+            )
+            approval_required = response_decision.approval_required
+            expected_outcome = (
+                f"Policy result {response_decision.policy_result.value}: {response_decision.policy_reason}"
+            )
+
         return ResponsePlan(
             campaign_id=campaign.campaign_id,
             threat_summary=threat_summary,
@@ -131,6 +175,16 @@ class ResponsePlanGenerator:
             historical_playbook_executions=historical_executions,
             misp_status=misp_status,
             misp_reason=misp_reason,
+            correlation_id=correlation_id,
+            incident_id=incident_id,
+            attack_event_id=attack_event_id,
+            operation_id=operation_id,
+            investigation_id=investigation_id,
+            evidence_references=evidence_references or [],
+            selected_containment_action=selected_containment_action,
+            approval_required=approval_required,
+            priority=priority,
+            expected_outcome=expected_outcome,
         )
 
 

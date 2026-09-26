@@ -28,6 +28,20 @@ MAX_PENDING_DUPLICATES = 1000
 MAX_BATCH_SIZE = 200
 ENABLE_DUPLICATE_BUFFER = True
 
+# Active containment (backend/active_response/) -- default OFF. A containment
+# action can only execute automatically (no analyst approval step) when this
+# is explicitly true AND the policy engine independently decides CONTAIN AND
+# the requested action is on the hard-coded executable allowlist. See
+# active_response/policy.py.
+AUTO_CONTAIN = os.environ.get("AUTO_CONTAIN", "false").strip().lower() in ("1", "true", "yes")
+
+# IPs that must never be auto-contained regardless of policy decision (e.g.
+# the default gateway, DNS, the Wazuh manager itself) -- a real, independent
+# safety net, not just a policy-engine code path that could have a bug.
+CONTAINMENT_NEVER_BLOCK_IPS = frozenset(
+    ip.strip() for ip in os.environ.get("CONTAINMENT_NEVER_BLOCK_IPS", "").split(",") if ip.strip()
+)
+
 SHUFFLE_WEBHOOK = os.environ.get("SHUFFLE_WEBHOOK", "")
 # Optional -- only needed for soar/shuffle_client.py's execution-status
 # polling path (Shuffle's REST API, distinct from the webhook trigger

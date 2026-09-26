@@ -44,6 +44,20 @@ def _load_context_or_error(campaign_id: str):
     return _try_load_campaign_context(campaign_id)
 
 
+@soar_bp.route("/response-audit/<correlation_id>")
+def response_audit_trail(correlation_id: str):
+    """Active-containment dashboard data source (backend/active_response/,
+    review/phaseX_active_response_report.md): the full auditable
+    lifecycle for one correlation_id -- policy decision, containment
+    request/execution, verification outcome, rollback/expiry -- exactly
+    as recorded by active_response.audit.log_response_event(), never
+    reconstructed or inferred. An empty list is a real, honest answer
+    (no response action has ever been logged under this ID), not an error."""
+    from active_response.audit import audit_trail_for_correlation
+    events = audit_trail_for_correlation(correlation_id)
+    return jsonify({"correlation_id": correlation_id, "event_count": len(events), "events": events})
+
+
 @soar_bp.route("/status")
 def soar_status():
     import config
