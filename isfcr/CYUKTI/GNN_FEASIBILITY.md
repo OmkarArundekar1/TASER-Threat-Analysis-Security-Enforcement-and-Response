@@ -542,6 +542,10 @@ not a code-quality one — every mechanical piece of the pipeline
 (extraction, encoding, model, training loop) is real, tested, and
 correct on the data shape it's given (Section 1, 6-7).
 
+*Planned:* revisit this verdict once the Phase 19 dataset-expansion
+effort (or equivalent real-campaign growth) provides enough
+class-diverse real campaigns to support a defensible split.
+
 ---
 
 ## 14. What requires a human/research decision (do not silently resolve)

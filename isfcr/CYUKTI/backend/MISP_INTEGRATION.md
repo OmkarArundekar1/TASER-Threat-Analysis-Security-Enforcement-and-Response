@@ -172,6 +172,9 @@ real (if not airtight) safety net for the *next* publish attempt on
 the same campaign to converge on one event via `search_campaign()`
 rather than duplicating further, but a single retry-storm within one
 `create_event()` call is not fully guarded against.
+*Planned:* add MISP-side idempotency keys (or an equivalent
+architectural change) to `create_event()` in a future stabilization
+pass once it's back in scope.
 
 ## Security (credential handling)
 

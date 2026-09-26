@@ -80,18 +80,22 @@ These are all genuinely campaign-dependent, real numbers — this part of the ar
 ## 8. Evidence dependency/redundancy behavior
 
 The one declared dependency (`ATTRIBUTION_MATCH → CAMPAIGN_HISTORY`) was exercised in all 3 runs — `campaign_history` (step 4) always preceded `attribution_match` (step 7), so the redundancy discount was live-active in every run. **However, because the action order itself was identical across all 3 campaigns (Section 6), this specific experiment cannot demonstrate that the discount *differs* by campaign** — it can only confirm the discount fires when its precondition is met, which it consistently did. A genuinely differentiating test would require an investigation where the two actions' relative order changes, which did not happen here.
+*Planned:* re-run this test once the NBE formula (or the action set) is changed enough that the two actions' relative order can vary between campaigns.
 
 ## 9. Stopping behavior
 
 All 3 real investigations stopped for the identical reason: `"reached maximum investigation depth (8 steps)"`. The confidence-threshold stopping branch (`investigation_confidence >= 0.75`) was **never exercised** in this run — all 3 final confidences were far below threshold (0.07–0.18). This is a real, measured limitation of this specific experiment: max-depth stopping is confirmed live; confidence-triggered early stopping is not (NOT MEASURED on real data this session).
+*Planned:* re-run against a real campaign whose confidence trajectory is expected to cross 0.75, once one is identified, to measure the confidence-threshold stopping branch live.
 
 ## 10. UNKNOWN safety validation
 
 **Not exercised live** — none of the 3 script-defined target campaigns' current technique is UNKNOWN (`T1595`, `T1210`, `T1110` are all resolved techniques). The structural (source-inspection) guarantee established in the prior implementation session — that the investigation module never references a Neo4j write function capable of setting `attack_id`/creating `Technique`/`MATCHES`/`NEXT_TECHNIQUE` — is unaffected and still holds, but a live UNKNOWN-campaign case was not part of this specific run.
+*Planned:* select a real UNKNOWN-technique campaign as a target in a future verification session and re-run this validation against it.
 
 ## 11. Hypothesis/ground-truth separation
 
 No violation observed: `model_probabilities` (candidate hypotheses) remained distinct from any Neo4j write throughout all 3 runs — the script performs no writes back to Neo4j based on investigation output. Consistent with the structural guarantee; not independently re-verified against a live write attempt this session (none was made, by design).
+*Planned:* add an integration test that deliberately attempts a disallowed Neo4j write from the investigation module and asserts it is structurally impossible, complementing the existing source-inspection proof.
 
 ## 12. Bugs discovered
 
@@ -127,9 +131,13 @@ Full backend test suite: 164/164 passing (unchanged; no code was modified this p
 ## 16. Limitations
 
 - Only 3 campaigns, all script-selected in an earlier phase, none currently UNKNOWN.
+  *Planned:* the Phase 19 dataset-expansion spec is expected to provide enough real campaigns, including UNKNOWN ones, to broaden this validation.
 - The action universe (8 actions) is small enough that every real investigation exhausted it completely within `max_steps=8`, which is precisely the condition under which the current formula cannot show order-adaptivity (Section 6) — a structural property of this experiment's scale, not of a larger/held-out one.
+  *Planned:* re-test with a larger action universe or a higher `max_steps` once one is available, per Phase 22's recommended next step.
 - `scripts/run_real_investigations.py` does not print `redundancy_penalty`, `why_selected`, `action_scores`, or `candidate_hypotheses` — those fields exist in memory but were not captured this run; the redundancy finding in Section 8 is a code-level inference, not a direct printout.
+  *Planned:* extend the script's logging to print these fields directly so future runs don't rely on code-level inference.
 - No timing/latency measurement was made.
+  *Planned:* add timing instrumentation to `scripts/run_real_investigations.py` alongside the existing benchmark harness.
 
 ## 17. Research conclusion
 

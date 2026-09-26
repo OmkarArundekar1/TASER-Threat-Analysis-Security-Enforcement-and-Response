@@ -25,6 +25,7 @@ No independent human reviewer participated in this session. Every ground-truth l
 ## 5. Prediction evaluation
 
 Real prediction target confirmed (NEXT_TECHNIQUE graph via `predict_next_readonly()`), not invented. The task brief's "0/0 hits/misses" figure was traced to an ad hoc Cypher query against a property that doesn't exist on any live node — no such tracking schema exists in the codebase (documented in `review/evaluation_implementation_audit.md`). The live NEXT_TECHNIQUE graph is unchanged in scale (3 edges) since Phase 18's real evaluation, so there is no new held-out data to score — result: **UNMEASURABLE for new data**, honestly reporting Phase 18's real historical result (4/12 = 33.3%, `INSUFFICIENT_FOR_SUPERVISED_ML`) rather than fabricating a new number.
+*Planned:* the Phase 19 dataset expansion is intended to accumulate enough real technique transitions to revisit this verdict.
 
 ## 6. MITRE mapping evaluation
 
@@ -37,18 +38,22 @@ Real prediction target confirmed (NEXT_TECHNIQUE graph via `predict_next_readonl
 ## 8. Campaign correlation evaluation
 
 **MEASURED_PRELIMINARY, n=46 real campaigns / 3 independent sessions**: pairwise P/R/F1 all 0.0, cluster purity 1.0, ARI 0.0, AMI≈0. This ground truth structurally can only detect fragmentation (CYUKTI's `campaign_manager` never merges two of its own Campaign nodes into one item in this dataset shape), and it found severe fragmentation: one real SSH-brute-force session boundary (Kali `192.168.56.106` → `pes1ug23cs411-VirtualBox`) is represented by **25 separate real Campaign nodes**; the Nmap session boundary by **17**. This is a genuine, previously-undocumented finding, not an artifact of the evaluation methodology (the pairwise-zero result is the mathematically correct way to express "CYUKTI never merged any of these, and it should have merged at least some").
+*Planned:* revisit the campaign-correlation feature weights and thresholds (Section 5.1/5.3 of `journal_ready_data.md`) that produced this fragmentation as a candidate for the next tuning pass, once the ground-truth dataset is human-reviewed.
 
 ## 9. RAG evaluation
 
 Evaluator built and unit-tested (per-source: MITRE semantic, campaign narrative, GNN topology — scored separately, never blended, matching the documented architecture). **NOT MEASURED**: no independently-judged query set exists. 10 real candidate queries (grounded in this project's actual scenarios) were exported to `evaluation/review/rag_query_queue_*.csv` for a human reviewer to judge.
+*Planned:* construct the labeled query set by having a human reviewer complete the exported queue, then measure retrieval precision/recall/nDCG directly.
 
 ## 10. Investigation evaluation
 
 Evaluator built and unit-tested. CYUKTI's real "conclusion" concept was confirmed (top-weighted `candidate_hypothesis` at investigation stop — no separate "verdict" field exists, so none was invented). **NOT MEASURED**: no independent analyst verdict exists. The 3 real Phase 21 investigations (`CAMP_427A075C`, `CAMP_1429ADB4`, `CAMP_D8605E81`) were exported to `evaluation/review/investigation_verdict_queue.csv`, ready for a human to fill in.
+*Planned:* once a human reviewer fills in the queue, score CYUKTI's top `candidate_hypothesis` against the independent verdict to produce a real investigation-conclusion-correctness metric.
 
 ## 11. Threat qualification evaluation
 
 **MEASURED_PRELIMINARY, n=24**: Accuracy 0.083 (2/24). The largest, most surprising disagreement found this session: all 20 campaigns this session's scenario-level judgment labeled `SUSPICIOUS` were classified `QUALIFIED_THREAT` by CYUKTI's live `cti_confidence_engine.py` score. This is disclosed as an **open disagreement, not resolved in either direction** — it may mean CYUKTI's CTI scoring is more aggressive than warranted, or that judging expected threat status per-scenario (rather than per-individual-campaign) was too conservative given real risk-score variation within a scenario. Flagged explicitly for human review, not spun either way.
+*Planned:* resolve via the human-review step in Section 19 before citing either the 0.083 accuracy or CYUKTI's CTI aggressiveness as a settled finding.
 
 ## 12. Actual measured metrics
 
@@ -57,6 +62,7 @@ See `review/evaluation_results.md` (full table) and `review/paper_metrics_source
 ## 13. Metrics still unavailable
 
 RAG precision/recall/MRR/nDCG (all 3 sources) and investigation confidence P/R/Brier/calibration — both blocked on human review, not on missing code.
+*Planned:* unblock via the human-review steps enumerated in Section 19 (fill in the exported queues, then re-run the evaluators).
 
 ## 14. Environment blockers
 

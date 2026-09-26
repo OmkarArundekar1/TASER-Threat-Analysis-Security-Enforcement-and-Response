@@ -11,6 +11,8 @@ This documents the attribution contract as it actually exists in
 accuracy claim is made** — this is behavioral/engineering verification
 (does the implementation do what its own algorithm says it does), not
 a validation of whether its attributions are correct.
+*Planned:* build a ground-truth attacker-identity benchmark dataset so
+a real attribution-accuracy metric can be computed.
 
 ## Two independent attribution mechanisms exist — this document covers one
 
@@ -36,6 +38,8 @@ CYUKTI has two separate things both called "attribution":
    formula independently (a real, minor duplication — not fixed this
    session; both are internally consistent, and unifying them is a
    Neo4j-side refactor outside this session's scope).
+   *Planned:* unify the two shared/total-technique-count formula
+   implementations in a dedicated Neo4j-side refactor pass.
 
 These are **deliberately not unified** here — they serve different
 purposes (real-time per-alert graph annotation vs. on-demand
@@ -45,6 +49,8 @@ not be behaviorally tested in this environment (its logic is Cypher
 `WHERE`/`MERGE` clauses that only execute against a live Neo4j
 instance); this is a genuine environment limitation, not a deferred
 validation choice.
+*Planned:* add a live-Neo4j integration test for mechanism 2 once a
+live instance is available in a verification session.
 
 ## The attribution contract (mechanism 1)
 

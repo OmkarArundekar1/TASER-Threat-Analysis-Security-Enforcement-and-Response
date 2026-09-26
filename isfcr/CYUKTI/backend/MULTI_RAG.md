@@ -72,6 +72,8 @@ would now reflect 9 actions; that re-run was **not** performed this
 session (per this phase's explicit scope: no NBE ablations, no
 re-validation), and no claim is made here about how the new action
 affects ranking adaptivity, novelty, or any other Phase 21/22 metric.
+*Planned:* re-run `scripts/run_real_investigations.py` in a future
+phase to reassess the Phase 21/22 metrics under the 9-action menu.
 
 ## Verification
 

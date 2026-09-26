@@ -12,19 +12,28 @@
 - **93.3% dedup ratio** — 212 distinct AttackEvents vs. 3,185 tracked occurrences
 - **46 API routes** — 33 core + 13 SOAR
 - **27 mounted frontend components, 1 orphaned** (`PredictionPanel.tsx`)
+  *Planned:* either mount `PredictionPanel.tsx` into a route/page or remove it, so no dead component remains in the tree.
 - **10 investigation actions** — not 8; `CAMPAIGN_NARRATIVE_SEARCH` and `GNN_TOPOLOGY_RETRIEVAL` were added later
 - **0 orphaned AttackEvents** — 124/124 linked to a Campaign, live-verified 2026-09-12 (not re-run at the current 212-event scale)
+  *Planned:* re-run the orphan-count integrity check at the current 212-event graph scale in the next verification session.
 - **44 orphaned events repaired → 0** — real production data-integrity defect found and durably fixed
 - **MITRE coverage (post rule-fix + reboot): 26/120 (21.7%) native, 94/120 (78.3%) UNKNOWN** — 2026-09-25; earlier snapshots (391-alert 10.0%/90.0% from 2026-08-31, 239-alert, 13-alert) preserved in `quantitative_results.md` as historical, superseded traffic-composition snapshots
+  *Planned:* continue extending `MITRE_TO_STAGE` coverage (e.g. the disclosed `T1548.003` gap) as new native mappings are confirmed; the UNKNOWN rate itself is intended behavior, not a defect.
 - **5/5 live UNKNOWN events re-verified intact** — 0 fabricated `attack_id`, after a full Neo4j outage/recovery cycle
 - **3 NEXT_TECHNIQUE edges, unchanged before/after UNKNOWN ingestion** — zero attack-chain contamination, live-verified
 - **XGBoost accuracy: 91.7%** — in-sample, n=60; **not** a generalization result
 - **Macro F1: 0.676** — in-sample, n=60
+  *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation for both accuracy and macro F1.
 - **Critical-class recall: 25%** — 3 of 4 Critical campaigns missed even in-sample, flagged not hidden
+  *Planned:* the Phase 19 dataset expansion explicitly targets adding real High/Critical-severity examples, which the current dataset lacks entirely.
 - **NEXT_TECHNIQUE: 4/12 correct (33.3%)** — self-assessed `INSUFFICIENT FOR SUPERVISED ML`
+  *Planned:* the same Phase 19 dataset expansion is intended to accumulate enough real technique transitions to revisit this verdict.
 - **>500 real ATT&CK documents indexed** — RAG retriever, real corpus not synthetic
 - **End-to-end latency: p50 35.5ms / p95 66.9ms** — real HTTP round trip, `GET /api/incidents/<id>/overview`, single-machine dev benchmark
+  *Planned:* extend the benchmark harness to a sustained-load ingestion test once a suitable traffic generator is in place.
 
 ## Numbers explicitly NOT included above (and why)
 
 Not included because they don't exist as defensible measurements: attribution accuracy, RAG retrieval precision/recall, GNN performance on real data, any held-out ML metric, MISP live-publication counts, latency/throughput. See the "cannot claim" list in `quantitative_results.md`.
+
+*Planned:* close these gaps in order — build a ground-truth attacker-identity benchmark for attribution accuracy; construct a labeled query set for RAG precision/recall; build a real-campaign GNN benchmark and a held-out ML split once the Phase 19 dataset expansion lands; reconfirm MISP publication once `MISP_API_KEY` is configured; extend the benchmark harness to a sustained-load throughput test.

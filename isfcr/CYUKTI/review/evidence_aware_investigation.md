@@ -74,19 +74,27 @@ Unchanged (already correct): stop when (confidence ≥ threshold AND model_uncer
 ## 14. Real integration results
 
 **BLOCKED — Neo4j (`neo4j-soc`) unavailable at the time of this task** (`nc -z localhost 7687` → connection refused, confirmed both before and after implementation). Per this task's explicit instruction, infrastructure was not restarted to force a result. `scripts/run_real_investigations.py` already exists, unmodified, targeting three real campaigns (`CAMP_427A075C`, `CAMP_1429ADB4`, `CAMP_D8605E81`) with the real `default_action_executor`/`default_model_predictor` — it is ready to run the moment Neo4j is available, and doing so is the recommended immediate next step (see `review_story.md`'s future work). No fake executor was used to manufacture a substitute "integration" result — the test suite (Section 13), which exercises the identical real scoring/confidence/stopping code paths with controlled evidence content, is offered as the available evidence instead, correctly labeled as test-verified, not live-validated.
+*Planned:* re-run the live-Neo4j integration validation via `scripts/run_real_investigations.py` once the infrastructure is available in a future session.
 
 ## 15. Current limitations
 
 - Live, real-Neo4j integration validation is currently blocked by infrastructure availability, not attempted with substitutes.
+  *Planned:* re-run via `scripts/run_real_investigations.py` once the infrastructure is available in a future session.
 - The evidence-dependency model covers exactly one verified pair (ATTRIBUTION_MATCH/CAMPAIGN_HISTORY); other plausible overlaps (e.g. MITRE_SEMANTIC_SEARCH's partial overlap with MITRE_KNOWLEDGE) were deliberately left to the existing same-source discount rather than double-declared, to avoid an unverified/redundant dependency claim.
+  *Planned:* verify and declare additional dependency pairs (e.g. MITRE_SEMANTIC_SEARCH/MITRE_KNOWLEDGE) once their overlap is confirmed by code inspection, following the same evidence standard used for the existing pair.
 - Next-best-evidence weights remain hand-set constants, not fitted to any outcome data — stated as such in code, unchanged from the pre-existing design.
+  *Planned:* fit these weights to real outcome data once a sufficient log of investigation-outcome pairs has been collected.
 - The previously-reported real XGBoost probabilities for 3 named campaigns (from earlier project history) were not re-generated this task, since that requires the same unavailable Neo4j infrastructure.
+  *Planned:* regenerate them in the same session as the live-Neo4j integration re-run above.
 
 ## 16. What remains NOT MEASURED
 
 - Live-system investigation traces (blocked, Section 14).
+  *Planned:* schedule a fresh live end-to-end investigation trace against Neo4j in the next verification session.
 - Whether the redundancy-penalty/multi-hypothesis additions measurably change real investigation outcomes (step count, final confidence) versus the pre-existing behavior on real campaigns — untestable without Neo4j this session.
+  *Planned:* compare before/after investigation traces on the same real campaigns once Neo4j is available.
 - Any comparison of the heuristic action-value weights against a learned or outcome-calibrated policy — no such calibration data exists.
+  *Planned:* collect a log of investigation outcomes and use it to fit or validate the action-value weights in a future phase.
 
 ## 17. Research novelty statement
 

@@ -472,10 +472,13 @@ phase's scope.
 
 - More real, more severity-diverse campaigns for Option C
   (`GNN_FEASIBILITY.md` Section 13 — a data-accumulation problem, not a
-  missing system).
+  missing system). *Planned:* the Phase 19 dataset-expansion effort is
+  designed to close exactly this gap.
 - An independent similarity/attribution ground-truth source for Option
   E's evaluation (Section 5, 9) — does not exist today in any form
-  (live telemetry or otherwise).
+  (live telemetry or otherwise). *Planned:* build one via analyst
+  review, the same independent-labeling gap `ACCURACY_EVALUATION.md`
+  already discloses for attribution accuracy generally.
 
 ---
 

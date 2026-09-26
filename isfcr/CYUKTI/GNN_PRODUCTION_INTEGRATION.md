@@ -195,6 +195,9 @@ The SSL/SSFT pipeline expects 312-dimensional CICIDS2017 network-flow
 windows; the live campaign pipeline does not produce that
 representation. **SSFT → live campaign integration remains
 infrastructure-blocked** — not attempted, not claimed complete.
+*Planned:* revisit once a live network-flow/packet-capture pipeline
+producing a real per-campaign window exists — an infrastructure
+question, not an engineering one.
 
 ## 11. MISP authentication limitation (re-verified this phase)
 
@@ -209,7 +212,9 @@ on a missing credential, not a code limitation.
 
 The dashboard's real-time behavior is polling-based. No
 Flask-SocketIO or equivalent backend exists. **Not implemented, not
-claimed.**
+claimed.** *Planned:* implement it once the listener/dashboard-API
+process-boundary question (see `ARCHITECTURE_AUDIT.md` Section D) is
+settled.
 
 ## 13. Neo4j — no new persistence (as instructed)
 
@@ -373,16 +378,24 @@ external infrastructure this session cannot provide.
 
 - Live Wazuh end-to-end verification (Phase 17) could not be performed
   — no such infrastructure exists in this session's environment.
+  *Planned:* run this verification once a real Wazuh lab environment
+  (Kali → Ubuntu → Wazuh Manager) is reachable from a future session.
 - The production GNN artifact is a single all-population split, not
   the fold-safe cross-validated model the strongest retrieval evidence
   (`GNN_RETRIEVAL_EVALUATION.md`) was measured against — documented
   explicitly in the artifact's own metadata (Section 3) so this is
-  never silently conflated.
+  never silently conflated. *Planned:* retrain/ship a fold-safe
+  artifact once the project decides production should reflect the
+  cross-validated numbers rather than the single-split one.
 - GNN is disabled by default; every "live-verified" result above was
   obtained with `GNN_ENABLED=true` set explicitly for verification —
   the shipped default behavior is byte-identical to pre-GNN-integration
   CYUKTI.
 - No frontend UI was built for GNN data — the API is ready, the
-  presentation point is documented, not implemented.
+  presentation point is documented, not implemented. *Planned:* build
+  the documented presentation points (`ThreatCorrelation.tsx`,
+  `ThreatActorAttribution.tsx`) in a future frontend-scoped phase.
 - MISP authenticated publication remains blocked on a missing
-  credential; not attempted, not claimed.
+  credential; not attempted, not claimed. *Planned:* reconfirm once
+  `MISP_API_KEY` is configured and the MISP service is running for a
+  verification session.

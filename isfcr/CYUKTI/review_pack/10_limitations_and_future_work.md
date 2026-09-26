@@ -24,13 +24,19 @@ TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'NoneType'
 
 **Disclosure for review**: this should be stated plainly if asked — "we found this live yesterday during our own activation testing, root-caused it precisely, and made the deliberate decision not to fix it under this task's scope so as not to touch `campaign_manager.py` without separate authorization." That is a defensible, disciplined answer, not something to hide.
 
+**Planned fix**: initialize `context.last_seen` in `create_campaign_context()` (or guard `expire_active_campaigns()` against `None`) once `campaign_manager.py` is back in scope; add a regression test covering the UNKNOWN-first-event path so this class of bug is caught by the suite next time.
+
 ## Current Issue 2: duplicate local rule IDs `100500`/`100501`
 
 Still formally **unresolved — requires root-level `wazuh-analysisd -t` validation.** New live evidence (rule 100500 firing 25 times with native `T1595` present) suggests the Nmap-detection rule definition is currently active, but this is behavioral inference, not a direct confirmation, and the status of the `100501` duplicate remains unknown either way. See `05_phase20_results.md` for detail. Do not claim this is resolved.
 
+**Planned fix**: run `wazuh-analysisd -t` with root access in a maintenance window to get a direct confirmation, then remove or renumber whichever rule is the duplicate.
+
 ## Current Issue 3: `T1548.003` missing from `MITRE_TO_STAGE`
 
 Confirmed absent, live-checked this session. Native Wazuh attribution for it (via rule 5401) is valid; CYUKTI's own risk-stage taxonomy simply hasn't been extended to cover it yet. Not fixed, per instruction. See `05_phase20_results.md`.
+
+**Planned fix**: add a `T1548.003` entry to `MITRE_TO_STAGE` in the same pass as the next taxonomy update, once other gaps discovered by live traffic are batched together.
 
 ## Dataset limitations (Phase 17 — carried forward, unchanged)
 
@@ -41,20 +47,29 @@ Confirmed absent, live-checked this session. Native Wazuh attribution for it (vi
 - Significant temporal clustering (45% of campaigns on 2 calendar dates).
 - Zero High-severity examples.
 - **Formal verdict, unchanged since Phase 17**: `NOT_READY_FOR_CALIBRATION`.
+- **Planned**: Phase 19 dataset-expansion spec (below) directly targets every one of these gaps — more attackers/victims, deduplicated feature vectors, deconfounded severity labels, spread-out collection dates, and real High-severity examples.
 
 ## ML/prediction limitations
 
 - No held-out train/test split exists anywhere in the repository — the in-sample XGBoost metrics in `04_results_and_metrics.md` are not a generalization estimate.
+  *Planned*: introduce a held-out split once the Phase 19 dataset expansion provides enough campaigns to make one meaningful.
 - NEXT_TECHNIQUE learning has only 3 real edges and 12 evaluable predictions (4 correct) — Phase 18's own formal verdict: `INSUFFICIENT_FOR_SUPERVISED_ML`.
+  *Planned*: the same Phase 19 expansion is expected to accumulate enough real technique transitions to revisit this verdict.
 - GNN has no real-campaign benchmark, only synthetic-graph unit tests.
+  *Planned*: build a real-campaign benchmark once Phase 19 provides enough real campaign graphs.
 - No attribution accuracy metric exists (no ground-truth actor-identity dataset).
+  *Planned*: construct a ground-truth attacker-identity benchmark dataset to enable this metric.
 
 ## Infrastructure/operational limitations
 
 - MISP live-publish success not reconfirmed this session (`MISP_API_KEY` was empty as of a prior audit).
+  *Planned*: reconfirm once `MISP_API_KEY` is configured and the MISP service is running for a verification session.
 - Neo4j-unavailable fallback behavior not tested.
+  *Planned*: add an integration test that simulates Neo4j unavailability and verifies the fallback path.
 - **Update, 2026-09-25**: per-stage latency IS now measured (`backend/benchmarks/run_benchmarks.py`, see `BENCHMARKS.md`) — end-to-end p50 35.5ms/p95 66.9ms on a real HTTP round trip. Throughput beyond the benchmark harness's own ops/sec figures (e.g. sustained listener ingestion rate under load) remains unmeasured.
+  *Planned*: extend the benchmark harness to a sustained-load ingestion test once a suitable traffic generator is in place.
 - File-based audit log (`logs/prerana_listener.log`) observed at 0 bytes despite active logging to stdout — the file-handler is not reliably capturing a durable audit trail in the current environment.
+  *Planned*: diagnose the file-handler configuration (likely a missing flush or buffering misconfiguration) and add a startup check that verifies the log file is actually being written to.
 
 ## What must NOT be claimed in the review
 

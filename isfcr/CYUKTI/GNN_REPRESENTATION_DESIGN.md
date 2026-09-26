@@ -380,7 +380,9 @@ neither dependent on `SIMILAR_TO`/`RESEMBLES`/`HAS_CAMPAIGN`:
 Not currently supportable: retrieval against an analyst-defined
 relevance set (no such set exists in this repository or process today
 — an infrastructure gap, not something this phase can construct
-without fabricating one).
+without fabricating one). *Planned:* build an analyst-defined relevance
+set via manual review once a process for it exists, the same
+independent-labeling gap `ACCURACY_EVALUATION.md` already discloses.
 
 ---
 

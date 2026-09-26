@@ -5,6 +5,7 @@
 ## 1. Executive Summary
 
 The previous evaluation reported **8.3% (2/24)** agreement between CYUKTI's live threat classification and a per-*scenario* AI-proposed label (one blanket label for every campaign sharing an attacker/victim pair). This adjudication re-examined all 24 campaigns individually against their own real evidence and found the per-scenario label was too coarse: it ignored real per-campaign differences (some brute-force campaigns show a corroborating successful-login event, most don't; one campaign labeled "brute force" by IP-pair grouping is actually an unrelated exploit chain; some "mixed exploitation" campaigns have almost no real evidence at all). **Independent per-campaign adjudication reaches 29.2% (7/24) agreement with CYUKTI** — a real, evidence-based change, not an optimization for a better number. The more important finding is *not* the headline percentage but its shape: **CYUKTI has 100% recall and 0% precision for the QUALIFIED_THREAT label against this adjudication** (false positive rate = 1.0 on the binary view) — it never misses a case this adjudication also calls a real threat, but it also calls *every* weaker SUSPICIOUS-level case QUALIFIED_THREAT too. This is a materially different, more actionable characterization than "8.3% accuracy" alone conveyed, and it survives this report's scrutiny in both directions (Section 6). **Human review is still required** before any of this is final.
+*Planned:* once human-reviewed, use this precision/recall asymmetry to guide a targeted recalibration of `cti_confidence_engine`'s scoring/thresholds (Section 8) rather than a blanket threshold change.
 
 ## 2. Evidence Sources — the exact 8 files
 
@@ -41,9 +42,10 @@ No unrelated technique was investigated. No Atomic Red Team test was executed to
 | Unique Campaign IDs | 24 | Every record is a distinct real `Campaign` node — no duplicates |
 | Unique Operations | 16 | `campaign_manager`'s own operation-correlation already merged some: `OP_D856F358`→2 campaigns, `OP_0EEBF42C`→2, `OP_236E9AE4`→3, `OP_7AF36DEF`→2, `OP_3970E3F5`→2, `OP_6844EECE`→2; the remaining 10 operations are 1:1 with a campaign |
 | Unique attacker/victim sessions (IP pairs) | 3 | `(.106, pes1ug23cs411)`=12 campaigns, `(.105, pes1ug23cs411)`=4 campaigns, `(.106, .105)`=8 campaigns |
-| Unique attack *episodes* (this adjudication's best estimate) | **Not precisely determinable without a human reviewer** | Real timestamps for the 12-campaign group span 2026-08-06 to 2026-09-25 (7 weeks) — most of that spread is far too wide to be one continuous session artificially fragmented; it is far more consistent with a lab user re-running the same generator scenario repeatedly over the project's lifetime. Reported as `HUMAN_REVIEW_REQUIRED` for a precise episode count, not guessed. |
+| Unique attack *episodes* (this adjudication's best estimate) | **Not precisely determinable without a human reviewer** | Real timestamps for the 12-campaign group span 2026-08-06 to 2026-09-25 (7 weeks) — most of that spread is far too wide to be one continuous session artificially fragmented; it is far more consistent with a lab user re-running the same generator scenario repeatedly over the project's lifetime. Reported as `HUMAN_REVIEW_REQUIRED` for a precise episode count, not guessed. *(Planned: have a human reviewer determine episode boundaries from the raw timestamps once available.)* |
 
 **One confirmed cross-contamination case, not a fragmentation case**: `CAMP_10407C1A` shares the `(.106, pes1ug23cs411)` attacker/victim pair with the SSH-brute-force group (hence being swept into that scenario and labeled `SUSPICIOUS`), but its real technique set (`T1055` process injection ×3, `T1595.002` vulnerability scanning ×1 at 152 occurrences, `T1210` exploitation of remote services, `T1190` exploit public-facing application) shows **zero brute-force technique activity at all**. This is a real scenario-construction defect (Section 6, cause #4) affecting one specific record, not evidence that the fragmentation finding itself was wrong.
+*Planned:* rebuild the scenario registry's session grouping using technique-set signatures in addition to IP pairs, so a record like this is no longer swept into the wrong scenario bucket.
 
 ## 5. Row-by-Row Adjudication
 
@@ -128,6 +130,7 @@ Reproducible via `python evaluation/review/compute_threat_qualification_adjudica
 | Agreements (no disagreement) | 1,3,5,6,7,11,14 | 7 |
 
 **Primary root cause of the disagreement pattern, stated plainly**: `cti_confidence_engine`'s `PUBLISH_THRESHOLD=40` is crossed by nearly any campaign with even one native-mapped MITRE technique and a handful of occurrences — the blended score (`DETECTION_WEIGHT=0.25`, `RISK_WEIGHT=0.20`, `THREAT_WEIGHT=0.20`, `CAMPAIGN_WEIGHT=0.20`, `PREDICTION_WEIGHT=0.15`) does not appear, from this real data, to meaningfully separate "one brute-force attempt" from "a sustained, corroborated compromise." This is a real, disclosed finding about the *scoring engine's discrimination*, not a claim that the underlying detections themselves are wrong.
+*Planned:* once this adjudication is human-reviewed, use it as the basis for retuning `cti_confidence_engine`'s weights/threshold so single-attempt events and sustained corroborated compromises score more distinctly.
 
 ## 9. Campaign Fragmentation Analysis
 
@@ -142,6 +145,8 @@ Quantified directly (Section 4): 24 review records → 16 real `Operation` nodes
 2. Whether the T1078 events genuinely represent a compromised account being used for further activity, or an operator/lab-owner legitimate login coinciding with generator noise — this adjudication treated attacker-IP+timing correlation as reasonably strong circumstantial evidence, but MITRE itself says this needs human behavioral judgment to confirm.
 3. Precise attack-episode boundaries within the 7-week-spanning SSH-brute-force group (Section 4) — this adjudication did not attempt to guess a number.
 4. Whether the Nmap group's identical `cti_score=49.08` across 6/8 records reflects a genuine scoring-engine ceiling/plateau or a coincidence — noted, not investigated further (out of this task's scope; a candidate follow-up for whoever reviews `cti_confidence_engine.py` next).
+
+*Planned:* a qualified human reviewer works through these four gaps (generator attribution, T1078 behavioral confirmation, episode boundaries, and the score-plateau question) using the evidence already exported at `evaluation/results/threat_qualification_adjudication_evidence.json`.
 
 ## 11. Scientific Interpretation
 

@@ -133,9 +133,12 @@ as its own code says it should.
   reachable-if-mounted logic (a confidence gauge, an empty state) —
   not wired into `App.tsx`'s layout this session, since doing so is a
   layout/product decision, not a test-infrastructure fix.
+  *Planned:* wire `PredictionPanel` into `App.tsx`'s layout in a future
+  product/design pass, once its placement is decided.
 - **`hooks/useWebSocket.ts`** is never imported anywhere in `src/`.
   Not tested (no consumer to test it through, and adding one would
   again be a feature decision, not infrastructure).
+  *Planned:* add a test once a real consumer wires this hook in.
 
 ## What is covered
 
@@ -174,6 +177,8 @@ as its own code says it should.
   pass. `RiskPropagation`'s and `QueryConsole`'s backend endpoints
   (`/api/risk/propagation`, `/api/query`) are already behaviorally
   verified at the API layer in `backend/tests/test_dashboard_api_routes.py`.
+  *Planned:* extend component coverage to these remaining components in
+  a future test-infrastructure pass, prioritized by usage.
 - **Real browser rendering / visual regression.** No Playwright,
   Cypress, or similar was introduced (none existed before, and the
   mission was explicit not to add one "unless genuinely necessary").
@@ -207,11 +212,16 @@ suite above verifies instead (in jsdom, not a browser).
 - Real browser end-to-end testing was not performed (see above) —
   genuinely unavailable in this environment without introducing new
   tooling, which was out of scope.
+  *Planned:* introduce a browser automation tool (e.g. Playwright) for
+  real end-to-end coverage once it is judged genuinely necessary.
 - `@types/react` (`^18.2.14`) and `@types/react-dom` (`^18.2.3`) are
   pinned to React 18 types despite the project using React 19 —
   pre-existing (not introduced this session), not touched, since it
   did not cause any actual typecheck or test failure. Worth revisiting
   if a future React-19-specific API is needed.
+  *Planned:* upgrade these type packages to their React-19-compatible
+  versions once a React-19-specific API is actually needed.
 - `npm audit` reports pre-existing transitive-dependency
   vulnerabilities (unrelated to this session's additions) — a
   dependency-hygiene task, out of scope for test-infrastructure work.
+  *Planned:* address these in a dedicated dependency-hygiene pass.

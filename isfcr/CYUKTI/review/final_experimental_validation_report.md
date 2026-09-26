@@ -54,6 +54,7 @@ Re-run this phase (not skipped): grepped `evaluation/ground_truth/builder.py` an
 ## J. Active-response validation
 
 **Re-checked this phase with a real test, not an assumption**: `ping -c 1 192.168.56.106` and `192.168.56.105` — both 0/1 packets received (0% reachable) from this environment. No `VBoxManage`/`vboxmanage` tooling is present. **`ACTIVE_RESPONSE = BLOCKED_BY_ENVIRONMENT`, confirmed, not simulated.** No attack was run, no containment was executed, no verification was attempted against any real system.
+*Planned:* validate active-response containment once real Kali/Ubuntu lab network access (VM console or SSH) is restored.
 
 ## K. Response latency
 
@@ -115,6 +116,7 @@ Machine-readable version: `evaluation/results/final_paper_dataset.json` (this ta
 ## P. Known limitations
 
 Unchanged from Phase X/Z, restated for completeness: no human reviewer available in this environment; no lab VM access; replay-attack surface and no RBAC in `active_response/`; correlation-ID not wired into live ingestion; Shuffle payload lacks correlation_id; no dedicated containment-effectiveness aggregate. **New this phase**: confirmed (not assumed) that the lab VMs are network-unreachable from this environment (0% ping success), closing any ambiguity about whether "no shell access" might still have allowed a network-level workaround.
+*Planned:* address the replay-attack surface and missing RBAC in `active_response/`, wire a correlation-ID through live ingestion and the Shuffle payload, and add a dedicated containment-effectiveness aggregate — tracked as follow-up engineering once lab access resumes.
 
 ## Q. Paper-readiness assessment
 
@@ -123,7 +125,9 @@ The paper (per `review/paper_submission_status.md`, updated this phase with one 
 ## R. Exact remaining blockers
 
 1. **A real, independent human reviewer** to fill in the 8 CSV queues in `evaluation/review/` — this is the single blocker preventing every "final" (as opposed to preliminary) evaluation number in this project.
+   *Planned:* recruit a qualified human reviewer to work through the 8 exported queues and promote records via `import_reviewed.py`/`lock_dataset()`.
 2. **Real Kali/Ubuntu lab access** (VM console or SSH) — the single blocker preventing any live active-response validation.
+   *Planned:* re-run the active-response validation once VM console or SSH access to the Kali/Ubuntu lab is restored.
 3. Everything else audited this phase (leakage, regression, security posture, research claims, documentation) was found consistent and required no correction.
 
 ---

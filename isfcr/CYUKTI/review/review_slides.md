@@ -60,8 +60,11 @@
 ## Slide 6 — ML / Prediction Results
 **Objective**: present real numbers with correct, unambiguous caveats — this is the slide most likely to be challenged.
 - XGBoost severity classifier: 91.7% accuracy — **in-sample, n=60, no held-out split**.
+  *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 - Critical-class recall only 25% (3 of 4 missed, even in-sample) — disclosed, not hidden.
+  *Planned:* the Phase 19 dataset-expansion spec explicitly targets adding real High/Critical-severity examples, which the current dataset lacks entirely.
 - NEXT_TECHNIQUE: 4/12 correct (33.3%) — labeled `INSUFFICIENT_FOR_SUPERVISED_ML` by the project's own prior audit.
+  *Planned:* the same Phase 19 dataset expansion is intended to accumulate enough real technique transitions to revisit this verdict.
 - Numbers to display: **91.7% (in-sample) / macro F1 0.676 / Critical recall 25% / 33.3% (4/12)**.
 - Figure/table: confusion matrix `[[1,2,1],[0,51,2],[0,0,3]]`; do not chart NEXT_TECHNIQUE (n=12 too small for a meaningful chart — present as a plain fraction).
 - **Say**: "We're showing you the in-sample numbers and the class-level breakdown, including the one that looks worst, because that's the honest picture at 60 campaigns."
@@ -71,9 +74,13 @@
 ## Slide 7 — Limitations + What the Results Actually Mean
 **Objective**: pre-empt the hardest questions by answering them yourself.
 - No held-out ML evaluation exists anywhere in the repository.
+  *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 - No ground-truth attribution dataset — attribution accuracy is `NOT MEASURED`, not poor.
+  *Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed.
 - Dataset diversity is limited: 3 attackers, 2 victims, 4 pairs, 0 High-severity examples.
+  *Planned:* the Phase 19 dataset-expansion spec directly targets these gaps — more attackers/victims and real High-severity examples.
 - One disclosed, unfixed live defect (maintenance-thread exception, non-blocking).
+  *Planned fix:* initialize `context.last_seen` in `create_campaign_context()` (or guard `expire_active_campaigns()` against `None`) once `campaign_manager.py` is back in scope; add a regression test for the UNKNOWN-first-event path.
 - Numbers to display: **3 attackers / 2 victims / 0 High-severity / NOT MEASURED (attribution)**.
 - Figure/table: the "cannot claim" list from `quantitative_results.md`.
 - **Say**: "These aren't gaps we're hiding — they're gaps our own internal audits found and formally documented before we were asked about them."

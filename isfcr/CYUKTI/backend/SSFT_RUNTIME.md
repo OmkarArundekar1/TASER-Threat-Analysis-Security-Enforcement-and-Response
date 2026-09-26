@@ -91,6 +91,10 @@ repository feeding either the SSL encoder or a per-campaign window.
 proven from code) **for the specific integration the mission
 described** ("SSL → SSFT → RuntimePredictor → XGBoost → Investigation").
 No workaround was fabricated to force a green checkmark on that box.
+*Planned:* revisit this once either a live network-flow/packet-capture
+pipeline exists to feed a per-campaign window, or a deliberate SSL
+retraining effort on the campaign-graph feature space is scoped as its
+own project.
 
 ## What genuinely was disconnected, and what this session fixed
 
@@ -144,6 +148,8 @@ SSFT-adjacent features would require **a research decision** (what
 does "a campaign's window" even mean, given no live flow-capture
 exists) before any migration engineering could start — not an
 engineering task this session could complete honestly.
+*Planned:* make that research decision explicitly in a future phase
+before attempting any SSFT-to-XGBoost migration engineering.
 
 ## Known environment limitation (unrelated to this change, disclosed for completeness)
 
@@ -159,6 +165,9 @@ session's changes. The authoritative regression check
 (`cd backend && python -m pytest tests/ -q`) is unaffected and passes
 cleanly; always use the full-suite command, not an isolated single-file
 run, to check this specific file's tests in this environment.
+*Planned:* investigate the Windows torch DLL loading-order quirk if an
+isolated single-file run of this test file is ever needed (e.g. in a
+future CI configuration).
 
 ## Tests
 

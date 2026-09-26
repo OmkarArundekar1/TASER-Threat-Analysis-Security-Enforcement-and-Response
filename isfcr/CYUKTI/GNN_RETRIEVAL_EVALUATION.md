@@ -219,6 +219,9 @@ useful evidence (the embedding does track structure, and does not
 track technique identity), but it should not be read as "the model
 learned that topology matters more" — it never had the option to do
 otherwise. **This is disclosed prominently, not glossed over.**
+*Planned:* extend `NODE_TYPES`/`NUMERIC_PROPS` with technique-identity
+features in a future phase if the GNN is meant to jointly capture
+topology and technique identity, rather than topology alone.
 
 Representations 1 (technique-Jaccard) and 2 (`similar_to_formula_score`,
 which is 60% Representation 1) would each treat the 82 same-shape/
@@ -272,6 +275,9 @@ alone.
   pooled across them is not a strictly single, jointly-fit space. The
   strong, consistent Task A/B/C results are encouraging under this
   caveat, not proof it doesn't matter.
+  *Planned:* investigate a post-hoc cross-fold alignment/calibration
+  step, or a jointly-fit embedding space once enough real campaigns
+  exist to support one without leaking test folds.
 - **Recall@5's ceiling effect** (Section 8, Tasks B/C): low Recall@5
   values for large attacker/host groups are an artifact of group size
   exceeding k, not evidence of weak retrieval — MRR is the more
@@ -282,10 +288,15 @@ alone.
 - Only 21 campaigns support Task A; only 68/65 support Tasks B/C
   (campaigns without a same-group peer are correctly excluded, not
   padded).
+  *Planned:* the Phase 19 dataset expansion is expected to increase the
+  number of campaigns available for Task A and similar retrieval
+  evaluations.
 - No comparison of Representations 1–3 against `z_G` was attempted for
   Tasks A/B/C (only Task D) — computing per-snapshot technique sets
   and 19-scalar features would require new plumbing not built this
   phase (disclosed, not silently skipped).
+  *Planned:* build that plumbing in a future phase to extend the
+  Representations 1–3 vs. `z_G` comparison to Tasks A/B/C.
 
 ## 13. What The Results Do NOT Prove
 

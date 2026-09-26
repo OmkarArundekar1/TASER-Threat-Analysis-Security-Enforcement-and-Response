@@ -285,21 +285,36 @@ where the embeddings show real per-dimension spread (this section).
 
 - Only 3 attacker groups exist in the 60-campaign ablation population
   — LOGO here means 3 folds, not a large-N cross-validation.
+  *Planned:* the Phase 19 dataset-expansion spec (6-8 attackers, 5+
+  victims) directly targets increasing the number of attacker groups
+  available for cross-validation.
 - One fold's training data has zero Medium and one Critical example —
   that fold's minority-class metrics are structurally floor-bound
   regardless of any feature added.
+  *Planned:* the same Phase 19 dataset expansion is expected to spread
+  Medium/Critical examples across more attacker groups so no single
+  fold is left without them.
 - 60 campaigns, 3 usable severity classes (High absent) — small by any
   general ML convention; a null result here should not be read as a
   definitive, permanent answer.
+  *Planned:* the Phase 19 dataset-expansion spec directly targets this
+  gap, including collecting real High-severity examples.
 - No hyperparameter search, no calibration step (Section 9) — a
   differently-tuned model (for either condition) was not explored.
+  *Planned:* explore hyperparameter tuning and reinstate the
+  `CalibratedClassifierCV` step once the dataset is large enough to
+  support the additional internal split it requires.
 - The embedding was trained via an unsupervised, severity-oblivious
   objective (graph autoencoding) — this ablation tests exactly that
   embedding, not a severity-supervised or contrastively-trained
   alternative representation.
+  *Planned:* evaluate a severity-supervised or contrastively-trained
+  embedding objective as a follow-up ablation.
 - `GraphSnapshotLoader`'s untyped-pattern finding
   (`GNN_OBJECTIVE_DECISION.md` Section 8) still applies to the
   underlying 60/71-campaign extraction used here, unchanged.
+  *Planned:* tracked as a follow-up under `GNN_OBJECTIVE_DECISION.md`
+  Section 8; no separate action needed here.
 
 ## 14. Interpretation
 
@@ -343,6 +358,8 @@ Additionally, not established by this experiment:
   (campaign correlation, retrieval, attribution) — not tested here.
 - Whether more real data (resolving the group/class scarcity in
   Section 6) would change this outcome — not testable with current data.
+  *Planned:* revisit this ablation once the Phase 19 dataset expansion
+  resolves the group/class scarcity described in Section 6.
 - Causality of any kind — only an observed, reproducible association
   (or, here, its exact absence) under a controlled comparison.
 

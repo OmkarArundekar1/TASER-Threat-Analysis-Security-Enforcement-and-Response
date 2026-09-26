@@ -10,6 +10,9 @@ This documents the matching contract as it actually exists in
 what this session verified and fixed. **No accuracy claim is made** —
 this is behavioral/engineering verification, not a validation of how
 well the matcher identifies real operations.
+*Planned:* build a labeled ground-truth operation-matching dataset so a
+real matching-quality metric can be computed, alongside the planned
+attribution-accuracy benchmark.
 
 ## What an "Operation" is
 
@@ -89,7 +92,9 @@ o.last_seen DESC` to `get_active_operations()`. Effect: ties now
 deterministically favor the most-recently-active operation. Verified
 structurally in `test_get_active_operations_query_orders_results_deterministically`
 (a live, multi-node Neo4j instance would be needed to observe the raw
-non-determinism directly, which this environment doesn't have) and
+non-determinism directly, which this environment doesn't have —
+*Planned:* re-run this observation once a live, multi-node Neo4j
+instance is available) and
 behaviorally in `test_correlate_breaks_exact_score_ties_by_first_candidate_in_list`
 (documents the Python-side tie-break policy that ordering feeds into).
 
@@ -116,6 +121,8 @@ if `OPERATION_DEFAULTS` is edited expecting it to take effect, it
 silently won't. Left as-is this session (out of scope — a genuinely
 unrelated dead-import cleanup, not a correlation/attribution behavioral
 issue), noted here for visibility.
+*Planned:* have `create_operation_db` reference `OPERATION_DEFAULTS`
+directly (or remove the unused import) in a future cleanup pass.
 
 ## Tests
 

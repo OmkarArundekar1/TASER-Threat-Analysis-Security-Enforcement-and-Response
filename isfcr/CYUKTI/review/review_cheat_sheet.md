@@ -30,10 +30,15 @@ CYUKTI ingests real Wazuh security telemetry into a Neo4j campaign graph and res
 
 ## 5 biggest limitations
 1. No held-out ML evaluation exists anywhere in the repository.
+   *Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation.
 2. No ground-truth attribution dataset — attribution accuracy is `NOT MEASURED`.
+   *Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed.
 3. Real dataset diversity is limited: 3 attackers, 2 victims, 0 High-severity examples.
+   *Planned:* the Phase 19 dataset-expansion spec directly targets these gaps — more attackers/victims and real High-severity examples.
 4. One disclosed, unfixed live defect (maintenance-thread `last_seen=None` exception) — non-blocking.
+   *Planned fix:* initialize `context.last_seen` in `create_campaign_context()` (or guard `expire_active_campaigns()` against `None`) once `campaign_manager.py` is back in scope; add a regression test for the UNKNOWN-first-event path.
 5. No latency, throughput, or RAG-retrieval-quality benchmark exists.
+   *Planned:* per-stage latency is now measured (see `BENCHMARKS.md`); throughput and RAG-retrieval-quality benchmarks remain to be added.
 
 ## 5 difficult questions + answers
 1. **"Isn't 90% UNKNOWN bad?"** → It's the correct outcome of refusing to fabricate attribution — the real question is contamination, and we can show 0%.
@@ -44,12 +49,14 @@ CYUKTI ingests real Wazuh security telemetry into a Neo4j campaign graph and res
 
 ## One sentence on ML
 The ML pipeline (XGBoost severity, SSL autoencoder, GNN) is real, trained, and tested end-to-end, but every reported metric is in-sample or synthetic-only — no held-out generalization claim exists yet, by deliberate, evidence-based choice.
+*Planned:* the Phase 19 dataset expansion is designed to reach the scale needed to support a proper held-out train/test evaluation and a real-campaign GNN benchmark.
 
 ## One sentence on UNKNOWN handling
 UNKNOWN is a first-class, provenance-tracked outcome — not a failure or a discard — verified live to preserve full raw evidence while being structurally incapable of touching technique attribution, attack-chain learning, prediction, or risk scoring.
 
 ## One sentence on attribution
 Threat attribution is implemented and unit-tested at the evidence-collector level, but has zero quantitative accuracy measurement because no ground-truth attacker-identity dataset currently exists.
+*Planned:* build a ground-truth attacker-identity benchmark dataset so a real attribution-accuracy metric can be computed.
 
 ## One sentence on future work
 The single highest-leverage next step is deliberate, diversity-targeted real-data expansion (more attacker/victim identities, at least one real High-severity example) — not more data volume — because it simultaneously unblocks a meaningful ML held-out evaluation and a first attribution benchmark.
@@ -60,10 +67,10 @@ The single highest-leverage next step is deliberate, diversity-targeted real-dat
 ---
 
 ## NEW PHASE RESULTS (2026-09-14): Evidence-Aware Adaptive Investigation
-Closed three real gaps in the existing (already-largely-correct) investigation architecture: bounded evidence-redundancy discounting (one verified dependency: attribution ↔ campaign history), multi-hypothesis state tracking, and conflict-severity-scaled confidence. 164/164 tests passing (14 new, zero regressions). Structurally proven the investigation module can never promote a hypothesis into ground-truth ATT&CK attribution. **Live-Neo4j validation was not performed — infrastructure was unavailable and was not restarted to force a result.** Full detail: `review/evidence_aware_investigation.md`. Maturity classification is unchanged: **RESEARCH PROTOTYPE**.
+Closed three real gaps in the existing (already-largely-correct) investigation architecture: bounded evidence-redundancy discounting (one verified dependency: attribution ↔ campaign history), multi-hypothesis state tracking, and conflict-severity-scaled confidence. 164/164 tests passing (14 new, zero regressions). Structurally proven the investigation module can never promote a hypothesis into ground-truth ATT&CK attribution. **Live-Neo4j validation was not performed — infrastructure was unavailable and was not restarted to force a result.** *Planned:* re-run the live-Neo4j integration validation once the infrastructure is available in a future session. Full detail: `review/evidence_aware_investigation.md`. Maturity classification is unchanged: **RESEARCH PROTOTYPE**.
 
 ## PHASE 21 REAL-CAMPAIGN RESULTS (2026-09-14, same day, Neo4j came back)
-Ran the real, unmodified `scripts/run_real_investigations.py` against 3 live campaigns once Neo4j was confirmed reachable. **Honest mixed result — say this if asked:** confidence/uncertainty numbers ARE genuinely campaign-dependent on real data (0.069-0.184 final confidence, all different); evidence-SELECTION-ORDER was NOT — identical across all 3 real campaigns to 3 decimal places, because the ranking formula's only content-sensitive term applies to one action type only, and all 3 investigations exhausted the same fixed 8-action set. This is a disclosed negative result on the strong adaptivity claim, not a bug. Do not say "the investigator adapts evidence choice per campaign" — the real data available so far says otherwise. Full detail: `review/phase21_real_investigation_validation.md`.
+Ran the real, unmodified `scripts/run_real_investigations.py` against 3 live campaigns once Neo4j was confirmed reachable. **Honest mixed result — say this if asked:** confidence/uncertainty numbers ARE genuinely campaign-dependent on real data (0.069-0.184 final confidence, all different); evidence-SELECTION-ORDER was NOT — identical across all 3 real campaigns to 3 decimal places, because the ranking formula's only content-sensitive term applies to one action type only, and all 3 investigations exhausted the same fixed 8-action set. This is a disclosed negative result on the strong adaptivity claim, not a bug. Do not say "the investigator adapts evidence choice per campaign" — the real data available so far says otherwise. *Planned:* revisit the NBE scoring formula so adaptive terms can encode evidence content rather than only action-type sequence, once that redesign is scoped. Full detail: `review/phase21_real_investigation_validation.md`.
 
 ## PHASE 22 RESULTS (2026-09-14): root cause of the invariant ranking, nailed down
-Ablation study (8 configurations × 3 real campaigns × 8 steps = 192 pairwise comparisons): zero score/ranking differences in every single one, including 3 configurations that isolate each adaptive term (novelty, model-uncertainty, dependency-redundancy) alone with no static-term competition. **Root cause, not just "it doesn't adapt":** the formula's adaptive terms respond only to which action TYPES have already run, never to what those actions actually found; the one term that could carry real model state (XGBoost's) is always evaluated at a moment pinned to the same value, because the action always taken right before it produces evidence with `relevance=0.0` by construction of its collector, which structurally zeroes the coverage signal that term depends on. Classification: **effectively static ranking** (not "adaptive scores that don't change order" — the raw scores themselves never differ). Say this if asked "is it actually adaptive": no, and we know exactly which code path explains it. Full detail: `review/phase22_nbe_sensitivity_validation.md`.
+Ablation study (8 configurations × 3 real campaigns × 8 steps = 192 pairwise comparisons): zero score/ranking differences in every single one, including 3 configurations that isolate each adaptive term (novelty, model-uncertainty, dependency-redundancy) alone with no static-term competition. **Root cause, not just "it doesn't adapt":** the formula's adaptive terms respond only to which action TYPES have already run, never to what those actions actually found; the one term that could carry real model state (XGBoost's) is always evaluated at a moment pinned to the same value, because the action always taken right before it produces evidence with `relevance=0.0` by construction of its collector, which structurally zeroes the coverage signal that term depends on. Classification: **effectively static ranking** (not "adaptive scores that don't change order" — the raw scores themselves never differ). Say this if asked "is it actually adaptive": no, and we know exactly which code path explains it. *Planned:* have the mitre_collector populate `Evidence.relevance` (or otherwise give step-1 evidence nonzero weight) so `current_uncertainty` can vary by campaign content, once that change is scoped. Full detail: `review/phase22_nbe_sensitivity_validation.md`.
