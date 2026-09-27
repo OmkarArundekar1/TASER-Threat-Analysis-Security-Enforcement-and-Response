@@ -1,10 +1,11 @@
 """
-Comprehensive behavioral tests for dashboard_api.py's 22 routes --
+Comprehensive behavioral tests for dashboard_api.py's routes --
 previously covered only for the newest evidence-aware endpoints
 (tests/test_dashboard_api.py, test_dashboard_api_campaign_context.py,
-test_query_console_execution.py). All 22 routes are consumed by the
+test_query_console_execution.py). Routes are consumed by the
 real React frontend (frontend/src/services/api.ts is the source of
-truth cross-checked here) -- there are no dead/unused routes.
+truth cross-checked here) -- there are no dead/unused routes. Added
+2026-09-27: GET /api/operations (see OPERATIONS_VIEW.md).
 
 Two tiers, both real dashboard_api.app.test_client() calls (never unit
 tests of route internals):
@@ -179,7 +180,7 @@ def test_neo4j_outage_on_a_previously_unprotected_route_returns_json_503(client,
     assert "Database unavailable" in resp.get_json()["error"]
 
 
-@pytest.mark.parametrize("route", ["/api/campaigns", "/api/attackers", "/api/predictions", "/api/attack-chain"])
+@pytest.mark.parametrize("route", ["/api/campaigns", "/api/operations", "/api/attackers", "/api/predictions", "/api/attack-chain"])
 def test_neo4j_outage_returns_json_503_across_multiple_routes(client, monkeypatch, route):
     monkeypatch.setattr(dashboard_api, "driver", _RaisingDriver(ServiceUnavailable("down")))
     resp = client.get(route)
@@ -335,6 +336,81 @@ def test_campaigns_list_live(client):
     assert data["count"] == len(data["campaigns"])
     if data["campaigns"]:
         assert data["campaigns"][0]["campaign_id"].startswith("CAMP_")
+
+
+# ============================================================== operations list
+
+def test_operations_list_response_matches_frontend_contract(client, mock_driver):
+    mock_driver(_FakeResult([{
+        "operation_id": "OP_1", "primary_attacker": "10.0.0.1", "primary_target": "10.0.0.2",
+        "status": "ACTIVE", "created_at": None, "last_seen": None, "closed_at": None,
+        "confidence": 0.0, "correlation_score": 0.0, "predicted_goal": None,
+        "campaign_ids": ["CAMP_1", "CAMP_2"],
+    }]))
+    resp = client.get("/api/operations")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["count"] == 1
+    row = data["operations"][0]
+    for field in ("operation_id", "primary_attacker", "primary_target", "status",
+                  "created_at", "last_seen", "closed_at", "confidence",
+                  "correlation_score", "predicted_goal", "campaign_ids", "campaign_count"):
+        assert field in row
+    assert row["campaign_ids"] == ["CAMP_1", "CAMP_2"]
+    # campaign_count is recomputed from the real relationship, not trusted
+    # from a possibly-stale stored counter -- see the route's docstring.
+    assert row["campaign_count"] == 2
+
+
+def test_operations_empty_result_returns_empty_list_not_error(client, mock_driver):
+    mock_driver(_FakeResult([]))
+    resp = client.get("/api/operations")
+    assert resp.status_code == 200
+    assert resp.get_json() == {"operations": [], "count": 0}
+
+
+def test_operations_with_no_attached_campaigns_reports_zero_not_a_crash(client, mock_driver):
+    """An Operation with no (real) HAS_CAMPAIGN relationship yet -- the
+    OPTIONAL MATCH's collect(DISTINCT c.campaign_id) then holds a single
+    [None] entry, which must be filtered out rather than reported as a
+    phantom campaign."""
+    mock_driver(_FakeResult([{
+        "operation_id": "OP_EMPTY", "primary_attacker": "10.0.0.1", "primary_target": None,
+        "status": "ACTIVE", "created_at": None, "last_seen": None, "closed_at": None,
+        "confidence": None, "correlation_score": None, "predicted_goal": None,
+        "campaign_ids": [None],
+    }]))
+    resp = client.get("/api/operations")
+    row = resp.get_json()["operations"][0]
+    assert row["campaign_ids"] == []
+    assert row["campaign_count"] == 0
+
+
+@requires_live_neo4j
+def test_operations_list_live(client):
+    resp = client.get("/api/operations")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["count"] == len(data["operations"])
+    if data["operations"]:
+        op = data["operations"][0]
+        assert op["operation_id"].startswith("OP_")
+        assert op["campaign_count"] == len(op["campaign_ids"])
+
+
+@requires_live_neo4j
+def test_every_live_campaign_is_accounted_for_by_operations_or_is_a_known_ungrouped_one(client):
+    """Not a claim that every campaign has an operation (a real,
+    disclosed gap -- see OPERATIONS_VIEW.md) -- just that the two
+    listings are mutually consistent: every campaign_id an operation
+    claims really exists in /api/campaigns, so the frontend's grouping
+    never references a phantom campaign."""
+    campaigns_resp = client.get("/api/campaigns")
+    operations_resp = client.get("/api/operations")
+    real_campaign_ids = {c["campaign_id"] for c in campaigns_resp.get_json()["campaigns"]}
+    for op in operations_resp.get_json()["operations"]:
+        for cid in op["campaign_ids"]:
+            assert cid in real_campaign_ids, f"{op['operation_id']} claims phantom campaign {cid}"
 
 
 # ============================================================== events / events/<id>

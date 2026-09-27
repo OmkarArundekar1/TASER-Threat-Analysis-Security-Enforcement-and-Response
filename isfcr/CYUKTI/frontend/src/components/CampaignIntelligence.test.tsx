@@ -21,10 +21,27 @@ const selectCampaign = vi.fn();
 
 function setState(overrides: Partial<ReturnType<typeof useDashboard>>) {
   mockUseDashboard.mockReturnValue({
-    campaigns: [], selectedCampaign: null, selectCampaign, predictions: [], recommendations: [],
+    campaigns: [], operations: [], selectedCampaign: null, selectCampaign, predictions: [], recommendations: [],
     ...overrides,
   } as ReturnType<typeof useDashboard>);
 }
+
+const secondCampaign = { ...campaignFixture, campaign_id: 'CAMP_SECOND', latest_technique: 'T1110' };
+
+const operationFixture = {
+  operation_id: 'OP_ABCDEF12',
+  primary_attacker: campaignFixture.attacker_ip,
+  primary_target: campaignFixture.victim_ip,
+  status: 'ACTIVE',
+  created_at: '2026-01-15T09:00:00+00:00',
+  last_seen: campaignFixture.last_seen,
+  closed_at: null,
+  confidence: 0.5,
+  correlation_score: 0.5,
+  predicted_goal: null,
+  campaign_ids: [campaignFixture.campaign_id, secondCampaign.campaign_id],
+  campaign_count: 2,
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -53,6 +70,58 @@ describe('CampaignIntelligence -- list view', () => {
     render(<CampaignIntelligence />);
     fireEvent.click(screen.getByText(campaignFixture.campaign_id));
     expect(selectCampaign).toHaveBeenCalledWith(campaignFixture.campaign_id);
+  });
+});
+
+describe('CampaignIntelligence -- operation-centric grouping', () => {
+  it('groups campaigns under their real Operation, collapsed by default (campaign ids not shown until expanded)', () => {
+    setState({ campaigns: [campaignFixture, secondCampaign], operations: [operationFixture] });
+    render(<CampaignIntelligence />);
+
+    expect(screen.getByText(operationFixture.operation_id)).toBeInTheDocument();
+    expect(screen.getByText('2 campaigns')).toBeInTheDocument();
+    expect(screen.queryByText(campaignFixture.campaign_id)).not.toBeInTheDocument();
+    expect(screen.queryByText(secondCampaign.campaign_id)).not.toBeInTheDocument();
+  });
+
+  it('expands an operation to reveal its member campaigns, and selecting one calls selectCampaign', () => {
+    setState({ campaigns: [campaignFixture, secondCampaign], operations: [operationFixture] });
+    render(<CampaignIntelligence />);
+
+    fireEvent.click(screen.getByText(operationFixture.operation_id));
+    expect(screen.getByText(campaignFixture.campaign_id)).toBeInTheDocument();
+    expect(screen.getByText(secondCampaign.campaign_id)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(secondCampaign.campaign_id));
+    expect(selectCampaign).toHaveBeenCalledWith(secondCampaign.campaign_id);
+  });
+
+  it('never hides a campaign that has no Operation -- it renders as its own entry', () => {
+    const ungroupedCampaign = { ...campaignFixture, campaign_id: 'CAMP_UNGROUPED' };
+    // operationFixture only claims campaignFixture + secondCampaign; ungroupedCampaign has no operation
+    setState({ campaigns: [campaignFixture, secondCampaign, ungroupedCampaign], operations: [operationFixture] });
+    render(<CampaignIntelligence />);
+
+    expect(screen.getByText(operationFixture.operation_id)).toBeInTheDocument();
+    expect(screen.getByText(ungroupedCampaign.campaign_id)).toBeInTheDocument(); // visible without expanding anything
+  });
+
+  it('an Operation whose campaign_ids reference a campaign outside the current filter is not shown as empty', () => {
+    // operationFixture claims two campaign_ids, but only one is in the
+    // currently-filtered campaigns list -- the operation must still show
+    // (with just that one visible member), never as a phantom 0-campaign group.
+    setState({ campaigns: [campaignFixture], operations: [operationFixture] });
+    render(<CampaignIntelligence />);
+
+    expect(screen.getByText(operationFixture.operation_id)).toBeInTheDocument();
+    expect(screen.getByText('1 campaign')).toBeInTheDocument();
+  });
+
+  it('an Operation with zero visible members (all its campaigns filtered out) is not shown at all', () => {
+    setState({ campaigns: [], operations: [operationFixture] });
+    render(<CampaignIntelligence />);
+    expect(screen.queryByText(operationFixture.operation_id)).not.toBeInTheDocument();
+    expect(screen.getByText(/no active campaigns/i)).toBeInTheDocument();
   });
 });
 

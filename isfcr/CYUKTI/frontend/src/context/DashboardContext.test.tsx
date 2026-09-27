@@ -13,12 +13,19 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { DashboardProvider, useDashboard } from './DashboardContext';
 import { healthFixture, overviewFixture, campaignsFixture } from '../test/fixtures';
 
+const operationsFixture = { operations: [{
+  operation_id: 'OP_1', primary_attacker: '10.0.0.1', primary_target: '10.0.0.2', status: 'ACTIVE',
+  created_at: null, last_seen: null, closed_at: null, confidence: 0, correlation_score: 0,
+  predicted_goal: null, campaign_ids: ['CAMP_7331E223'], campaign_count: 1,
+}], count: 1 };
+
 function routeFor(url: string): { body: unknown; ok: boolean; status?: number } {
   if (url.startsWith('/api/health')) return { body: healthFixture, ok: true };
   if (url.startsWith('/api/overview')) return { body: overviewFixture, ok: true };
   if (url.startsWith('/api/events')) return { body: { events: [], total: 0, page: 1, page_size: 50, total_pages: 0 }, ok: true };
   if (url.startsWith('/api/graph')) return { body: { nodes: [], links: [] }, ok: true };
   if (url.startsWith('/api/campaigns')) return { body: campaignsFixture, ok: true };
+  if (url.startsWith('/api/operations')) return { body: operationsFixture, ok: true };
   if (url.startsWith('/api/predictions')) return { body: { predictions: [], count: 0 }, ok: true };
   if (url.startsWith('/api/recommendations')) return { body: { recommendations: [] }, ok: true };
   if (url.startsWith('/api/attackers')) return { body: { attackers: [], count: 0 }, ok: true };
@@ -33,7 +40,7 @@ function mockAllEndpointsHealthy() {
 }
 
 function Consumer() {
-  const { loading, error, health, overview, campaigns } = useDashboard();
+  const { loading, error, health, overview, campaigns, operations } = useDashboard();
   return (
     <div>
       <div data-testid="loading">{String(loading)}</div>
@@ -41,6 +48,7 @@ function Consumer() {
       <div data-testid="health-status">{health?.status ?? 'none'}</div>
       <div data-testid="overview-events">{overview?.total_events ?? 'none'}</div>
       <div data-testid="campaign-count">{campaigns.length}</div>
+      <div data-testid="operation-count">{operations.length}</div>
     </div>
   );
 }
@@ -62,6 +70,7 @@ describe('DashboardProvider -- refreshAll loading/success/error states', () => {
     expect(screen.getByTestId('health-status').textContent).toBe('healthy');
     expect(screen.getByTestId('overview-events').textContent).toBe('130');
     expect(screen.getByTestId('campaign-count').textContent).toBe('1');
+    expect(screen.getByTestId('operation-count').textContent).toBe('1');
   });
 
   it('reports a single clear error when every endpoint fails, without crashing', async () => {

@@ -66,6 +66,26 @@ export interface Campaign {
   prediction_confidence?: number;
 }
 
+/* ── Operations (backend/operation_manager.py, Operation nodes) ──
+   Not every Campaign has an Operation yet -- a real, disclosed gap in
+   the real-time operation-attachment pipeline (see OPERATIONS_VIEW.md).
+   The frontend must treat any campaign_id absent from every operation's
+   campaign_ids as its own ungrouped entry, never hide it. */
+export interface Operation {
+  operation_id: string;
+  primary_attacker: string | null;
+  primary_target: string | null;
+  status: string;
+  created_at: string | null;
+  last_seen: string | null;
+  closed_at: string | null;
+  confidence: number | null;
+  correlation_score: number | null;
+  predicted_goal: string | null;
+  campaign_ids: string[];
+  campaign_count: number;
+}
+
 export interface Prediction {
   campaign_id: string;
   current_technique: string;

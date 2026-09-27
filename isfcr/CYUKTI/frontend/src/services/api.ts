@@ -82,7 +82,10 @@ export const api = {
     return fetchApi<{ campaigns: import('../types').Campaign[]; count: number }>(`/campaigns${query}`);
   },
 
-  campaignTimeline: (campaignId: string) => 
+  operations: () =>
+    fetchApi<{ operations: import('../types').Operation[]; count: number }>('/operations'),
+
+  campaignTimeline: (campaignId: string) =>
     fetchApi<{ events: any[]; campaign_id: string }>(`/campaigns/${encodeURIComponent(campaignId)}/timeline`),
 
   campaignCorrelation: (campaignId: string) => 

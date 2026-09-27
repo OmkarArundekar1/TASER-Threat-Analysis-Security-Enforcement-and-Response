@@ -63,6 +63,15 @@ describe('api service -- success paths', () => {
     expect(result.campaigns[0].campaign_id).toBe('CAMP_7331E223');
   });
 
+  it('operations() calls GET /api/operations and returns the real parsed operation list shape', async () => {
+    mockFetchOnce({ operations: [{ operation_id: 'OP_1', campaign_ids: ['CAMP_1'], campaign_count: 1 }], count: 1 });
+    const result = await api.operations();
+    const calledUrl = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(calledUrl).toBe('/api/operations');
+    expect(result.count).toBe(1);
+    expect(result.operations[0].operation_id).toBe('OP_1');
+  });
+
   it('investigate() POSTs to the campaign-scoped URL with the options as the JSON body', async () => {
     mockFetchOnce(investigationResultFixture);
     const result = await api.investigate('CAMP_7331E223', { max_steps: 5 });

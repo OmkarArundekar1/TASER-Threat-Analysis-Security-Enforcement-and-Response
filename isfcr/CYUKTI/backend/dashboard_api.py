@@ -373,6 +373,60 @@ def campaigns():
             })
         return jsonify({"campaigns": campaigns_list, "count": len(campaigns_list)})
 
+
+@app.route('/api/operations')
+def operations():
+    """List every real Operation node plus the campaign_ids it actually
+    has a HAS_CAMPAIGN relationship to. campaign_count is recomputed
+    live from that relationship rather than trusted from the stored
+    Operation.campaign_count property, which can go stale if a campaign
+    is attached outside the one code path that increments it.
+
+    Not every Campaign has an Operation yet (a known, disclosed gap in
+    the real-time operation-attachment pipeline -- see
+    OPERATIONS_VIEW.md) -- this endpoint only reports what real
+    Operation nodes exist; the frontend is responsible for treating any
+    campaign_id absent from every operation's campaign_ids as its own
+    ungrouped entry, never for hiding it.
+    """
+    with driver.session() as session:
+        res = session.run("""
+            MATCH (o:Operation)
+            OPTIONAL MATCH (o)-[:HAS_CAMPAIGN]->(c:Campaign)
+            WITH o, collect(DISTINCT c.campaign_id) AS campaign_ids
+            RETURN o.operation_id AS operation_id,
+                   o.primary_attacker AS primary_attacker,
+                   o.primary_target AS primary_target,
+                   o.status AS status,
+                   o.created_at AS created_at,
+                   o.last_seen AS last_seen,
+                   o.closed_at AS closed_at,
+                   o.confidence AS confidence,
+                   o.correlation_score AS correlation_score,
+                   o.predicted_goal AS predicted_goal,
+                   campaign_ids
+            ORDER BY o.last_seen DESC
+        """)
+        operations_list = []
+        for r in res:
+            campaign_ids = [cid for cid in r["campaign_ids"] if cid is not None]
+            operations_list.append({
+                "operation_id": r["operation_id"],
+                "primary_attacker": r["primary_attacker"],
+                "primary_target": r["primary_target"],
+                "status": r["status"],
+                "created_at": neo4j_datetime_to_iso(r["created_at"]),
+                "last_seen": neo4j_datetime_to_iso(r["last_seen"]),
+                "closed_at": neo4j_datetime_to_iso(r["closed_at"]),
+                "confidence": float(r["confidence"]) if r["confidence"] is not None else None,
+                "correlation_score": float(r["correlation_score"]) if r["correlation_score"] is not None else None,
+                "predicted_goal": r["predicted_goal"] or None,
+                "campaign_ids": campaign_ids,
+                "campaign_count": len(campaign_ids),
+            })
+        return jsonify({"operations": operations_list, "count": len(operations_list)})
+
+
 @app.route('/api/correlation/campaigns/<campaign_id>')
 def correlation_campaigns(campaign_id):
     with driver.session() as session:

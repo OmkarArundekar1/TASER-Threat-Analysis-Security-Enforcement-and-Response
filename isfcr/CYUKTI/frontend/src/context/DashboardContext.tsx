@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { api } from '../services/api';
 import type {
   HealthStatus, OverviewMetrics, AlertEvent, GraphData,
-  Campaign, Prediction, RecommendationGroup, Attacker
+  Campaign, Operation, Prediction, RecommendationGroup, Attacker
 } from '../types';
 
 interface DashboardState {
@@ -14,6 +14,7 @@ interface DashboardState {
   eventsPage: number;
   graphData: GraphData | null;
   campaigns: Campaign[];
+  operations: Operation[];
   predictions: Prediction[];
   recommendations: RecommendationGroup[];
   attackers: Attacker[];
@@ -54,7 +55,7 @@ export function useDashboard() {
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<DashboardState>({
     health: null, overview: null, events: [], eventsTotal: 0, eventsPage: 1,
-    graphData: null, campaigns: [], predictions: [], recommendations: [],
+    graphData: null, campaigns: [], operations: [], predictions: [], recommendations: [],
     attackers: [], selectedCampaign: null, selectedAttacker: null,
     selectedTechnique: null, globalTimeRange: '24h', graphLayer: 'campaign', resetKey: 0, loading: true, error: null,
     isPathExplorerOpen: false,
@@ -154,12 +155,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         }),
         api.graph(state.selectedCampaign || undefined, state.graphLayer, state.selectedAttacker || undefined),
         api.campaigns({ time_range: state.globalTimeRange, attacker: state.selectedAttacker || undefined }),
+        api.operations(),
         api.predictions(),
         api.recommendations(),
         api.attackers(),
       ]);
 
-      const [healthRes, overviewRes, eventsRes, graphRes, campaignsRes,
+      const [healthRes, overviewRes, eventsRes, graphRes, campaignsRes, operationsRes,
              predictionsRes, recsRes, attackersRes] = results;
 
       const allFailed = results.every(r => r.status === 'rejected');
@@ -172,6 +174,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         eventsTotal: eventsRes.status === 'fulfilled' ? eventsRes.value.total : s.eventsTotal,
         graphData: graphRes.status === 'fulfilled' ? graphRes.value : s.graphData,
         campaigns: campaignsRes.status === 'fulfilled' ? campaignsRes.value.campaigns : s.campaigns,
+        operations: operationsRes.status === 'fulfilled' ? operationsRes.value.operations : s.operations,
         predictions: predictionsRes.status === 'fulfilled' ? predictionsRes.value.predictions : s.predictions,
         recommendations: recsRes.status === 'fulfilled' && Array.isArray((recsRes.value as { recommendations: RecommendationGroup[] }).recommendations)
           ? (recsRes.value as { recommendations: RecommendationGroup[] }).recommendations : s.recommendations,
