@@ -9,6 +9,13 @@ from recommendation_engine import get_recommendations
 from mitre_mapper import MITRE_TO_STAGE
 from dynamic_tps import dynamic_tps
 from chain_updater import update_attack_chain
+# Critical fixes integration: cross-campaign transition learning
+try:
+    from transition_learner import learner as transition_learner
+    TRANSITION_LEARNER_AVAILABLE = True
+except ImportError:
+    TRANSITION_LEARNER_AVAILABLE = False
+    transition_learner = None
 from campaign_manager import campaign_manager
 from neo4j_client import (
     create_attack_event,
@@ -23,6 +30,7 @@ from neo4j_client import (
     update_operation_activity,
 )
 from mitre_resolver import resolve_mitre, PROVENANCE_UNKNOWN, PROVENANCE_AMBIGUOUS
+from event_time import EventTimeError, resolve_event_time, event_clock
 
 from dedup_engine import (
     dedup_engine,
@@ -38,6 +46,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 from config import (
     ENABLE_DUPLICATE_BUFFER,
+    EVENT_TIME_POLICY,
     GNN_ENABLED,
     MISP_URL,
     MISP_API_KEY,
@@ -165,7 +174,7 @@ def should_ignore_audit_command(alert):
 
     return False
 
-def _process_unattributed_alert(alert, rule, rule_id, agent_id, resolution):
+def _process_unattributed_alert(alert, rule, rule_id, agent_id, resolution, event_time, trace=None):
     """Phase 20 UNKNOWN/AMBIGUOUS path: preserves the alert as evidence
     without fabricating an ATT&CK technique. Deliberately does NOT call
     campaign_manager.append_technique(), chain_updater.update_attack_chain(),
@@ -195,6 +204,7 @@ def _process_unattributed_alert(alert, rule, rule_id, agent_id, resolution):
         technique_id=None,
         rule_id=rule_id,
         agent_id=agent_id,
+        event_time=event_time.value,
     )
 
     if duplicate:
@@ -204,7 +214,11 @@ def _process_unattributed_alert(alert, rule, rule_id, agent_id, resolution):
                 event_id=metadata["event_id"],
                 tps=0,
                 investigation_payload=compact_payload,
+                event_time=event_time.value,
             )
+        if trace is not None:
+            trace.update(path="DUPLICATE_UNATTRIBUTED", fingerprint=fingerprint,
+                         campaign_id=(metadata or {}).get("campaign_id"))
         print("\n[UNATTRIBUTED DUPLICATE]")
         print(f"Rule ID : {rule_id}")
         print(f"Reason  : {resolution.reason}")
@@ -227,8 +241,11 @@ def _process_unattributed_alert(alert, rule, rule_id, agent_id, resolution):
     # can attach to an existing ACTIVE campaign, but will not look up a
     # recently-closed INACTIVE one -- it creates a fresh campaign shell
     # instead in that case. See realtime_socgraph.py docstring.
-    context = campaign_manager.resolve_campaign_context(
-        attacker_ip, victim_ip
+    # Event time: an active campaign already expired at this alert's event
+    # time is closed and not reused (same rule as the resolved path), so the
+    # outcome does not depend on whether background maintenance ran first.
+    context = campaign_manager.resolve_active_context_at(
+        attacker_ip, victim_ip, event_time.value
     )
     if context is None:
         # No active campaign for this attacker/victim pair -- create the
@@ -237,7 +254,7 @@ def _process_unattributed_alert(alert, rule, rule_id, agent_id, resolution):
         # prior last_technique, since there is no prior state for a
         # brand-new campaign.
         context = campaign_manager.create_campaign_context(
-            attacker_ip, victim_ip, current_technique=None
+            attacker_ip, victim_ip, current_technique=None, event_time=event_time.value
         )
     campaign_id = context.campaign_id
 
@@ -255,12 +272,18 @@ def _process_unattributed_alert(alert, rule, rule_id, agent_id, resolution):
         mitre_reason=resolution.reason,
         mitre_resolver_version=resolution.resolver_version,
         mitre_technique_ids=list(resolution.technique_ids),
+        event_time=event_time.value,
+        event_time_source=event_time.source,
     )
     dedup_engine.register_event(
         fingerprint=fingerprint,
         campaign_id=campaign_id,
         event_id=event_id,
+        event_time=event_time.value,
     )
+    if trace is not None:
+        trace.update(path="UNATTRIBUTED", fingerprint=fingerprint,
+                     campaign_id=campaign_id, event_id=event_id)
 
     print("\n[UNATTRIBUTED ALERT]")
     print(f"Campaign : {campaign_id}")
@@ -270,17 +293,44 @@ def _process_unattributed_alert(alert, rule, rule_id, agent_id, resolution):
     return True
 
 
-def process_alert(alert):
+def process_alert(alert, trace=None, event_time_policy=None):
+    """trace: optional dict filled with what happened to this alert (path,
+    event time and its source, campaign_id, ...) -- used by the replay
+    harness; no effect on processing.
+    event_time_policy: overrides config.EVENT_TIME_POLICY (event_time.py)."""
     try:
         if not isinstance(alert, dict):
             return False
-        
+
         rule = alert.get("rule")
         if not rule:
             logger.info("Skipping alert: missing rule")
+            if trace is not None:
+                trace.update(path="SKIPPED_NO_RULE")
             return False
         if should_ignore_audit_command(alert):
+            if trace is not None:
+                trace.update(path="SKIPPED_AUDIT_HELPER")
             return False
+
+        # Event time is resolved once, here, and passed explicitly to every
+        # campaign-lifecycle decision below (research/STEP2_EVENT_TIME.md).
+        try:
+            event_time = resolve_event_time(alert, event_time_policy or EVENT_TIME_POLICY)
+        except EventTimeError as err:
+            logger.warning("Alert rejected: event time %s (%r).", err.reason, err.raw)
+            if trace is not None:
+                trace.update(path="REJECTED_EVENT_TIME", event_time_error=err.reason)
+            return False
+        event_time = event_clock.observe(event_time)
+        if trace is not None:
+            trace.update(
+                event_time=event_time.value.isoformat(),
+                event_time_source=event_time.source,
+                event_time_fallback_reason=event_time.fallback_reason,
+                late=event_time.late,
+                future_skew=event_time.future_skew,
+            )
         rule_id = rule.get("id")
         
         agent_id = (
@@ -295,7 +345,7 @@ def process_alert(alert):
                 resolution.provenance,
                 resolution.reason,
             )
-            return _process_unattributed_alert(alert, rule, rule_id, agent_id, resolution)
+            return _process_unattributed_alert(alert, rule, rule_id, agent_id, resolution, event_time, trace)
 
         mitre = rule.get("mitre") or {}
         mitre_id = resolution.technique_ids[0]
@@ -383,7 +433,8 @@ def process_alert(alert):
             victim_ip=victim_ip,
             technique_id=mitre_id,
             rule_id=rule_id,
-            agent_id=agent_id
+            agent_id=agent_id,
+            event_time=event_time.value
         )
         print(f"Fingerprint : {fingerprint}")
         print(f"Duplicate   : {duplicate}")
@@ -396,7 +447,8 @@ def process_alert(alert):
                         event_id=metadata["event_id"],
                         campaign_id=metadata["campaign_id"],
                         tps=tps,
-                        payload=compact_payload
+                        payload=compact_payload,
+                        timestamp=event_time.value.isoformat()
                     )
                     if success:
                         print("\n==============================================")
@@ -416,7 +468,8 @@ def process_alert(alert):
                         update_duplicate_event(
                             event_id=metadata["event_id"],
                             tps=tps,
-                            investigation_payload=compact_payload
+                            investigation_payload=compact_payload,
+                            event_time=event_time.value
                         )
         
                 else:
@@ -424,7 +477,8 @@ def process_alert(alert):
                     update_duplicate_event(
                         event_id=metadata["event_id"],
                         tps=tps,
-                        investigation_payload=compact_payload
+                        investigation_payload=compact_payload,
+                        event_time=event_time.value
                     )
         
                     print("\n==============================================")
@@ -433,15 +487,37 @@ def process_alert(alert):
                     print(f"Event ID    : {metadata['event_id']}")
                     print("Existing AttackEvent updated.")
                     print("==============================================")
-        
+
+            if trace is not None:
+                trace.update(path="DUPLICATE", fingerprint=fingerprint,
+                             campaign_id=(metadata or {}).get("campaign_id"))
             return True
             
-        campaign_id = campaign_manager.get_or_create_campaign(
+        # The TransitionContext is captured before the campaign's
+        # last_technique is overwritten with mitre_id (by activation and by
+        # create_attack_event below) and is the only source of the
+        # previous technique for update_attack_chain().
+        transition = campaign_manager.get_or_create_campaign_with_transition(
             attacker_ip,
             victim_ip,
-            mitre_id
+            mitre_id,
+            event_time=event_time.value
         )
-        
+        campaign_id = transition.campaign_id
+
+        # Critical fixes: record attacker activity for cross-campaign learning
+        if TRANSITION_LEARNER_AVAILABLE and mitre_id != "UNKNOWN":
+            try:
+                learned = transition_learner.record_attacker_activity(
+                    attacker_ip=attacker_ip,
+                    technique=mitre_id,
+                    event_time=event_time.value
+                )
+                if learned:
+                    print(f"[LEARNER] Learned new transition from {attacker_ip}")
+            except Exception as e:
+                print(f"[LEARNER ERROR] {e}")
+
         print("\n===================================================")
         print("[NEW ALERT]")
         print(f"Campaign : {campaign_id}")
@@ -469,12 +545,20 @@ def process_alert(alert):
             mitre_reason=resolution.reason,
             mitre_resolver_version=resolution.resolver_version,
             mitre_technique_ids=list(resolution.technique_ids),
+            event_time=event_time.value,
+            event_time_source=event_time.source,
         )
         dedup_engine.register_event(
             fingerprint=fingerprint,
             campaign_id=campaign_id,
-            event_id=event_id
+            event_id=event_id,
+            event_time=event_time.value
         )
+        if trace is not None:
+            trace.update(path="RESOLVED", fingerprint=fingerprint, campaign_id=campaign_id,
+                         event_id=event_id, technique=mitre_id,
+                         segment_start=transition.segment_start,
+                         previous_technique=transition.previous_technique)
         
         print("[GRAPH] AttackEvent Created")
         print(f"[GRAPH] Event ID : {event_id}")
@@ -509,7 +593,8 @@ def process_alert(alert):
             print(f"  {key:<25}: {value}")
         update_attack_chain(
             campaign_id,
-            mitre_id
+            mitre_id,
+            transition
         )
 
         print("[CHAIN] Updated")
@@ -580,7 +665,7 @@ def process_alert(alert):
         print("Chain      :", context.attack_chain)
         print("Predicted  :", context.predicted_next)
         print("=================================")
-        result = operation_engine.correlate(context)
+        result = operation_engine.correlate(context, reference_time=event_time.value)
         
         print("\n========== OPERATION CORRELATION ==========")
         print(f"Matched     : {result.matched}")

@@ -47,11 +47,13 @@ from typing import Callable, Optional
 
 from neo4j_client import driver
 from mitre_rule_registry import REVIEWED_RULE_MAPPINGS
+# Critical fixes integration: wazuh_rule_mapper as fallback for UNKNOWN casestry:    from wazuh_rule_mapper import mapper as wazuh_mapper    WAZUH_MAPPER_AVAILABLE = Trueexcept ImportError:    WAZUH_MAPPER_AVAILABLE = False    wazuh_mapper = None
 
 RESOLVER_VERSION = "1.0.0"
 
 PROVENANCE_NATIVE_WAZUH = "NATIVE_WAZUH"
 PROVENANCE_REVIEWED_RULE_MAPPING = "REVIEWED_RULE_MAPPING"
+PROVENANCE_CURATED_WAZUH_MAPPING = "CURATED_WAZUH_MAPPING"
 PROVENANCE_DETERMINISTIC_INFERENCE = "DETERMINISTIC_INFERENCE"
 PROVENANCE_AMBIGUOUS = "AMBIGUOUS"
 PROVENANCE_UNKNOWN = "UNKNOWN"
@@ -167,6 +169,29 @@ def _resolve_reviewed(alert: dict) -> Optional[MitreResolution]:
 DETERMINISTIC_INFERENCE_RULES: list[Callable[[dict], Optional[tuple[str, ...]]]] = []
 
 
+def _resolve_curated_wazuh(alert: dict) -> Optional[MitreResolution]:
+    if not WAZUH_MAPPER_AVAILABLE:
+        return None
+    technique_id = wazuh_mapper.map_alert(alert)
+    if technique_id is None:
+        return None
+    valid, invalid_reason = _validate_technique_ids((technique_id,))
+    if not valid:
+        return _unknown(f'Curated Wazuh mapping rejected: {invalid_reason}')
+    rule = alert.get('rule') or {}
+    rule_id = rule.get('id')
+    description = wazuh_mapper.get_description(int(rule_id)) if rule_id else None
+    reason_text = f'Curated Wazuh rule mapping for rule {rule_id}'
+    if description:
+        reason_text += f': {description}'
+    return MitreResolution(
+        technique_ids=(technique_id,),
+        provenance=PROVENANCE_CURATED_WAZUH_MAPPING,
+        confidence=CONFIDENCE_REVIEWED,
+        reason=reason_text,
+    )
+
+
 def _resolve_inference(alert: dict) -> Optional[MitreResolution]:
     for rule_fn in DETERMINISTIC_INFERENCE_RULES:
         candidates = rule_fn(alert)
@@ -210,11 +235,14 @@ def resolve_mitre(alert: dict) -> MitreResolution:
     if reviewed is not None:
         return reviewed
 
+    curated = _resolve_curated_wazuh(alert)
+    if curated is not None:
+        return curated
     inferred = _resolve_inference(alert)
     if inferred is not None:
         return inferred
 
-    return _unknown("No native, reviewed, or deterministically-inferred ATT&CK mapping")
+    return _unknown("No native, reviewed, curated, or deterministically-inferred ATT&CK mapping")
 
 
 def _tactic_labels_from_kill_chain_phases(phases: list[str] | None) -> list[str]:
