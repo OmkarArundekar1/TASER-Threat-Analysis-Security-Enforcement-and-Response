@@ -47,7 +47,14 @@ from typing import Callable, Optional
 
 from neo4j_client import driver
 from mitre_rule_registry import REVIEWED_RULE_MAPPINGS
-# Critical fixes integration: wazuh_rule_mapper as fallback for UNKNOWN casestry:    from wazuh_rule_mapper import mapper as wazuh_mapper    WAZUH_MAPPER_AVAILABLE = Trueexcept ImportError:    WAZUH_MAPPER_AVAILABLE = False    wazuh_mapper = None
+
+# Critical fixes integration: wazuh_rule_mapper as fallback for UNKNOWN cases
+try:
+    from wazuh_rule_mapper import mapper as wazuh_mapper
+    WAZUH_MAPPER_AVAILABLE = True
+except ImportError:
+    WAZUH_MAPPER_AVAILABLE = False
+    wazuh_mapper = None
 
 RESOLVER_VERSION = "1.0.0"
 
