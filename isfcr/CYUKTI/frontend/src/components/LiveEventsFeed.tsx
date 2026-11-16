@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Search, Filter, ChevronDown, ChevronRight, Activity, AlertTriangle, FileJson, ShieldCheck } from 'lucide-react';
+import { Play, Pause, Search, Filter, ChevronDown, ChevronRight, Activity, AlertTriangle, FileJson, ShieldCheck, Wifi, WifiOff } from 'lucide-react';
 import { useDashboard } from '../context/DashboardContext';
 import { api } from '../services/api';
 import type { AlertEvent } from '../types';
@@ -11,6 +11,7 @@ export function LiveEventsFeed() {
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const [eventDetail, setEventDetail] = useState<AlertEvent | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
 
   useEffect(() => {
     setSearchTerm('');
@@ -18,7 +19,23 @@ export function LiveEventsFeed() {
     setEventDetail(null);
     setIsPaused(false);
   }, [resetKey]);
-  
+
+  // Listen for WebSocket connection status
+  useEffect(() => {
+    const checkConnection = setInterval(() => {
+      // Check if we received any events in the last 60 seconds
+      const lastEventTime = events[0]?.timestamp;
+      if (lastEventTime) {
+        const eventDate = new Date(lastEventTime);
+        const now = new Date();
+        const ageMs = now.getTime() - eventDate.getTime();
+        setWsConnected(ageMs < 60000); // Consider connected if event within last minute
+      }
+    }, 5000);
+
+    return () => clearInterval(checkConnection);
+  }, [events]);
+
   // Columns config
   const [columns, setColumns] = useState({
     timestamp: true,
@@ -56,7 +73,7 @@ export function LiveEventsFeed() {
       setEventDetail(null);
       return;
     }
-    
+
     setExpandedEventId(id);
     if (event.id) {
       setLoadingDetail(true);
@@ -78,7 +95,7 @@ export function LiveEventsFeed() {
     setColumns(prev => ({ ...prev, [col]: !prev[col] }));
   };
 
-  const filteredEvents = events.filter(e => 
+  const filteredEvents = events.filter(e =>
     e.technique_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     e.technique_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     e.attacker_ip.includes(searchTerm) ||
@@ -91,23 +108,28 @@ export function LiveEventsFeed() {
         <h2 className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${isPaused ? 'bg-amber-500' : 'bg-green-500 animate-pulse-dot'}`}></div>
           Live SOC Feed
+          {wsConnected ? (
+            <Wifi className="w-4 h-4 text-green-400" title="WebSocket connected" />
+          ) : (
+            <WifiOff className="w-4 h-4 text-amber-400" title="WebSocket disconnected - using polling" />
+          )}
         </h2>
-        
+
         <div className="flex items-center gap-3">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-2.5 top-2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Filter events locally..." 
+            <input
+              type="text"
+              placeholder="Filter events locally..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-[#0a0e17] border border-[#1e2d4a] rounded-md pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 w-48 transition-colors"
             />
           </div>
           <div className="relative">
-            <button 
+            <button
               onClick={() => setShowColConfig(!showColConfig)}
-              className={`p-1.5 rounded transition-colors ${showColConfig ? 'bg-[#1e2d4a] text-white' : 'text-slate-400 hover:text-white hover:bg-[#1e2d4a]'}`} 
+              className={`p-1.5 rounded transition-colors ${showColConfig ? 'bg-[#1e2d4a] text-white' : 'text-slate-400 hover:text-white hover:bg-[#1e2d4a]'}`}
               title="Filter columns"
             >
               <Filter className="w-4 h-4" />
@@ -124,13 +146,12 @@ export function LiveEventsFeed() {
               </div>
             )}
           </div>
-          <button 
+          <button
             onClick={() => setIsPaused(!isPaused)}
-            className={`p-1.5 rounded transition-colors flex items-center gap-1 text-xs font-semibold ${
-              isPaused 
-                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
-                : 'bg-[#1e2d4a] text-slate-300 hover:text-white border border-transparent'
-            }`}
+            className={`p-1.5 rounded transition-colors flex items-center gap-1 text-xs font-semibold ${isPaused
+              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+              : 'bg-[#1e2d4a] text-slate-300 hover:text-white border border-transparent'
+              }`}
           >
             {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
             {isPaused ? 'RESUME' : 'PAUSE'}
@@ -164,7 +185,7 @@ export function LiveEventsFeed() {
                 const isExpanded = expandedEventId === id;
                 return (
                   <React.Fragment key={`${id}-${idx}`}>
-                    <tr 
+                    <tr
                       onClick={() => handleRowClick(event)}
                       className={`cursor-pointer transition-colors ${isExpanded ? 'bg-indigo-500/10' : 'hover:bg-[#1a2540]'}`}
                     >
@@ -190,7 +211,7 @@ export function LiveEventsFeed() {
                         </td>
                       )}
                     </tr>
-                    
+
                     {/* Expanded Drawer Details */}
                     {isExpanded && (
                       <tr className="bg-[#0a0e17] border-b border-[#1e2d4a]">
@@ -245,7 +266,7 @@ export function LiveEventsFeed() {
                                   </div>
                                 </div>
                               </div>
-                              
+
                               {eventDetail?.predicted_next_attack && (
                                 <div>
                                   <h4 className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 mb-2">
@@ -257,7 +278,7 @@ export function LiveEventsFeed() {
                                   </div>
                                 </div>
                               )}
-                              
+
                               {eventDetail?.recommendations && eventDetail.recommendations.length > 0 && (
                                 <div>
                                   <h4 className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 mb-2">
@@ -267,11 +288,12 @@ export function LiveEventsFeed() {
                                     {eventDetail.recommendations.map((rec, i) => {
                                       const text = typeof rec === 'string' ? rec : rec.recommendation;
                                       return (
-                                      <div key={i} className="flex items-start gap-1 text-slate-300">
-                                        <ChevronRight className="w-3 h-3 text-emerald-400 flex-shrink-0 mt-0.5" />
-                                        <span>{text}</span>
-                                      </div>
-                                    )})}
+                                        <div key={i} className="flex items-start gap-1 text-slate-300">
+                                          <ChevronRight className="w-3 h-3 text-emerald-400 flex-shrink-0 mt-0.5" />
+                                          <span>{text}</span>
+                                        </div>
+                                      )
+                                    })}
                                   </div>
                                 </div>
                               )}
@@ -282,7 +304,7 @@ export function LiveEventsFeed() {
                               <h4 className="text-xs font-semibold text-slate-500 uppercase flex items-center gap-1 mb-2">
                                 <FileJson className="w-3.5 h-3.5" /> SOC Investigation Evidence Panel
                               </h4>
-                              
+
                               {loadingDetail ? (
                                 <div className="bg-[#060a13] border border-[#1e2d4a] rounded flex-1 p-4 flex items-center justify-center">
                                   <div className="text-slate-500 text-sm italic animate-pulse">Loading deep investigation evidence...</div>
@@ -301,7 +323,7 @@ export function LiveEventsFeed() {
                                       </div>
                                     </div>
                                   )}
-                                  
+
                                   {/* Network Evidence */}
                                   {eventDetail?.investigation_payload?.network && Object.keys(eventDetail.investigation_payload.network).length > 0 && (
                                     <details className="bg-[#060a13] border border-blue-500/30 rounded p-3 group">
@@ -314,7 +336,7 @@ export function LiveEventsFeed() {
                                       </pre>
                                     </details>
                                   )}
-                                  
+
                                   {/* HTTP Evidence */}
                                   {eventDetail?.investigation_payload?.http && Object.keys(eventDetail.investigation_payload.http).length > 0 && (
                                     <details className="bg-[#060a13] border border-purple-500/30 rounded p-3 group">
@@ -366,7 +388,7 @@ export function LiveEventsFeed() {
             )}
           </tbody>
         </table>
-        
+
         {!isPaused && (
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent animate-[scan-line_4s_linear_infinite] pointer-events-none z-30"></div>
         )}
@@ -378,7 +400,7 @@ export function LiveEventsFeed() {
           Showing {events.length} of {eventsTotal} total events
         </div>
         <div className="flex items-center gap-2">
-          <button 
+          <button
             disabled={eventsPage === 1}
             onClick={() => { setEventsPage(eventsPage - 1); refreshEvents(); }}
             className="px-3 py-1 text-xs bg-[#1e2d4a] hover:bg-indigo-500/30 text-white rounded transition-colors disabled:opacity-50"
@@ -386,7 +408,7 @@ export function LiveEventsFeed() {
             Previous
           </button>
           <span className="text-xs text-slate-300">Page {eventsPage}</span>
-          <button 
+          <button
             disabled={events.length < 50}
             onClick={() => { setEventsPage(eventsPage + 1); refreshEvents(); }}
             className="px-3 py-1 text-xs bg-[#1e2d4a] hover:bg-indigo-500/30 text-white rounded transition-colors disabled:opacity-50"

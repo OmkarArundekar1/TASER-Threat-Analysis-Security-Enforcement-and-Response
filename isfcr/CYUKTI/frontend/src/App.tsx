@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { DashboardProvider, useDashboard } from './context/DashboardContext';
+import { useWebSocket } from './hooks/useWebSocket';
 import { TopNavBar, type TopLevelView } from './components/TopNavBar';
 import { SecurityOverview } from './components/SecurityOverview';
 import { LiveEventsFeed } from './components/LiveEventsFeed';
@@ -21,6 +22,9 @@ import { IncidentView } from './components/IncidentView';
 function DashboardLayout() {
   const { isPathExplorerOpen } = useDashboard();
   const [activeView, setActiveView] = useState<TopLevelView>('dashboard');
+  
+  // Initialize WebSocket for real-time event streaming
+  useWebSocket();
 
   return (
     <div className="h-screen flex flex-col bg-[#060a13] text-slate-200 overflow-hidden">

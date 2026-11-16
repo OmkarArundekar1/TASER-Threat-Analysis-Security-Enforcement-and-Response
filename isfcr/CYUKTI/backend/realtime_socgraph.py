@@ -787,6 +787,29 @@ def process_alert(alert, trace=None, event_time_policy=None):
         incident.operation_id = operation_id
         result = sync.publish_campaign(incident)
         
+        # Emit real-time event to WebSocket clients after successful persistence
+        try:
+            from websocket_events import emit_attack_event
+            emit_attack_event(
+                event_id=event_id,
+                campaign_id=campaign_id,
+                attacker_ip=attacker_ip,
+                victim_ip=victim_ip,
+                technique_id=mitre_id if mitre_id and mitre_id != 'UNKNOWN' else None,
+                technique_name=alert.get('rule', {}).get('description', 'Unknown'),
+                rule_id=str(alert.get('rule', {}).get('id', 'unknown')),
+                severity=severity_engine.calculate(dynamic_tps).level,
+                stage=stage or 'Unknown',
+                timestamp=alert.get('timestamp', ''),
+                agent_name=alert.get('agent', {}).get('name'),
+                confidence=cti.score if cti else None,
+                operation_id=operation_id,
+                risk_score=dynamic_risk.risk_score if dynamic_risk else None,
+            )
+        except Exception as e:
+            # WebSocket emission failures must never break ingestion
+            logger.error(f"WebSocket emission failed for event {event_id}: {e}")
+        
         print("\n========== MISP ==========")
         
         print(f"Action      : {result.get('action', '-')}")

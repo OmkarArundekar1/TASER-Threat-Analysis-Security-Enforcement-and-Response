@@ -52,6 +52,14 @@ if _startup_config.GNN_ENABLED:
 from soar.api import soar_bp
 app.register_blueprint(soar_bp)
 
+# Register containment API for real-time response
+from containment_api import containment_bp
+app.register_blueprint(containment_bp)
+
+# Initialize WebSocket support for real-time event broadcasting
+from websocket_events import initialize_socketio
+socketio = initialize_socketio(app, cors_allowed_origins="*")
+
 
 @app.errorhandler(ServiceUnavailable)
 def handle_neo4j_unavailable(e):
@@ -2023,6 +2031,7 @@ def ml_predict_severity():
 
 
 if __name__ == '__main__':
+    # Use socketio.run() instead of app.run() to enable WebSocket support
     # threaded=True: the dashboard's own frontend routinely fires 8-13
     # concurrent requests at once (DashboardContext.refreshAll's 8
     # parallel calls, plus IncidentView's own overview/timeline/RAG/
@@ -2032,4 +2041,9 @@ if __name__ == '__main__':
     # (driver.session() is safe to use concurrently) and soar/memory.py
     # opens a fresh sqlite connection per call under its own lock, so
     # nothing here depends on single-threaded execution.
-    app.run(host='0.0.0.0', port=5002, threaded=True)
+    if socketio is not None:
+        logger.info("Starting CYUKTI dashboard with WebSocket support on port 5002")
+        socketio.run(app, host='0.0.0.0', port=5002, allow_unsafe_werkzeug=True)
+    else:
+        logger.warning("SocketIO not initialized, starting without WebSocket support")
+        app.run(host='0.0.0.0', port=5002, threaded=True)
