@@ -1,0 +1,3 @@
+{"decision": "CREATE", "campaign_id": "CAMP_F7C7CE09", "attacker_ip": "10.99.0.5", "victim_ip": "10.99.0.9", "event_time": "2026-01-01T12:00:00+00:00", "technique": "T1595"}
+{"decision": "CLOSE_EXPIRED", "campaign_id": "CAMP_F7C7CE09", "attacker_ip": "10.99.0.5", "victim_ip": "10.99.0.9", "event_time": "2026-01-01T12:03:20+00:00"}
+{"decision": "CREATE", "campaign_id": "CAMP_5B0F7C32", "attacker_ip": "10.99.0.5", "victim_ip": "10.99.0.9", "event_time": "2026-01-01T12:03:20+00:00", "technique": "T1110"}

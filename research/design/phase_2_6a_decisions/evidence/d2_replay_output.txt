@@ -1,0 +1,28 @@
+input ../data/raw_logs/alerts.json sha256 e958c1cc9211036b2e9feaf48990c36cf370d724c1c139183229cb59565b3098
+source listener/wazuh_listener.py sha256 206e147543ce7979384891c0ed9c93bac33a494af72fee6d842d058ce3152ccd
+source listener/utils.py sha256 5d25a3e4e404eacc1789effcf8718bbc4387c213b0489a03b5614edfbb8fd6c0
+source realtime_socgraph.py sha256 7026cbd2b2227490da9bcdfb6504a8272006e46ea4457d44a2dc83bf6bc32bcb
+source dedup_engine.py sha256 1abb03650912cf988ede6a0d1b51f41e1631587049bc69277bb5388c1587cbeb
+source config.py sha256 caeeb8b0b3ff78996ebc58b9c91826574362fad6ade4ee89819fa3868e3995b5
+source mitre_rule_registry.py sha256 559bf9703b5f196f9ceb35c5f02bc3bda4efa6efea8ad403e0ba595f678ede14
+MAX_ALERT_CACHE 10000 ALERT_CACHE_TTL 600
+
+accept_alert, paced by alert timestamps: accepted 8945, refused as repeats 70
+
+accept_alert, read as one fast backlog: accepted 8945, refused as repeats 70
+
+--- how each refused alert differs from the accepted one with its alert_id
+differ only in Wazuh id: 0; differ in more: 70; distinct Wazuh ids among refused: 70
+fields differing, with counts: {'rule.firedtimes': 70, 'id': 70, 'data.http.url': 39, 'data.tx_id': 38, 'full_log': 27, 'data.flow.pkts_toclient': 24, 'data.timestamp': 24, 'data.flow.bytes_toclient': 24, 'data.flow.bytes_toserver': 20, 'data.flow.pkts_toserver': 19, 'data.http.length': 18, 'data.url': 15, 'data.http.status': 13, 'data.dest_ip': 7, 'data.flow_id': 6, 'data.src_port': 6, 'data.flow.dest_ip': 6, 'data.flow.src_port': 6, 'data.flow.start': 6, 'data.http.hostname': 6, 'predecoder.timestamp': 2, 'data.file': 2, 'data.protocol': 1, 'data.id': 1, 'data.direction': 1}
+share a timestamp with the accepted one: 70
+refused alerts by rule level: {3: 53, 5: 13, 6: 2, 7: 2}
+refused alerts by whether srcip is present: {True: 15, False: 55}
+
+reviewed rule mappings: 0. Treated as valid here, because checking them needs the graph. An assumption
+DEDUP_WINDOW 90. Model of routing, for all alerts: {'attributed duplicate': 1201, 'attributed new event': 110, 'unattributed duplicate': 7552, 'unattributed new event': 152}
+The same model, for only what accept_alert lets through: {'attributed duplicate': 1198, 'attributed new event': 110, 'unattributed duplicate': 7486, 'unattributed new event': 151}
+Lost to accept_alert, by category: {'attributed duplicate': 3, 'unattributed duplicate': 66, 'unattributed new event': 1}
+refused alerts that would have been a new event rather than a repeat: 1
+refused alerts whose attacker or victim differs from the accepted one: 7
+consecutive-position check: refused alerts adjacent in the file to their accepted twin: 34 of 39 groups are contiguous
+largest group of alerts sharing one alert_id: 9

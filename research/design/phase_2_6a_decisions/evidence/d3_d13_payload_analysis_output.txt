@@ -1,0 +1,16 @@
+input sha256 e958c1cc9211036b2e9feaf48990c36cf370d724c1c139183229cb59565b3098
+statement sha256 be1e58d33acf08e6b862406c64d20e57ecbef62fed54d707a4e8e61df83ab8e9 | carries MATCHES: True
+unattributed duplicates in the model: 7552
+fingerprints with more than one modelled unattributed event: 18 of 27
+journal serializer: identical across parses 7552; refused {}
+ledger fingerprint: identical across parses 7552; distinct 7552
+tzinfo types on event_time: {'timezone': 7552}
+investigation_payload bytes: median 384, p99 664, max 719, total 2927754
+proposed key characters: min 59, max 63; refused by the ledger's key check: 0
+W07U requests: busiest second 377; seconds with 100 or more 27; rate over the span 11197 per day
+--- other facts
+rule.firedtimes present: 9015 of 9015
+native technique id spelled 'None': 0
+timestamps the strict policy refuses: 0
+manager names needing percent-encoding under the proposed rule: 0
+ids matching the proposed pattern: 9015

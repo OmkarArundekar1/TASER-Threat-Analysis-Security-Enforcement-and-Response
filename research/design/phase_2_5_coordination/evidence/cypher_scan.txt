@@ -1,0 +1,217 @@
+
+### _verify_neo4j.py: 0 write-looking cypher, 1 driver calls
+
+### attack_chain_builder.py: 1 write-looking cypher, 2 driver calls
+  C    20 build_attack_chain                             CREATE,MERGE,SET       MATCH (a:Technique {attack_id: $src}) MATCH (b:Technique {attack_id: $dst}) MERGE (a)-[r:NEXT_TECHNIQUE]->(b)
+  D    20 build_attack_chain                             session.run
+
+### attribution_context.py: 0 write-looking cypher, 2 driver calls
+  D    24 AttributionContext.load_historical_campaigns   session.run
+
+### benchmarks/run_benchmarks.py: 0 write-looking cypher, 9 driver calls
+  D    95 benchmark_neo4j_simple_query._run              session.run
+  D   122 benchmark_campaign_selection_live_candidate_discovery session.run
+  D   156 benchmark_gnn_embedding                        session.run
+  D   182 benchmark_incident_overview_end_to_end_http    session.run
+
+### campaign_feature_engine.py: 0 write-looking cypher, 3 driver calls
+  D    51 CampaignFeatureEngine.chain_similarity         session.run
+  D    71 CampaignFeatureEngine.chain_similarity         session.run
+
+### campaign_manager.py: 0 write-looking cypher, 2 driver calls
+  D   835 CampaignManager.is_chain_continuation          session.run
+
+### campaign_reconstruction.py: 1 write-looking cypher, 11 driver calls
+  C   117 apply_reconstruction                           CREATE,MERGE,SET       MERGE (c:Campaign {campaign_id: $campaign_id}) ON CREATE SET c.attacker_ip = $attacker_ip, c.victim_ip = $vict
+  D    47 find_orphan_campaign_ids                       session.run
+  D    65 plan_reconstruction                            session.run
+  D    71 plan_reconstruction                            session.run
+  D   116 apply_reconstruction                           session.run
+  D   175 check_integrity                                session.run
+  D   176 check_integrity                                session.run
+  D   180 check_integrity                                session.run
+
+### chain_updater.py: 2 write-looking cypher, 4 driver calls
+  C    80 update_attack_chain                            CREATE,MERGE,SET       MATCH (a:Technique {attack_id: $src}) MATCH (b:Technique {attack_id: $dst}) MERGE (a)-[r:NEXT_TECHNIQUE]->(b)
+  C   101 update_attack_chain                            SET                    MATCH (a:Technique {attack_id: $src})-[r:NEXT_TECHNIQUE]->() WITH collect(r) AS rels, sum(r.count) AS total UN
+  D    79 update_attack_chain                            session.run
+  D   100 update_attack_chain                            session.run
+  D   118 update_attack_chain                            session.run
+
+### dashboard_api.py: 0 write-looking cypher, 57 driver calls
+  D   164 overview                                       session.run
+  D   215 events                                         session.run
+  D   230 events                                         session.run
+  D   267 event_detail                                   session.run
+  D   272 event_detail                                   session.run
+  D   340 campaigns                                      session.run
+  D   393 operations                                     session.run
+  D   479 correlation_campaigns                          session.run
+  D   561 attribution_actors                             session.run
+  D   597 risk_propagation                               session.run
+  D   670 campaign_timeline                              session.run
+  D   688 attackers                                      session.run
+  D   730 expand_graph                                   session.run
+  D   758 expand_graph                                   session.run
+  D   831 graph_paths                                    session.run
+  D   878 graph_paths                                    session.run
+  D   905 graph_paths                                    session.run
+  D   937 execute_query._execute_read                    tx.run
+  D   997 execute_query                                  session.execute_read
+  D  1015 _build_graph_response                          session.run
+  D  1095 _build_graph_response                          session.run
+  D  1115 _build_graph_response                          session.run
+  D  1132 _build_graph_response                          session.run
+  D  1148 _build_graph_response                          session.run
+  D  1179 analytics_paths                                session.run
+  D  1200 attack_chain                                   session.run
+  D  1218 attack_chain                                   session.run
+  D  1242 predictions                                    session.run
+  D  1272 predictions                                    session.run
+  D  1304 recommendations                                session.run
+  D  1347 _load_campaign_context                         session.run
+  D  1740 _build_threat_qualification                    session.run
+  D  1800 _discover_campaign_selection_candidates        session.run
+  D  1883 incident_overview                              session.run
+
+### graph_feature_engine.py: 0 write-looking cypher, 2 driver calls
+  D    75 GraphSnapshotLoader.load_campaign_graph        session.run
+
+### mitre_import/import_courses.py: 1 write-looking cypher, 2 driver calls
+  C    15 <module>                                       CREATE,MERGE,SET       MERGE (c:CourseOfAction { mitigation_id:$mitigation_id }) ON CREATE SET c.created_at = datetime() SET c.stix_i
+  D    42 import_courses                                 session.run
+
+### mitre_import/import_malware.py: 1 write-looking cypher, 2 driver calls
+  C    14 <module>                                       CREATE,MERGE,SET       MERGE (m:Malware { stix_id:$stix_id }) ON CREATE SET m.created_at = datetime() SET m.name = $name, m.descripti
+  D    40 import_malware                                 session.run
+
+### mitre_import/import_techniques.py: 1 write-looking cypher, 2 driver calls
+  C    19 <module>                                       CREATE,MERGE,SET       MERGE (t:Technique { attack_id:$attack_id }) ON CREATE SET t.created_at = datetime() SET t.stix_id = $stix_id,
+  D    70 import_techniques                              session.run
+
+### mitre_import/import_threat_actors.py: 1 write-looking cypher, 2 driver calls
+  C    14 <module>                                       CREATE,MERGE,SET       MERGE (a:ThreatActor { actor_id:$actor_id }) ON CREATE SET a.created_at = datetime() SET a.stix_id = $stix_id,
+  D    43 import_threat_actors                           session.run
+
+### mitre_import/import_tools.py: 1 write-looking cypher, 2 driver calls
+  C    14 <module>                                       CREATE,MERGE,SET       MERGE (t:Tool { stix_id:$stix_id }) ON CREATE SET t.created_at = datetime() SET t.name = $name, t.description
+  D    40 import_tools                                   session.run
+
+### mitre_import/relationships.py: 1 write-looking cypher, 2 driver calls
+  C    17 <module>                                       CREATE,MERGE,SET       MATCH (source {stix_id:$source_ref}) MATCH (target {stix_id:$target_ref}) MERGE (source)-[r:%s]->(target) ON C
+  D    63 import_relationships                           session.run
+
+### mitre_resolver.py: 0 write-looking cypher, 4 driver calls
+  D    94 _validate_technique_ids                        session.run
+  D   252 enrich_technique_metadata                      session.run
+
+### ml/gnn/campaign_graphs.py: 0 write-looking cypher, 2 driver calls
+  D    72 list_campaign_ids                              session.run
+
+### ml/gnn/evaluate_autoencoder.py: 0 write-looking cypher, 2 driver calls
+  D   397 <module>                                       session.run
+
+### ml/gnn/retrieval_evaluation.py: 0 write-looking cypher, 4 driver calls
+  D    47 get_campaign_techniques                        session.run
+  D    60 get_campaign_hosts                             session.run
+
+### ml/gnn/temporal_graphs.py: 0 write-looking cypher, 6 driver calls
+  D    79 list_temporal_campaign_ids                     session.run
+  D    93 _distinct_event_timestamps                     session.run
+  D   107 _build_snapshot_graph                          session.run
+
+### ml/gnn/train_autoencoder.py: 0 write-looking cypher, 2 driver calls
+  D    52 get_campaign_attacker_ips                      session.run
+
+### neo4j_client.py: 21 write-looking cypher, 79 driver calls
+  C   441 create_attack_event                            CREATE,MERGE,SET       WITH coalesce($event_time, datetime()) AS t MERGE (a:Attacker { ip:$attacker_ip }) ON CREATE SET a.first_seen
+  C   624 create_unattributed_attack_event               CREATE,MERGE,SET       WITH coalesce($event_time, datetime()) AS t MERGE (a:Attacker { ip:$attacker_ip }) ON CREATE SET a.first_seen
+  C   715 update_duplicate_event                         SET                    WITH coalesce($event_time, datetime()) AS dt MATCH (e:AttackEvent {event_id:$event_id}) SET e.last_seen = CASE
+  C   754 batch_update_duplicates                        SET                    UNWIND $records AS r MATCH (e:AttackEvent {event_id:r.event_id}) SET e.last_seen = CASE WHEN e.last_seen IS NU
+  C   796 update_campaign_similarity                     DELETE,MERGE,SET       MATCH (c1:Campaign {campaign_id: $campaign_id}) MATCH (c2:Campaign) WHERE c1 <> c2 OPTIONAL MATCH (c1)-[:HAS_E
+  C   852 update_actor_attribution                       DELETE,MERGE,SET       MATCH (c:Campaign {campaign_id: $campaign_id})-[:HAS_EVENT]->(:AttackEvent)-[:MATCHES]->(t:Technique) WITH c,
+  C   966 reopen_campaign_db                             SET                    WITH coalesce($event_time, datetime()) AS t MATCH (c:Campaign {campaign_id:$campaign_id}) SET c.status='ACTIVE
+  C   988 create_campaign_db                             CREATE                 CREATE (c:Campaign{ campaign_id:$campaign_id, attacker_ip:$attacker_ip, victim_ip:$victim_ip, status:'ACTIVE',
+  C  1043 update_campaign_activity                       SET                    WITH coalesce($event_time, datetime()) AS t MATCH (c:Campaign {campaign_id:$campaign_id}) SET c.last_seen = CA
+  C  1063 close_campaign_db                              SET                    MATCH (c:Campaign {campaign_id:$campaign_id}) SET c.status='INACTIVE', c.closed_at=coalesce($closed_at, dateti
+  C  1082 expire_stale_campaigns_db                      SET                    MATCH (c:Campaign) WHERE c.status = 'ACTIVE' AND c.last_seen < coalesce($reference_time, datetime()) - duratio
+  C  1107 create_operation_db                            CREATE                 CREATE (o:Operation{ operation_id:$operation_id, status:$status, created_at:$created_at, last_seen:$last_seen,
+  C  1141 update_operation_activity                      SET                    MATCH (o:Operation {operation_id:$operation_id}) SET o.last_seen=$last_seen, o.status='ACTIVE'
+  C  1154 close_operation_db                             SET                    MATCH (o:Operation {operation_id:$operation_id}) SET o.status='INACTIVE', o.closed_at=datetime()
+  C  1166 reopen_operation_db                            REMOVE,SET             WITH coalesce($event_time, datetime()) AS t MATCH (o:Operation {operation_id:$operation_id}) SET o.status='ACT
+  C  1183 attach_campaign_to_operation                   CREATE,MERGE,SET       MATCH (o:Operation {operation_id:$operation_id}) MATCH (c:Campaign {campaign_id:$campaign_id}) MERGE (o)-[r:HA
+  C  1215 expire_stale_operations_db                     SET                    MATCH (o:Operation) WHERE o.status = 'ACTIVE' AND o.last_seen < coalesce($reference_time, datetime()) - durati
+  C  1268 store_prediction                               DELETE,MERGE,SET       MATCH (c:Campaign {campaign_id:$campaign_id}) OPTIONAL MATCH (c)-[old:LIKELY_NEXT]->() DELETE old WITH * OPTIO
+  C  1343 archive_campaign_db                            SET                    MATCH (c:Campaign {campaign_id:$campaign_id}) SET c.status='ARCHIVED', c.last_technique=NULL, c.predicted_next
+  C  1732 store_dynamic_risk                             SET                    MATCH (c:Campaign {campaign_id:$campaign_id}) SET c.dynamic_risk=$risk, c.risk_level=$level, c.risk_color=$col
+  C  1755 store_cti_confidence                           SET                    MATCH (c:Campaign {campaign_id:$campaign_id}) SET c.cti_score = $score, c.cti_level = $level, c.cti_publish =
+  D   329 _execute_write.work                            tx.run
+  D   347 _execute_write                                 session.execute_write
+  D   549 create_attack_event                            session.run
+  D   688 create_unattributed_attack_event               session.run
+  D   714 update_duplicate_event                         session.run
+  D   753 batch_update_duplicates                        session.run
+  D   842 update_campaign_similarity                     session.run
+  D   846 update_campaign_similarity                     session.run
+  D   886 update_actor_attribution                       session.run
+  D   889 get_active_campaign_db                         session.run
+  D   934 get_recent_inactive_campaign_db                session.run
+  D   965 reopen_campaign_db                             session.run
+  D   987 create_campaign_db                             session.run
+  D  1042 update_campaign_activity                       session.run
+  D  1062 close_campaign_db                              session.run
+  D  1081 expire_stale_campaigns_db                      session.run
+  D  1106 create_operation_db                            session.run
+  D  1140 update_operation_activity                      session.run
+  D  1153 close_operation_db                             session.run
+  D  1165 reopen_operation_db                            session.run
+  D  1182 attach_campaign_to_operation                   session.run
+  D  1214 expire_stale_operations_db                     session.run
+  D  1234 get_active_operations                          session.run
+  D  1249 get_recent_inactive_operations                 session.run
+  D  1267 store_prediction                               session.run
+  D  1307 get_prediction_distribution                    session.run
+  D  1342 archive_campaign_db                            session.run
+  D  1360 get_campaign_chain                             session.run
+  D  1382 find_recent_duplicate                          session.run
+  D  1475 get_mitre_features                             session.run
+  D  1547 get_runtime_graph_features                     session.run
+  D  1589 get_threat_intel_features                      session.run
+  D  1622 get_detection_confidence                       session.run
+  D  1695 get_runtime_features                           session.run
+  D  1713 store_dynamic_risk                             session.run
+  D  1731 store_dynamic_risk                             session.run
+  D  1754 store_cti_confidence                           session.run
+  D  1785 get_campaign_context_data                      session.run
+  D  1833 get_operation_context_data                     session.run
+  D  1845 get_operation_context_data                     session.run
+  D  1860 get_operation_context_data                     session.run
+  D  1911 get_dynamic_risk                               session.run
+
+### prediction_engine.py: 0 write-looking cypher, 2 driver calls
+  D    28 predict_next_readonly                          session.run
+
+### recommendation_engine.py: 0 write-looking cypher, 2 driver calls
+  D     8 get_recommendations                            session.run
+
+### replay/harness.py: 0 write-looking cypher, 8 driver calls
+  D   251 snapshot_graph._read                           tx.run
+  D   258 snapshot_graph._read                           tx.run
+  D   261 snapshot_graph._read                           tx.run
+  D   268 snapshot_graph                                 session.execute_read
+  D   279 _require_fresh_database                        session.execute_read
+  D   279 _require_fresh_database                        tx.run
+
+### risk_recalculation.py: 3 write-looking cypher, 10 driver calls
+  C   117 apply_recalculation                            SET                    MATCH (ev:AttackEvent {event_id: $event_id}) SET ev.stage = $stage, ev.tps = $tps
+  C   122 apply_recalculation                            SET                    MATCH (c:Campaign {campaign_id: $campaign_id}) SET c.risk_score = $risk_score, c.total_tps = $risk_score
+  C   130 apply_recalculation                            SET                    MATCH (t:Technique)<-[:MATCHES]-(e:AttackEvent) WITH t, sum(e.tps) AS corrected_total SET t.total_tps = correc
+  D    57 compute_deltas                                 session.run
+  D    95 backup_current_values                          session.run
+  D    98 backup_current_values                          session.run
+  D   102 backup_current_values                          session.run
+  D   116 apply_recalculation                            session.run
+  D   121 apply_recalculation                            session.run
+  D   129 apply_recalculation                            session.run
+
+### soar/api.py: 0 write-looking cypher, 1 driver calls

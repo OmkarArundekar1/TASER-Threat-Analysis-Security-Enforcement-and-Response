@@ -1,0 +1,26 @@
+python 3.12.3, Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39; 9015 alerts
+listener 8d7f0d28dcce0ba2 utils 2657321029162810
+
+--- identity generation, 5 runs over the sample
+median 25.6 ms for 9015 alerts: 352,769 alerts a second, 2.83 us each
+
+--- duplicate decision: accept_alert refusing a repeat, by cache size
+cache    100: median      5.4 us, p99      9.5 us
+cache   1000: median     51.9 us, p99     73.8 us
+cache  10000: median    579.8 us, p99    988.7 us
+
+--- memory of a full seen cache, by key form (10,000 entries)
+source key form: 1640 KiB; earlier 64-character hash form: 1903 KiB
+
+--- reader and worker, whole sample, no service time
+with the listener's own per-alert logging: first pass 5.054 s, 1,784 alerts a second; second pass 6.618 s, 1,362 alerts a second
+logging off: first pass 3.375 s, 2,671 alerts a second; second pass 6.299 s, 1,431 alerts a second
+
+--- 377 alerts a second for 15 s, real poll interval, synthetic service time per alert
+service    0 ms: written 5655, processed 5655, deepest queue 0, queue-full refusals 0 (each retried), behind when writing stopped 0, finished 15.4 s after the start
+service    1 ms: written 5655, processed 5655, deepest queue 195, queue-full refusals 0 (each retried), behind when writing stopped 155, finished 15.6 s after the start
+service    2 ms: written 5655, processed 5655, deepest queue 206, queue-full refusals 0 (each retried), behind when writing stopped 56, finished 15.9 s after the start
+service    5 ms: written 5655, processed 5655, deepest queue 999, queue-full refusals 38 (each retried), behind when writing stopped 2937, finished 31.6 s after the start
+service  9.2 ms: written 5655, processed 5655, deepest queue 1000, queue-full refusals 80 (each retried), behind when writing stopped 4133, finished 55.7 s after the start
+
+temporary directories left: 0

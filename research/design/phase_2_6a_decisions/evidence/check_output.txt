@@ -1,0 +1,5 @@
+symbol citations checked: 49
+line facts checked: 24
+statements creating MATCHES in production code: ['neo4j_client.py']
+measured values matched against outputs: 39
+all checks passed

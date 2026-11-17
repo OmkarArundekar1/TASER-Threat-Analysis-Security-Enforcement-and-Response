@@ -1,0 +1,147 @@
+=== every module importing the driver, or the client's driver, or GraphDatabase
+_verify_neo4j.py: from neo4j import GraphDatabase | driver = GraphDatabase.driver('bolt://localhost:7687', auth=('', ''))
+attack_chain_builder.py: from neo4j_client import driver
+attribution_context.py: from neo4j_client import driver
+benchmarks/run_benchmarks.py: from neo4j_client import driver | from neo4j_client import driver | from neo4j_client import driver | from neo4j_client import driver
+campaign_correlation_engine.py: from neo4j_client import (
+campaign_feature_engine.py: from neo4j_client import (
+campaign_manager.py: from neo4j_client import ( | from neo4j_client import driver
+campaign_reconstruction.py: from neo4j_client import driver
+chain_updater.py: from neo4j_client import driver
+dashboard_api.py: from neo4j_client import driver | from neo4j.exceptions import Neo4jError, ServiceUnavailable
+dedup_engine.py: from neo4j_client import (
+detection_confidence_engine.py: from neo4j_client import get_detection_confidence
+feature_orchestrator.py: from neo4j_client import (
+graph_feature_engine.py: from neo4j_client import driver
+listener/wazuh_listener.py: from neo4j_client import batch_update_duplicates
+mitre_feature_engine.py: from neo4j_client import get_mitre_features
+mitre_import/import_courses.py: from neo4j import GraphDatabase | driver = GraphDatabase.driver(
+mitre_import/import_malware.py: from neo4j import GraphDatabase | driver = GraphDatabase.driver(
+mitre_import/import_techniques.py: from neo4j import GraphDatabase | driver = GraphDatabase.driver(
+mitre_import/import_threat_actors.py: from neo4j import GraphDatabase | driver = GraphDatabase.driver(
+mitre_import/import_tools.py: from neo4j import GraphDatabase | driver = GraphDatabase.driver(
+mitre_import/importer.py: from neo4j import GraphDatabase | driver = GraphDatabase.driver(
+mitre_import/relationships.py: from neo4j import GraphDatabase | driver = GraphDatabase.driver(
+mitre_resolver.py: from neo4j_client import driver
+ml/gnn/campaign_graphs.py: from neo4j_client import driver | from neo4j_client import get_campaign_context_data
+ml/gnn/evaluate_autoencoder.py: from neo4j_client import driver
+ml/gnn/retrieval_evaluation.py: from neo4j_client import driver | from neo4j_client import driver
+ml/gnn/temporal_graphs.py: from neo4j_client import driver | from neo4j_client import driver | from neo4j_client import driver
+ml/gnn/train_autoencoder.py: from neo4j_client import driver
+neo4j_client.py: from neo4j import GraphDatabase, unit_of_work | from neo4j.exceptions import DriverError, IncompleteCommit, Neo4jError | driver = GraphDatabase.driver(
+neo4j_idempotency_ledger.py: import neo4j.time as neo4j_time
+neo4j_write_journal.py: import neo4j.time as neo4j_time
+operation_feature_engine.py: from neo4j_client import get_prediction_distribution
+operation_manager.py: from neo4j_client import (
+operation_repository.py: from neo4j_client import (
+prediction_engine.py: from neo4j_client import driver
+realtime_socgraph.py: from neo4j_client import (
+recommendation_engine.py: from neo4j_client import driver
+replay/harness.py: from neo4j_client import driver
+risk_recalculation.py: from neo4j_client import driver
+runtime_graph_feature_engine.py: from neo4j_client import get_runtime_graph_features
+soar/api.py: from neo4j_client import driver
+threat_intelligence_engine.py: from neo4j_client import get_threat_intel_features
+
+=== every .run( whose receiver the first scan's filter skipped, and any non-literal first argument to a session run
+  OTHER _verify_neo4j.py:4 s.run('MATCH (t1:Technique)-[r:NEXT_TECHNIQUE]->(t2:Tech)
+  OTHER _verify_neo4j.py:10 s.run('MATCH (c:Campaign)-[r:LIKELY_NEXT]->(t:Technique))
+  OTHER _verify_neo4j.py:16 s.run('MATCH (t:Technique) RETURN keys(t) AS k LIMIT 3')
+  OTHER _verify_neo4j.py:24 s.run('MATCH (c:Campaign) RETURN c.campaign_id AS cid, c)
+  OTHER _verify_neo4j.py:30 s.run('MATCH (e:AttackEvent) RETURN e.technique_id AS ti)
+  OTHER _verify_neo4j.py:28 s.run('MATCH (c:Campaign) RETURN max(c.tps) AS max_tps')
+  OTHER _verify_neo4j.py:22 s.run('MATCH (n:%s) RETURN count(n) AS c' % label)
+  OTHER active_response/firewall_backend.py:112 subprocess.run(['iptables', *args])
+  DYN   dashboard_api.py:1095 session.run(node_list_query)
+  OTHER dashboard_api.py:2035 app.run()
+  DYN   dashboard_api.py:230 session.run(query)
+  DYN   dashboard_api.py:340 session.run(f'\n            MATCH (a:Attacker)-[:LAUNCHED]->(c:Campaign))
+  DYN   dashboard_api.py:479 session.run(query)
+  DYN   dashboard_api.py:561 session.run(query)
+  DYN   dashboard_api.py:670 session.run(query)
+  DYN   dashboard_api.py:831 session.run(query)
+  DYN   dashboard_api.py:937 tx.run(cypher)
+  DYN   dashboard_api.py:1115 session.run(q)
+  DYN   dashboard_api.py:1132 session.run(nt_query)
+  DYN   dashboard_api.py:1148 session.run(likely_query)
+  DYN   dashboard_api.py:1179 session.run(query)
+  DYN   dashboard_api.py:164 session.run(f'\n            MATCH (e:AttackEvent) {where_clause} WITH co)
+  DYN   dashboard_api.py:215 session.run(f'{match_clause}{where_str} RETURN count(e) as total')
+  DYN   dashboard_api.py:267 session.run(query)
+  DYN   dashboard_api.py:597 session.run(query)
+  DYN   dashboard_api.py:758 session.run(query)
+  DYN   dashboard_api.py:878 session.run(links_query)
+  DYN   dashboard_api.py:905 session.run(mitig_query)
+  DYN   graph_feature_engine.py:75 session.run(query)
+  DYN   mitre_import/import_courses.py:42 session.run(QUERY)
+  DYN   mitre_import/import_malware.py:40 session.run(QUERY)
+  DYN   mitre_import/import_techniques.py:70 session.run(QUERY)
+  DYN   mitre_import/import_threat_actors.py:43 session.run(QUERY)
+  DYN   mitre_import/import_tools.py:40 session.run(QUERY)
+  DYN   mitre_import/relationships.py:63 session.run(query)
+  DYN   ml/gnn/temporal_graphs.py:107 session.run(_SNAPSHOT_QUERY)
+  DYN   neo4j_client.py:549 session.run(query)
+  DYN   neo4j_client.py:688 session.run(query)
+  DYN   neo4j_client.py:886 session.run(query)
+  DYN   neo4j_client.py:842 session.run(query)
+  DYN   neo4j_client.py:329 tx.run(query)
+  DYN   neo4j_client.py:1475 session.run(query)
+  DYN   neo4j_client.py:1547 session.run(query)
+  DYN   neo4j_client.py:1589 session.run(query)
+  DYN   neo4j_client.py:1622 session.run(query)
+  DYN   neo4j_client.py:1695 session.run(query)
+  DYN   neo4j_client.py:846 session.run(fallback_query)
+  OTHER response/mitigator.py:79 subprocess.run(command)
+
+=== callers of each writer: file:line in function
+create_attack_event: ['realtime_socgraph.py:510 process_alert']
+create_unattributed_attack_event: ['realtime_socgraph.py:254 _process_unattributed_alert']
+update_duplicate_event: ['realtime_socgraph.py:206 _process_unattributed_alert', 'realtime_socgraph.py:461 process_alert', 'realtime_socgraph.py:470 process_alert']
+batch_update_duplicates: ['dedup_engine.py:136 _write_pending']
+update_campaign_similarity: ['realtime_socgraph.py:583 process_alert']
+update_actor_attribution: ['realtime_socgraph.py:587 process_alert']
+reopen_campaign_db: ['campaign_manager.py:638 CampaignManager.resolve_campaign', 'campaign_manager.py:703 CampaignManager.resolve_campaign']
+create_campaign_db: ['campaign_manager.py:436 CampaignManager.create_campaign_context']
+update_campaign_activity: ['campaign_manager.py:782 CampaignManager.activate_campaign_with_transition']
+close_campaign_db: ['campaign_manager.py:205 CampaignManager.close_expired_context', 'campaign_manager.py:499 CampaignManager.expire_active_campaigns', 'campaign_manager.py:601 CampaignManager.resolve_campaign']
+expire_stale_campaigns_db: ['campaign_manager.py:509 CampaignManager.expire_active_campaigns']
+create_operation_db: ['operation_repository.py:16 OperationRepository.create_operation', 'realtime_socgraph.py:759 process_alert']
+update_operation_activity: ['operation_repository.py:19 OperationRepository.update_operation', 'realtime_socgraph.py:747 process_alert']
+close_operation_db: ['operation_repository.py:22 OperationRepository.close_operation']
+reopen_operation_db: ['campaign_correlation_engine.py:148 CampaignCorrelationEngine.correlate']
+attach_campaign_to_operation: ['operation_repository.py:25 OperationRepository.attach_campaign', 'realtime_socgraph.py:742 process_alert', 'realtime_socgraph.py:761 process_alert']
+expire_stale_operations_db: ['operation_manager.py:86 OperationManager.expire_active_operations', 'operation_repository.py:31 OperationRepository.expire_operations']
+store_prediction: ['campaign_manager.py:252 CampaignManager.update_prediction', 'neo4j_client.py:788 store_likely_next']
+store_likely_next: NO CALLERS
+archive_campaign_db: ['campaign_manager.py:866 CampaignManager.archive_old_campaigns']
+store_dynamic_risk: ['realtime_socgraph.py:558 process_alert']
+store_cti_confidence: ['realtime_socgraph.py:668 process_alert']
+update_attack_chain: ['realtime_socgraph.py:574 process_alert']
+build_attack_chain: ['attack_chain_builder.py:31 <module>']
+apply_reconstruction: ['campaign_reconstruction.py:200 reconstruct_all_orphans']
+apply_recalculation: NO CALLERS
+import_courses: ['mitre_import/import_all.py:15 main']
+import_malware: ['mitre_import/import_all.py:19 main']
+import_techniques: ['mitre_import/import_all.py:11 main']
+import_threat_actors: ['mitre_import/import_all.py:13 main']
+import_tools: ['mitre_import/import_all.py:17 main']
+import_relationships: ['mitre_import/import_all.py:21 main']
+
+=== entry points: __main__ blocks, and who imports each candidate
+  main: attack_chain_builder.py
+  main: listener/wazuh_listener.py
+  main: mitre_import/import_all.py
+  main: replay/harness.py
+  imported: attack_chain_builder: []
+  imported: campaign_reconstruction: []
+  imported: risk_recalculation: ['campaign_reconstruction.py']
+  imported: chain_updater: ['realtime_socgraph.py']
+  imported: operation_repository: []
+  imported: dynamic_risk_engine: ['realtime_socgraph.py']
+  imported: cti_confidence_engine: ['dashboard_api.py', 'realtime_socgraph.py']
+  imported: cti_publisher: ['dashboard_api.py', 'misp_sync.py', 'realtime_socgraph.py']
+  imported: campaign_manager: ['listener/wazuh_listener.py', 'prediction_engine.py', 'realtime_socgraph.py', 'replay/harness.py']
+  imported: operation_manager: ['campaign_correlation_engine.py', 'listener/wazuh_listener.py', 'realtime_socgraph.py', 'replay/harness.py']
+  imported: prediction_engine: ['dashboard_api.py', 'ml/label_generator.py', 'realtime_socgraph.py']
+  imported: realtime_socgraph: ['benchmarks/run_benchmarks.py', 'listener/wazuh_listener.py', 'replay/harness.py']
+  imported: dedup_engine: ['benchmarks/run_benchmarks.py', 'listener/wazuh_listener.py', 'realtime_socgraph.py', 'replay/harness.py']

@@ -26,7 +26,7 @@ class CorrelationResult:
     # field; this is a separate, additive signal for downstream reasoning
     # to consult, not a silent redefinition of the existing decision.
     gnn_topology_similarity: float | None = None
-    
+
 class CampaignCorrelationEngine:
 
     def __init__(self):
@@ -34,7 +34,13 @@ class CampaignCorrelationEngine:
         self.feature_engine = OperationFeatureEngine()
         self.decision_engine = OperationDecisionEngine()
 
-    def correlate(self, campaign_context):
+    def correlate(self, campaign_context, reference_time=None):
+        """reference_time: event time of the alert that triggered this
+        correlation. When given, operations already inactive at that event
+        time are expired first, so the ACTIVE/INACTIVE candidate split below
+        does not depend on when the background maintenance sweep ran
+        (event-time determinism, research/STEP2_EVENT_TIME.md). Scoring is
+        unchanged."""
         if campaign_context is None:
             return CorrelationResult(
                 matched=False,
@@ -46,13 +52,16 @@ class CampaignCorrelationEngine:
                 candidates=[]
             )
 
+        if reference_time is not None:
+            self.manager.expire_active_operations(reference_time)
+
         operation_ids = get_active_operations()
         searching_inactive = False
-        
+
         if not operation_ids:
             operation_ids = get_recent_inactive_operations()
             searching_inactive = True
-        
+
         if not operation_ids:
             return CorrelationResult(
                 matched=False,
@@ -83,7 +92,7 @@ class CampaignCorrelationEngine:
             print(campaign_context.techniques)
             print(campaign_context.attack_chain)
             print(campaign_context.predicted_next)
-            
+
             print("\n===== OPERATION CONTEXT =====")
             print(operation_context.techniques)
             print(operation_context.attack_chain)
@@ -135,9 +144,10 @@ class CampaignCorrelationEngine:
         ):
             print("\n[FAST OPERATION REOPEN]")
             print(best_operation.operation_id)
-        
+
             reopen_operation_db(
-                best_operation.operation_id
+                best_operation.operation_id,
+                event_time=reference_time
             )
 
         matched = best_decision.decision == "ATTACH_TO_OPERATION"

@@ -1,0 +1,3 @@
+2026-11-04T08:08:03Z	A_restart	START	available_kb=3012984 mode=dry timeout_s=1800
+2026-11-04T08:08:03Z	A_restart	HARNESS_FAILED	rc=7 stage= elapsed_s=0
+2026-11-04T08:08:03Z	BATCH	STOPPED	at=A_restart status=HARNESS_FAILED

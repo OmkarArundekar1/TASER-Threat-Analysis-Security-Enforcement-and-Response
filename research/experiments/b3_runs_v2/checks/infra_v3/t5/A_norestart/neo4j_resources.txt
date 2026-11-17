@@ -1,0 +1,5 @@
+container=cyukti-b3v2-A_norestart platform=Docker Desktop 4.59.0 (217644)
+image=neo4j:5.26.27 image_id=sha256:b8b4c30662aa794360bae816e76ecc6d4206bcbaefadd56d344526d3feaba962 container_id=8b07ed69caff633c7efec0149c0e19dec3d3602d55e5d8f88254fd74afb6a240 memory=1073741824 memory_swap=1073741824 ports={"7687/tcp":[{"HostIp":"127.0.0.1","HostPort":"17690"}]} mounts=volume:36c23195e16b4cee4d2305ec63609f0a6682dacaa0bab094b45a861a2423f547:/data volume:27e757076117ed06775afcbab58aa85fc05e58892ed149d2446aa92948161ee1:/logs
+cgroup_memory_max=1073741824 cgroup_swap_max=0
+jvm -Xms393216k -Xmx393216k
+conf server.memory.pagecache.size=128m

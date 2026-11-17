@@ -59,23 +59,24 @@ def test_neo4j_unavailable_on_campaigns_route_returns_clean_503(client, monkeypa
 
 # ---------------------------------------------------------------- 2. Wazuh (alert file) unavailable
 
-def test_missing_alert_file_does_not_crash_the_listener_at_import(monkeypatch, tmp_path):
+def test_missing_alert_file_does_not_crash_the_listener_at_import(tmp_path):
     """AlertFileHandler.__init__ must tolerate ALERT_FILE not existing
     (e.g. Wazuh not installed/running) -- offset defaults to 0, no
-    exception. wazuh_listener.py's own top-level `from utils import ...`
-    only resolves with listener/ itself on sys.path (see
-    test_audit_logging.py's _PATH_PRELUDE, the established pattern for
-    importing this module in a test)."""
-    import sys
-    import os
-    listener_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "listener")
-    if listener_dir not in sys.path:
-        sys.path.insert(0, listener_dir)
-    import wazuh_listener as wl
+    exception. Runs in a subprocess, because importing wazuh_listener replaces
+    the process's SIGINT and SIGTERM handlers and attaches a handler to the
+    listener log file. The test's offset.dat is in tmp_path too: the real one
+    must not be read."""
+    from tests._isolated_listener import run_isolated_listener
 
-    monkeypatch.setattr(wl, "ALERT_FILE", str(tmp_path / "does_not_exist.json"))
-    handler = wl.AlertFileHandler()
-    assert handler.offset == 0
+    result = run_isolated_listener(
+        """
+        wl.ALERT_FILE = os.path.join(os.getcwd(), "does_not_exist.json")
+        handler = wl.AlertFileHandler()
+        assert handler.offset == 0
+        """,
+        cwd=str(tmp_path),
+    )
+    assert result.returncode == 0, result.stderr
 
 
 # ---------------------------------------------------------------- 3. GNN artifact unavailable
@@ -218,7 +219,7 @@ def test_duplicate_alert_is_recognized_on_second_call_not_reprocessed(monkeypatc
     register once the event is truly processed)."""
     import dedup_engine as dedup_module
 
-    monkeypatch.setattr(dedup_module, "find_recent_duplicate", lambda fingerprint: None)
+    monkeypatch.setattr(dedup_module, "find_recent_duplicate", lambda fingerprint, reference_time=None: None)
     engine = dedup_module.DeduplicationEngine()
 
     first_is_dup, fp1 = engine.is_duplicate("1.2.3.4", "10.0.0.5", "T1110", "5716", "001")

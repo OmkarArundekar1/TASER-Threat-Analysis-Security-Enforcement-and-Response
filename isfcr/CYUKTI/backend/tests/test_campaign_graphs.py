@@ -233,22 +233,10 @@ def test_severity_mapping_matches_label_generator():
 
 
 # ---------------------------------------------------------------------------
-# live Neo4j (optional -- skipped if unreachable in this environment)
+# live Neo4j (explicit disposable instance only -- see live_neo4j in conftest.py)
 # ---------------------------------------------------------------------------
 
-def _neo4j_reachable():
-    try:
-        from neo4j_client import driver
-        driver.verify_connectivity()
-        return True
-    except Exception:
-        return False
-
-
-requires_live_neo4j = pytest.mark.skipif(
-    not _neo4j_reachable(),
-    reason="No live Neo4j instance reachable in this environment.",
-)
+requires_live_neo4j = pytest.mark.usefixtures("live_neo4j")
 
 
 @requires_live_neo4j

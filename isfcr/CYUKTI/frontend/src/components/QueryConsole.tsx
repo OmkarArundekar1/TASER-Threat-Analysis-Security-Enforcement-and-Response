@@ -54,7 +54,7 @@ export function QueryConsole() {
       const nextHistory = [query, ...history.filter((h) => h !== query)].slice(0, 20);
       setHistory(nextHistory);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHistory));
-      
+
       if (res.graph && res.graph.nodes && res.graph.nodes.length > 0) {
         setViewMode('graph');
       } else {
@@ -80,7 +80,7 @@ export function QueryConsole() {
     const fontSize = 10 / globalScale;
     ctx.font = `${fontSize}px Inter, monospace`;
     ctx.beginPath();
-    
+
     let color = '#6366f1';
     switch (node.type) {
       case 'Attacker': color = '#ef4444'; break;
@@ -161,12 +161,12 @@ export function QueryConsole() {
                     <tr key={i}>
                       {result.columns.map((col) => {
                         const val = typeof row[col] === 'object' ? JSON.stringify(row[col]) : String(row[col]);
-                        
+
                         // Detect if this looks like a Technique or Campaign ID to make it clickable
                         const isTechnique = val.startsWith('T') && val.length >= 5 && !val.includes(' ');
                         const isCampaign = val.includes('_') && val.split('_').length >= 2 && val.length > 10;
                         const { selectTechnique, selectCampaign } = useDashboard();
-                        
+
                         return (
                           <td key={col} className="max-w-[200px] truncate">
                             {isTechnique ? (

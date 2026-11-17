@@ -1,0 +1,61 @@
+diff -ru variants/CUR/campaign_manager.py variants/A/campaign_manager.py
+--- variants/CUR/campaign_manager.py	2026-11-03 18:36:43.781237000 +0000
++++ variants/A/campaign_manager.py	2026-11-04 06:52:41.445357949 +0000
+@@ -125,6 +125,15 @@
+         entry.update(fields)
+         self.decision_log.append(entry)
+
++    def touch(self, campaign_id, event_time):
++        """Policy A: any accepted alert attached to the campaign extends its
++        in-memory activity exactly as the Neo4j writers extend c.last_seen."""
++        if campaign_id is None:
++            return
++        context = self.get_context_by_campaign_id(campaign_id)
++        if context is not None:
++            context.last_seen = _later(context.last_seen, _reference_time(event_time))
++
+     def reset(self):
+         """Clears in-memory state (replay harness: fresh run per database)."""
+         with self.lock:
+diff -ru variants/CUR/neo4j_client.py variants/A/neo4j_client.py
+--- variants/CUR/neo4j_client.py	2026-11-03 18:24:23.879463271 +0000
++++ variants/A/neo4j_client.py	2026-11-04 06:52:41.660210432 +0000
+@@ -385,6 +385,11 @@
+
+             WITH e, dt
+
++            OPTIONAL MATCH (activity:Campaign {campaign_id:e.campaign_id})
++            SET activity.last_seen = CASE WHEN activity.last_seen IS NULL OR dt > activity.last_seen THEN dt ELSE activity.last_seen END
++
++            WITH e, dt
++
+             MATCH (e)-[:MATCHES]->(t:Technique)
+
+             SET
+diff -ru variants/CUR/realtime_socgraph.py variants/A/realtime_socgraph.py
+--- variants/CUR/realtime_socgraph.py	2026-11-03 18:28:08.285101225 +0000
++++ variants/A/realtime_socgraph.py	2026-11-04 06:52:41.640159978 +0000
+@@ -209,6 +209,7 @@
+                 investigation_payload=compact_payload,
+                 event_time=event_time.value,
+             )
++        campaign_manager.touch((metadata or {}).get("campaign_id"), event_time.value)
+         if trace is not None:
+             trace.update(path="DUPLICATE_UNATTRIBUTED", fingerprint=fingerprint,
+                          campaign_id=(metadata or {}).get("campaign_id"))
+@@ -274,6 +275,7 @@
+         event_id=event_id,
+         event_time=event_time.value,
+     )
++    campaign_manager.touch(campaign_id, event_time.value)
+     if trace is not None:
+         trace.update(path="UNATTRIBUTED", fingerprint=fingerprint,
+                      campaign_id=campaign_id, event_id=event_id)
+@@ -481,6 +483,7 @@
+                     print("Existing AttackEvent updated.")
+                     print("==============================================")
+
++            campaign_manager.touch((metadata or {}).get("campaign_id"), event_time.value)
+             if trace is not None:
+                 trace.update(path="DUPLICATE", fingerprint=fingerprint,
+                              campaign_id=(metadata or {}).get("campaign_id"))

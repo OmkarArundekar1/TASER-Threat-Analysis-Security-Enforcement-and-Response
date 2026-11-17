@@ -1,15 +1,15 @@
 import os
 import sys
 import signal
-from utils import generate_alert_id
-from collections import OrderedDict
+from utils import assign_source_identity, content_fingerprint, network_endpoints, source_ref
+from collections import Counter, OrderedDict
 BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 import json
 import time
 import logging
-from queue import Queue, Empty
+from queue import Queue, Empty, Full
 from threading import Thread, Event, Lock
 from config import ENABLE_DUPLICATE_BUFFER, POLL_INTERVAL
 from realtime_socgraph import process_alert
@@ -21,6 +21,7 @@ from dedup_engine import (
 from neo4j_client import batch_update_duplicates
 from campaign_manager import campaign_manager
 from operation_manager import operation_manager
+from event_time import event_clock
 
 ALERT_FILE = "/var/ossec/logs/alerts/alerts.json"
 WATCH_DIR = os.path.dirname(ALERT_FILE)
@@ -30,9 +31,12 @@ LOG_FILE = os.path.join(LOG_DIR, "prerana_listener.log")
 
 QUEUE_SIZE = 1000
 MAX_ALERT_CACHE = 10000
-ALERT_CACHE_TTL = 600     
+ALERT_CACHE_TTL = 600
 seen_alerts = OrderedDict()
 seen_alerts_lock = Lock()
+# Why alerts went without source-level duplicate suppression, and lines that could never be alerts. Reader thread only.
+identity_unavailable = Counter()
+unreadable_lines = Counter()
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -120,8 +124,26 @@ def safe_json_load(line):
     except Exception:
         logger.warning("Invalid JSON skipped.")
         return None
-        
-def already_seen(alert_id):
+
+def accept_alert(alert):
+    """Queues the alert unless it was already accepted. Returns True if it was
+    queued, False if it is a repeat of an accepted alert.
+
+    An alert counts as accepted only once put_nowait() has succeeded, so its id
+    is recorded only then. If insertion raises, nothing changes and the
+    exception reaches the caller, so the alert stays eligible when re-read.
+
+    alert_id is the alert's source identity. With none (None), it can't be a
+    repeat of anything: it's queued, and nothing is recorded, so a re-read
+    delivers it again. That's preferred to guessing from its content, which
+    merged distinct alerts.
+
+    This suppresses a re-read within one process, within ALERT_CACHE_TTL and
+    MAX_ALERT_CACHE. It says nothing about processing or Neo4j writes."""
+    alert_id = alert.get("alert_id")
+    if alert_id is None:
+        alert_queue.put_nowait(alert)
+        return True
     now = time.time()
     with seen_alerts_lock:
         expired = [
@@ -132,12 +154,13 @@ def already_seen(alert_id):
         for key in expired:
             del seen_alerts[key]
         if alert_id in seen_alerts:
-            return True
+            return False
+        alert_queue.put_nowait(alert)
         seen_alerts[alert_id] = now
         while len(seen_alerts) > MAX_ALERT_CACHE:
             seen_alerts.popitem(last=False)
-        return False
-        
+        return True
+
 def queue_worker():
     logger.info("Queue worker started.")
     while not stop_event.is_set() or not alert_queue.empty():
@@ -146,7 +169,7 @@ def queue_worker():
             try:
                 logger.info("Processing alert from queue")
                 result = process_alert(alert)
-                
+
                 if not result:
                     logger.error("process_alert() returned False")
             except Exception as e:
@@ -162,8 +185,14 @@ def maintenance_worker():
 
     while not stop_event.is_set():
         try:
-            campaign_manager.expire_active_campaigns()
-            operation_manager.expire_active_operations()
+            # Event time, not wall-clock time: maintenance must never close
+            # a campaign/operation the alert stream has not yet shown to be
+            # inactive (research/STEP2_EVENT_TIME.md). Until the first alert
+            # has been processed there is no event time, so nothing expires.
+            watermark = event_clock.watermark
+            if watermark is not None:
+                campaign_manager.expire_active_campaigns(reference_time=watermark)
+                operation_manager.expire_active_operations(reference_time=watermark)
 
         except Exception as e:
             logger.exception(
@@ -173,10 +202,40 @@ def maintenance_worker():
         time.sleep(5)
 
     logger.info("Maintenance worker stopped.")
-    
+
+def _note_identity_unavailable(alert, identity):
+    """Counted always, and logged at the first and every 1000th of each kind. If a deployed Wazuh writes ids in another form,
+    this is how it shows, and it shouldn't also flood the log. Carries no alert content."""
+    identity_unavailable[identity.status] += 1
+    count = identity_unavailable[identity.status]
+    if count == 1 or count % 1000 == 0:
+        logger.warning(
+            "Alert has no usable source identity (%s, occurrence %d, content fingerprint %s). "
+            "Delivered with no duplicate suppression, so a re-read delivers it again.",
+            identity.status, count, content_fingerprint(alert)[:12]
+        )
+
+
+def _note_conflicting_endpoints(alert):
+    if network_endpoints(alert)[2]:
+        logger.warning("Alert %s has both spellings of a network field, disagreeing.", source_ref(alert))
+
+
+def _save_offset(path, offset):
+    """Replaces the file in one step, in the same format. Writing it in place could leave it empty after a crash, and an empty
+    file means "start at the end of the log", which would skip every unread alert."""
+    temporary = path + ".tmp"
+    with open(temporary, "w") as handle:
+        handle.write(str(offset))
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+
+
 class AlertFileHandler:
     def __init__(self):
         self.offset = 0
+        self._saved_offset = None
         offset_file = os.path.join(
             os.path.dirname(__file__),
             "offset.dat"
@@ -208,8 +267,15 @@ class AlertFileHandler:
                 self.offset = current_size
         else:
             self.offset = current_size
+            try:
+                # Saved now: otherwise a crash before the first save would mean "the end of the
+                # log" again at the next start, past whatever arrived in between.
+                _save_offset(offset_file, self.offset)
+                self._saved_offset = self.offset
+            except OSError:
+                logger.exception("Could not save the initial offset.")
         logger.info(f"Initial offset = {self.offset}")
-        
+
     def read_new_lines(self):
         try:
             if not os.path.exists(ALERT_FILE):
@@ -240,35 +306,45 @@ class AlertFileHandler:
                     if not line:
                         continue
                     alert = safe_json_load(line)
-                    
-                    if alert is None:
-                        if not line.endswith("}"):
-                            logger.debug("Partial JSON detected.")
-                            break
-                    
+
+                    # The line ended in a newline, so nothing more is coming for it: waiting would
+                    # stop the reader for good, with every later alert behind it.
+                    if not isinstance(alert, dict):
+                        unreadable_lines["malformed" if alert is None else "not_an_object"] += 1
                         logger.warning("Skipping malformed JSON.")
                         last_good_offset = f.tell()
                         continue
-                    alert["alert_id"] = generate_alert_id(alert)
+                    identity = assign_source_identity(alert)
+                    if not identity.valid:
+                        _note_identity_unavailable(alert, identity)
+                    _note_conflicting_endpoints(alert)
                     logger.info(
                         "Alert ID: %s",
-                        alert["alert_id"][:12]
+                        source_ref(alert)
                     )
-                    if already_seen(alert["alert_id"]):
-                        logger.info(
-                            "Duplicate raw alert ignored: %s",
-                            alert["alert_id"][:12]
-                        )
-                        last_good_offset = f.tell()
-                        continue
                     try:
-                        alert_queue.put_nowait(alert)
-                        last_good_offset = f.tell()
-                    except Exception:
+                        accepted = accept_alert(alert)
+                    except Full:
                         logger.warning(
-                            "Queue full. Alert dropped."
+                            "Queue full. Alert %s not accepted; offset kept, "
+                            "will re-read at the next poll.",
+                            source_ref(alert)
                         )
                         break
+                    except Exception:
+                        logger.exception(
+                            "Queue insertion failed. Alert %s not accepted; "
+                            "offset kept, will re-read at the next poll.",
+                            source_ref(alert)
+                        )
+                        break
+                    last_good_offset = f.tell()
+                    if not accepted:
+                        logger.info(
+                            "Duplicate raw alert ignored: %s",
+                            source_ref(alert)
+                        )
+                        continue
 
                 if last_good_offset != self.offset:
                     logger.info(
@@ -277,11 +353,12 @@ class AlertFileHandler:
                         last_good_offset
                     )
                 self.offset = last_good_offset
-                with open(offset_file, "w") as fp:
-                    fp.write(str(self.offset))
+                if self.offset != self._saved_offset:
+                    _save_offset(offset_file, self.offset)
+                    self._saved_offset = self.offset
         except Exception as e:
             logger.exception(f"Failure: {e}")
-            
+
 def process_existing_alerts(handler):
     try:
         handler.read_new_lines()
@@ -306,7 +383,7 @@ def start_listener():
         target=maintenance_worker,
         daemon=True
     )
-    
+
     maintenance.start()
     logger.info("Polling started.")
     logger.info("Waiting for new Wazuh alerts...")

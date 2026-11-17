@@ -227,7 +227,7 @@ class MISPSync:
                 incident.campaign_id,
             )
         return result
-        
+
     def close_campaign(
         self,
         campaign_id: str,

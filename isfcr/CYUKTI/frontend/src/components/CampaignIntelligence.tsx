@@ -213,7 +213,7 @@ export function CampaignIntelligence() {
             Campaign Investigation
           </h2>
         </div>
-        
+
         <div className="flex-1 overflow-auto p-4 custom-scrollbar flex flex-col gap-4">
           {/* Summary Panel */}
           {camp && (
@@ -244,7 +244,7 @@ export function CampaignIntelligence() {
               <span>Observed Attack Chain</span>
               {loadingTimeline && <span className="text-indigo-400 animate-pulse text-[10px]">Loading...</span>}
             </h3>
-            
+
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
               <div className="relative border-l border-[#1e2d4a] ml-3 pl-4 space-y-4 py-2">
                 {timeline.map((event, idx) => (
@@ -297,7 +297,7 @@ export function CampaignIntelligence() {
           Campaign Intelligence
         </h2>
         {selectedCampaign && (
-          <button 
+          <button
             onClick={() => selectCampaign(null)}
             className="text-xs text-slate-400 hover:text-white bg-[#1e2d4a] px-2 py-1 rounded transition-colors"
           >

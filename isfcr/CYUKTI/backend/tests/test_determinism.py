@@ -115,26 +115,18 @@ def test_response_plan_generation_is_deterministic_given_identical_inputs():
 
 # ---------------------------------------------------------------- GNN embedding (live-gated)
 
-def _neo4j_reachable():
-    try:
-        dashboard_api.driver.verify_connectivity()
-        return True
-    except Exception:
-        return False
-
-
-def _gnn_available():
+@pytest.fixture
+def gnn_model_available():
     try:
         from ml.gnn.inference import gnn_inference_service
-        return gnn_inference_service.available
+        available = gnn_inference_service.available
     except Exception:
-        return False
+        available = False
+    if not available:
+        pytest.skip("Requires an enabled, loaded GNN model.")
 
 
-requires_live_neo4j_and_gnn = pytest.mark.skipif(
-    not (_neo4j_reachable() and _gnn_available()),
-    reason="Requires a live, reachable Neo4j instance and an enabled/loaded GNN model.",
-)
+requires_live_neo4j_and_gnn = pytest.mark.usefixtures("live_neo4j", "gnn_model_available")
 
 
 @requires_live_neo4j_and_gnn

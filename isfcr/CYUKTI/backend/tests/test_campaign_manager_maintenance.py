@@ -29,9 +29,9 @@ from campaign_manager import CampaignManager
 
 @pytest.fixture()
 def manager(monkeypatch):
-    monkeypatch.setattr("campaign_manager.create_campaign_db", lambda attacker_ip, victim_ip: "CAMP_TEST_UNKNOWN")
-    monkeypatch.setattr("campaign_manager.expire_stale_campaigns_db", lambda timeout: [])
-    monkeypatch.setattr("campaign_manager.close_campaign_db", lambda campaign_id: None)
+    monkeypatch.setattr("campaign_manager.create_campaign_db", lambda attacker_ip, victim_ip, event_time=None: "CAMP_TEST_UNKNOWN")
+    monkeypatch.setattr("campaign_manager.expire_stale_campaigns_db", lambda timeout, reference_time=None: [])
+    monkeypatch.setattr("campaign_manager.close_campaign_db", lambda campaign_id, closed_at=None: None)
     return CampaignManager()
 
 
@@ -70,7 +70,7 @@ def test_expire_active_campaigns_actually_expires_a_genuinely_stale_unknown_cont
     context.last_seen = datetime.now(timezone.utc) - timedelta(seconds=CAMPAIGN_TIMEOUT + 30)
 
     closed = []
-    monkeypatch.setattr("campaign_manager.close_campaign_db", lambda campaign_id: closed.append(campaign_id))
+    monkeypatch.setattr("campaign_manager.close_campaign_db", lambda campaign_id, closed_at=None: closed.append(campaign_id))
 
     manager.expire_active_campaigns()
 

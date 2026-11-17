@@ -1,0 +1,14 @@
+symbol citations checked: 110
+matrix rows: 28
+state diagram transitions matched against the ledger: 9
+PHASE_2_5_SCOPE_AND_FINDINGS.md: 0 diagrams
+PRODUCTION_NEO4J_WRITER_INVENTORY.md: 0 diagrams
+REQUEST_IDENTITY_MAPPING.md: 0 diagrams
+JOURNAL_LEDGER_COORDINATION_CONTRACT.md: 5 diagrams
+CROSS_COMPONENT_STATE_TRANSITIONS.md: 0 diagrams
+FAILURE_WINDOW_AND_RECOVERY_ANALYSIS.md: 0 diagrams
+COORDINATOR_INTERFACE_PROPOSAL.md: 0 diagrams
+PHASE_2_6_IMPLEMENTATION_AND_VALIDATION_PLAN.md: 0 diagrams
+EVIDENCE_INDEX.md: 0 diagrams
+Cypher writes in the raw scan, all accounted for: 34
+all checks passed

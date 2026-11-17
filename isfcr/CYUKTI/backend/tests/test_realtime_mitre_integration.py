@@ -11,17 +11,23 @@ consistent with the fake-driver/fake-session pattern used throughout the
 existing test suite (see test_campaign_reconstruction.py).
 """
 
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 import pytest
 
 import realtime_socgraph as rsg
 import mitre_resolver
+from campaign_context import TransitionContext
 
 
 class _FakeCampaignContext:
     def __init__(self, campaign_id):
         self.campaign_id = campaign_id
+        # Step 2: the UNKNOWN path checks expiry at the alert's event time.
+        # Active at the fixtures' event times (2026-08-29 ~11:10-11:26 UTC).
+        self.status = "ACTIVE"
+        self.last_seen = datetime(2026, 8, 29, 11, 25, 0, tzinfo=timezone.utc)
         self.techniques = set()
         self.attack_chain = []
         self.predicted_next = None
@@ -62,11 +68,20 @@ def stub_everything(monkeypatch):
     monkeypatch.setattr(rsg, "create_unattributed_attack_event", _fake_create_unattributed)
     monkeypatch.setattr(rsg, "update_duplicate_event", lambda **kw: None)
 
-    def _fake_get_or_create_campaign(attacker_ip, victim_ip, technique):
+    def _fake_get_or_create_campaign(attacker_ip, victim_ip, technique, event_time=None):
         calls["get_or_create_campaign"] = technique
-        return "CAMP_TEST_RESOLVED"
+        return TransitionContext(
+            campaign_id="CAMP_TEST_RESOLVED",
+            current_technique=technique,
+            previous_technique=None,
+            segment_start=True,
+        )
 
-    monkeypatch.setattr(rsg.campaign_manager, "get_or_create_campaign", _fake_get_or_create_campaign)
+    # process_alert() now obtains the campaign together with its immutable
+    # TransitionContext (research/STEP1_CHAIN_LEARNING.md).
+    monkeypatch.setattr(
+        rsg.campaign_manager, "get_or_create_campaign_with_transition", _fake_get_or_create_campaign,
+    )
 
     def _fake_append_technique(context, technique):
         calls["append_technique"] = technique
@@ -85,7 +100,7 @@ def stub_everything(monkeypatch):
 
     monkeypatch.setattr(rsg.campaign_manager, "resolve_campaign_context", _fake_resolve_campaign_context)
 
-    def _fake_create_campaign_context(attacker_ip, victim_ip, current_technique):
+    def _fake_create_campaign_context(attacker_ip, victim_ip, current_technique, event_time=None):
         calls["create_campaign_context"] = current_technique
         return _FakeCampaignContext("CAMP_TEST_UNKNOWN")
 
@@ -99,7 +114,9 @@ def stub_everything(monkeypatch):
     )
     monkeypatch.setattr(rsg, "store_dynamic_risk", lambda campaign_id, dynamic_risk: None)
 
-    def _fake_update_attack_chain(campaign_id, technique):
+    def _fake_update_attack_chain(campaign_id, technique, transition):
+        assert transition.campaign_id == campaign_id
+        assert transition.current_technique == technique
         calls["update_attack_chain"] = technique
 
     monkeypatch.setattr(rsg, "update_attack_chain", _fake_update_attack_chain)
@@ -119,7 +136,7 @@ def stub_everything(monkeypatch):
     )
     monkeypatch.setattr(
         rsg.operation_engine, "correlate",
-        lambda context: SimpleNamespace(matched=False, score=0.0, confidence=0.0, candidate_count=0, operation_id=None),
+        lambda context, reference_time=None: SimpleNamespace(matched=False, score=0.0, confidence=0.0, candidate_count=0, operation_id=None),
     )
     monkeypatch.setattr(rsg.detection_engine, "calculate", lambda event_id: SimpleNamespace(confidence=0.0))
     monkeypatch.setattr(rsg.threat_engine, "calculate", lambda attacker_ip: SimpleNamespace(confidence=0.0))

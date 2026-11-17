@@ -1,0 +1,19 @@
+................                                                         [100%]
+================== network attempts blocked by the test guard ==================
+UNEXPECTED connect 127.0.0.1:1 <- tests/active_response/test_end_to_end_integration.py::test_06_shuffle_unavailable_fails_safely
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_correlate_breaks_exact_score_ties_by_first_candidate_in_list
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_correlating_the_same_campaign_twice_is_idempotent
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_matching_attacker_victim_and_overlapping_techniques_attaches
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_realistic_two_campaign_same_attacker_operation_from_real_dataset_techniques
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_temporal_boundary_flips_the_attach_decision
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_vanished_operation_candidate_is_skipped_not_fatal
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_dashboard_api.py::test_investigate_requires_json_body_tolerant
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_default_wiring.py::test_full_closed_loop_incident_context_to_next_decision
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_final_trace.py::test_full_alert_to_misp_decision_object_chain_is_actually_connected
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_misp_integration.py::test_attribution_enrichment_reaches_generated_event
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_misp_integration.py::test_full_pipeline_investigation_evidence_confidence_to_misp_publish
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_production_model_artifact.py::test_full_closed_loop_with_production_model_artifact
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_soar_matcher.py::test_find_matches_includes_historical_success_rate_in_reason
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_soar_matcher.py::test_find_matches_respects_top_k
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_soar_matcher.py::test_find_matches_scores_technique_overlap_without_neo4j_session
+16 passed in 8.65s

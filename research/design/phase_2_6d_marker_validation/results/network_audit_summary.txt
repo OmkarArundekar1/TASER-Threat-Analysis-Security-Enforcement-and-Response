@@ -1,0 +1,145 @@
+attempts recorded: 27
+destinations: {'127.0.0.1:1': 27}
+tests: 16
+
+where each attempt enters production code, and from which tests:
+
+campaign_correlation_engine.py:168:correlate  (6 tests)
+    tests/test_campaign_correlation.py::test_correlate_breaks_exact_score_ties_by_first_candidate_in_list
+    tests/test_campaign_correlation.py::test_correlating_the_same_campaign_twice_is_idempotent
+    tests/test_campaign_correlation.py::test_matching_attacker_victim_and_overlapping_techniques_attaches
+    tests/test_campaign_correlation.py::test_realistic_two_campaign_same_attacker_operation_from_real_dataset_techniques
+    tests/test_campaign_correlation.py::test_temporal_boundary_flips_the_attach_decision
+    tests/test_campaign_correlation.py::test_vanished_operation_candidate_is_skipped_not_fatal
+
+soar/matcher.py:64:find_matches  (3 tests)
+    tests/test_soar_matcher.py::test_find_matches_includes_historical_success_rate_in_reason
+    tests/test_soar_matcher.py::test_find_matches_respects_top_k
+    tests/test_soar_matcher.py::test_find_matches_scores_technique_overlap_without_neo4j_session
+
+soar/generator.py:91:generate  (2 tests)
+    tests/active_response/test_end_to_end_integration.py::test_06_shuffle_unavailable_fails_safely
+    tests/test_final_trace.py::test_full_alert_to_misp_decision_object_chain_is_actually_connected
+
+investigation/loop.py:229:run_investigation  (2 tests)
+    tests/test_default_wiring.py::test_full_closed_loop_incident_context_to_next_decision
+    tests/test_production_model_artifact.py::test_full_closed_loop_with_production_model_artifact
+
+threat_attribution_engine.py:80:attribute  (2 tests)
+    tests/test_misp_integration.py::test_attribution_enrichment_reaches_generated_event
+    tests/test_misp_integration.py::test_full_pipeline_investigation_evidence_confidence_to_misp_publish
+
+dashboard_api.py:1409:investigate_campaign  (1 tests)
+    tests/test_dashboard_api.py::test_investigate_requires_json_body_tolerant
+
+full stacks, one per test:
+tests/active_response/test_end_to_end_integration.py::test_06_shuffle_unavailable_fails_safely
+    tests/active_response/test_end_to_end_integration.py:145:test_06_shuffle_unavailable_fails_safely
+    soar/generator.py:91:generate
+    recommendation_engine.py:8:get_recommendations
+tests/test_campaign_correlation.py::test_correlate_breaks_exact_score_ties_by_first_candidate_in_list
+    campaign_correlation_engine.py:168:correlate
+    campaign_correlation_engine.py:184:_gnn_topology_similarity_to_operation
+    campaign_correlation_engine.py:186:<genexpr>
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_campaign_correlation.py::test_correlating_the_same_campaign_twice_is_idempotent
+    campaign_correlation_engine.py:168:correlate
+    campaign_correlation_engine.py:184:_gnn_topology_similarity_to_operation
+    campaign_correlation_engine.py:186:<genexpr>
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_campaign_correlation.py::test_matching_attacker_victim_and_overlapping_techniques_attaches
+    campaign_correlation_engine.py:168:correlate
+    campaign_correlation_engine.py:184:_gnn_topology_similarity_to_operation
+    campaign_correlation_engine.py:186:<genexpr>
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_campaign_correlation.py::test_realistic_two_campaign_same_attacker_operation_from_real_dataset_techniques
+    campaign_correlation_engine.py:168:correlate
+    campaign_correlation_engine.py:184:_gnn_topology_similarity_to_operation
+    campaign_correlation_engine.py:186:<genexpr>
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_campaign_correlation.py::test_temporal_boundary_flips_the_attach_decision
+    campaign_correlation_engine.py:168:correlate
+    campaign_correlation_engine.py:184:_gnn_topology_similarity_to_operation
+    campaign_correlation_engine.py:186:<genexpr>
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_campaign_correlation.py::test_vanished_operation_candidate_is_skipped_not_fatal
+    campaign_correlation_engine.py:168:correlate
+    campaign_correlation_engine.py:184:_gnn_topology_similarity_to_operation
+    campaign_correlation_engine.py:186:<genexpr>
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_dashboard_api.py::test_investigate_requires_json_body_tolerant
+    tests/test_dashboard_api.py:59:test_investigate_requires_json_body_tolerant
+    dashboard_api.py:1409:investigate_campaign
+    dashboard_api.py:1393:_try_load_campaign_context
+    dashboard_api.py:1347:_load_campaign_context
+tests/test_default_wiring.py::test_full_closed_loop_incident_context_to_next_decision
+    investigation/loop.py:229:run_investigation
+    investigation/loop.py:324:execute
+    rag/gnn_topology_retriever.py:37:query
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_final_trace.py::test_full_alert_to_misp_decision_object_chain_is_actually_connected
+    tests/test_final_trace.py:99:test_full_alert_to_misp_decision_object_chain_is_actually_connected
+    soar/generator.py:91:generate
+    recommendation_engine.py:8:get_recommendations
+tests/test_misp_integration.py::test_attribution_enrichment_reaches_generated_event
+    threat_attribution_engine.py:80:attribute
+    threat_attribution_engine.py:19:_gnn_topology_similarity_for_attribution
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_misp_integration.py::test_full_pipeline_investigation_evidence_confidence_to_misp_publish
+    threat_attribution_engine.py:80:attribute
+    threat_attribution_engine.py:19:_gnn_topology_similarity_for_attribution
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_production_model_artifact.py::test_full_closed_loop_with_production_model_artifact
+    investigation/loop.py:229:run_investigation
+    investigation/loop.py:324:execute
+    rag/gnn_topology_retriever.py:37:query
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_soar_matcher.py::test_find_matches_includes_historical_success_rate_in_reason
+    soar/matcher.py:64:find_matches
+    soar/matcher.py:101:_score_one
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_soar_matcher.py::test_find_matches_respects_top_k
+    soar/matcher.py:64:find_matches
+    soar/matcher.py:101:_score_one
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data
+tests/test_soar_matcher.py::test_find_matches_scores_technique_overlap_without_neo4j_session
+    soar/matcher.py:64:find_matches
+    soar/matcher.py:101:_score_one
+    ml/gnn/topology_similarity.py:39:gnn_topology_similarity_between_campaigns
+    ml/gnn/inference.py:202:embed_campaign
+    ml/gnn/campaign_graphs.py:90:build_campaign_graph_sample
+    neo4j_client.py:1785:get_campaign_context_data

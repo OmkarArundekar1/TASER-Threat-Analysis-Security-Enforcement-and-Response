@@ -1,0 +1,25 @@
+sample: 9015 alerts over 58274 s; busiest second 409; alert bytes median 893, p99 4233, max 9216, mean 1109
+
+drain/s  largest backlog  seconds to empty after it  seconds with a backlog   (MODEL, sample day, event time taken as arrival time)
+      5             6836                       1589                    1662
+     10             6616                        757                     820
+     20             6183                        312                     401
+     50             4893                         99                     156
+    100             2781                         30                      76
+    200              984                          8                      30
+    400                9                          1                       1
+   1000                0         not within the day                       0
+
+archive: 681259 alerts in 111 files; median file 198; 90th percentile 2117
+largest files, alerts, and that day's mean per second over 86,400 s:
+  2026/Apr/ossec-alerts-20.json: 379908, 4.40/s
+  2026/Apr/ossec-alerts-19.json.gz: 107461, 1.24/s
+  2026/Mar/ossec-alerts-24.json.gz: 66957, 0.77/s
+  2026/Sep/ossec-alerts-26.json: 30862, 0.36/s
+  2026/Aug/ossec-alerts-11.json: 19839, 0.23/s
+busiest event-time second 11566; seconds with 100 or more 2087; largest id seconds drop 126
+
+spool bytes if whole alerts were kept, at the sample's mean of 1109 bytes:
+  largest day: 379908 alerts, about 421.3 MB of alert text, before SQLite's overhead
+  busiest second: 11566 alerts, about 12.8 MB of alert text, before SQLite's overhead
+  archive, nine months: 681259 alerts, about 755.5 MB of alert text, before SQLite's overhead

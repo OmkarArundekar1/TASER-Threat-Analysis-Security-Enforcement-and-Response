@@ -23,6 +23,13 @@ FileHandler directly to the root logger, idempotently (by inspecting
 existing handlers rather than a one-shot flag), instead of relying on
 logging.basicConfig()'s existence check.
 
+Safety: the import-only tests below run with the production-safety guards
+installed in the child. The lifecycle tests call start_listener(), so they use
+tests/_isolated_listener.py: stubbed dependencies, and a temporary alert file and
+offset file. They must never run against the real ones. Without that isolation,
+start_listener() read the real alerts.json, advanced the real offset.dat and sent
+real alerts into process_alert.
+
 These tests run the real, unmodified listener module in fresh
 subprocesses. Root-logger handler state is a process-global side effect
 of import order, so a fresh interpreter is the only way to get a clean,
@@ -43,6 +50,8 @@ import textwrap
 
 import pytest
 
+from tests._isolated_listener import real_offset_state, run_isolated_listener
+
 BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 LISTENER_DIR = os.path.join(BACKEND_DIR, "listener")
 
@@ -50,6 +59,8 @@ _PATH_PRELUDE = f"""
 import sys
 sys.path.insert(0, {LISTENER_DIR!r})
 sys.path.insert(0, {BACKEND_DIR!r})
+from tests._production_safety import install_child_guards
+install_child_guards()
 """
 
 
@@ -178,9 +189,9 @@ def test_reimporting_via_fresh_interpreter_does_not_duplicate_prior_content(tmp_
 # ---------------------------------------------------------------- lifecycle / shutdown
 
 def test_events_persist_across_the_real_start_listener_shutdown_lifecycle(tmp_path):
-    """Drives the REAL, unmodified start_listener() through its actual
-    stop_event-based graceful-shutdown path (the same mechanism
-    shutdown_handler/SIGTERM uses) and confirms both pre-shutdown and
+    """Drives the real start_listener(), with isolated dependencies and paths,
+    through its actual stop_event-based graceful-shutdown path (the same
+    mechanism shutdown_handler/SIGTERM uses) and confirms both pre-shutdown and
     the shutdown-triggered log lines themselves ("Listener stopped.")
     reach the file -- i.e. the finally block's cleanup does not leave
     anything silently unwritten. Driven via stop_event directly, in a
@@ -188,10 +199,10 @@ def test_events_persist_across_the_real_start_listener_shutdown_lifecycle(tmp_pa
     shutdown/signal-delivery timing varies across platforms and isn't
     what's under test here -- the audit-logging behavior is.
     """
-    result = _run(
+    offset_before = real_offset_state()
+    result = run_isolated_listener(
         """
         import threading, time
-        import wazuh_listener as wl
 
         def trigger_stop():
             time.sleep(1.5)
@@ -204,6 +215,7 @@ def test_events_persist_across_the_real_start_listener_shutdown_lifecycle(tmp_pa
         cwd=str(tmp_path),
         timeout=20,
     )
+    assert real_offset_state() == offset_before
     assert result.returncode == 0, result.stderr
     assert "START_LISTENER_RETURNED" in result.stdout, (
         "start_listener() must return once stop_event is set, not hang"
@@ -225,10 +237,10 @@ def test_real_listener_startup_path_produces_audit_events_that_reach_the_file(tm
     lifecycle logging (offset detection, worker startup, polling
     announcement) -- these are real calls through the real logger this
     module configures, not simulated ones."""
-    result = _run(
+    offset_before = real_offset_state()
+    result = run_isolated_listener(
         """
         import threading, time
-        import wazuh_listener as wl
 
         def trigger_stop():
             time.sleep(1.0)
@@ -240,6 +252,7 @@ def test_real_listener_startup_path_produces_audit_events_that_reach_the_file(tm
         cwd=str(tmp_path),
         timeout=20,
     )
+    assert real_offset_state() == offset_before
     assert result.returncode == 0, result.stderr
 
     content = open(_log_path(str(tmp_path)), encoding="utf-8").read()

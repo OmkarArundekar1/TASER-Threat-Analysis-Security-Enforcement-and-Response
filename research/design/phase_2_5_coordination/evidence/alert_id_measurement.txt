@@ -1,0 +1,7 @@
+
+../data/raw_logs/alerts.json: 9015 alerts, 0 unparsable
+  have a top-level id: 9015; distinct ids: 9015; have a timestamp: 9015; have srcip in data: 8004; have src_ip in data: 189
+  distinct alert_id: 8945
+  alert_id groups with more than one alert: 39; alerts lost to a collision though Wazuh's id differs: 70; though the content differs: 70
+  Wazuh ids mapping to more than one alert_id: 0
+  id format example shape: dddddddddd.d

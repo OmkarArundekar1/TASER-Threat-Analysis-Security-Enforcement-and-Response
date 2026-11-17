@@ -1,0 +1,41 @@
+
+### ../data/raw_logs/alerts.json
+sha256 e958c1cc9211036b2e9feaf48990c36cf370d724c1c139183229cb59565b3098; alerts 9015
+top-level keys: {'timestamp': 9015, 'rule': 9015, 'agent': 9015, 'manager': 9015, 'id': 9015, 'decoder': 9015, 'location': 9015, 'full_log': 8826, 'data': 8751, 'predecoder': 592, 'previous_output': 591, 'previous_log': 20, 'syscheck': 5}
+manager.name distinct values: 1 | alerts with manager.name: 9015
+cluster.name present: 0 | cluster.node present: 0
+with id: 9015; distinct: 9015; string typed: 9015
+match seconds.offset: 9015
+id seconds equal the timestamp's second: 9015; difference histogram (clamped to 3): {0: 9015}
+file order: offset went down 0 times, stayed equal 0 times, rose 9014 times
+offset rise: min 234, median 591, max 7147
+alerts in the busiest second: 409; seconds with more than one alert: 294
+span 58274 s (0.67 days), rate 13366 alerts per day over the span
+distinct days 1, busiest day 9015 alerts
+--- identical occurrences, the case a content hash can't separate
+all fields except id: 9015 distinct; 0 groups repeat; 0 alerts would merge into another under a content hash
+all except id and timestamp: 8992 distinct; 15 groups repeat; 23 alerts would merge into another under a content hash
+
+### ../evaluation/ground_truth/raw/mitre_mapping_v0_alerts.json
+sha256 78ad16bf073cfcd3350d1d637aedd94983b6a8f6b288cc210877f5e091f2775c; alerts 1
+top-level keys: {'SCN-SSHBRUTE-001-000': 1, 'SCN-SSHBRUTE-001-001': 1, 'SCN-SSHBRUTE-001-002': 1, 'SCN-SSHBRUTE-001-003': 1, 'SCN-SSHBRUTE-001-004': 1, 'SCN-SSHBRUTE-001-005': 1, 'SCN-SSHBRUTE-001-006': 1, 'SCN-SSHBRUTE-001-007': 1, 'SCN-SSHBRUTE-001-008': 1, 'SCN-SSHBRUTE-001-009': 1, 'SCN-SSHBRUTE-001-010': 1, 'SCN-SSHBRUTE-001-011': 1, 'SCN-SSHBRUTE-001-012': 1, 'SCN-SSHBRUTE-001-013': 1, 'SCN-SSHBRUTE-001-014': 1, 'SCN-SSHBRUTE-001-015': 1, 'SCN-SSHBRUTE-001-016': 1, 'SCN-SSHBRUTE-001-017': 1, 'SCN-SSHBRUTE-001-018': 1, 'SCN-SSHBRUTE-001-019': 1, 'SCN-SSHBRUTE-001-020': 1, 'SCN-SSHBRUTE-001-021': 1, 'SCN-SSHBRUTE-001-022': 1, 'SCN-SSHBRUTE-001-023': 1, 'SCN-SSHBRUTE-001-024': 1, 'SCN-SSHBRUTE-001-025': 1, 'SCN-SSHBRUTE-001-026': 1, 'SCN-SSHBRUTE-001-027': 1, 'SCN-SSHBRUTE-001-028': 1, 'SCN-SSHBRUTE-001-029': 1, 'SCN-SSHBRUTE-001-030': 1, 'SCN-SSHBRUTE-001-031': 1, 'SCN-SSHBRUTE-001-032': 1, 'SCN-SSHBRUTE-001-033': 1, 'SCN-SSHBRUTE-001-034': 1, 'SCN-SSHBRUTE-001-035': 1, 'SCN-SSHBRUTE-001-036': 1, 'SCN-SSHBRUTE-001-037': 1, 'SCN-SSHBRUTE-001-038': 1, 'SCN-SSHBRUTE-001-039': 1, 'SCN-SSHBRUTE-001-040': 1, 'SCN-SSHBRUTE-001-041': 1, 'SCN-SSHBRUTE-001-042': 1, 'SCN-SSHBRUTE-001-043': 1, 'SCN-SSHBRUTE-001-044': 1, 'SCN-SSHBRUTE-001-045': 1, 'SCN-SSHBRUTE-001-046': 1, 'SCN-SSHBRUTE-001-047': 1, 'SCN-SSHBRUTE-001-048': 1, 'SCN-SSHBRUTE-001-049': 1, 'SCN-NMAP-001-000': 1, 'SCN-NMAP-001-001': 1, 'SCN-NMAP-001-002': 1, 'SCN-NMAP-001-003': 1, 'SCN-NMAP-001-004': 1, 'SCN-NMAP-001-005': 1, 'SCN-NMAP-001-006': 1, 'SCN-NMAP-001-007': 1, 'SCN-NMAP-001-008': 1, 'SCN-NMAP-001-009': 1, 'SCN-NMAP-001-010': 1, 'SCN-NMAP-001-011': 1, 'SCN-NMAP-001-012': 1, 'SCN-NMAP-001-013': 1, 'SCN-NMAP-001-014': 1, 'SCN-NMAP-001-015': 1, 'SCN-NMAP-001-016': 1, 'SCN-NMAP-001-017': 1, 'SCN-NMAP-001-018': 1, 'SCN-NMAP-001-019': 1, 'SCN-NMAP-001-020': 1, 'SCN-NMAP-001-021': 1, 'SCN-NMAP-001-022': 1, 'SCN-NMAP-001-023': 1, 'SCN-NMAP-001-024': 1, 'SCN-NMAP-001-025': 1, 'SCN-NMAP-001-026': 1, 'SCN-NMAP-001-027': 1, 'SCN-NMAP-001-028': 1, 'SCN-NMAP-001-029': 1, 'SCN-NMAP-001-030': 1, 'SCN-NMAP-001-031': 1, 'SCN-NMAP-001-032': 1, 'SCN-NMAP-001-033': 1, 'SCN-NMAP-001-034': 1, 'SCN-NMAP-001-035': 1, 'SCN-NMAP-001-036': 1, 'SCN-NMAP-001-037': 1, 'SCN-NMAP-001-038': 1, 'SCN-NMAP-001-039': 1, 'SCN-NMAP-001-040': 1, 'SCN-NMAP-001-041': 1, 'SCN-NMAP-001-042': 1, 'SCN-NMAP-001-043': 1, 'SCN-NMAP-001-044': 1, 'SCN-NMAP-001-045': 1, 'SCN-NMAP-001-046': 1, 'SCN-NMAP-001-047': 1, 'SCN-NMAP-001-048': 1, 'SCN-NMAP-001-049': 1}
+manager.name distinct values: 0 | alerts with manager.name: 0
+cluster.name present: 0 | cluster.node present: 0
+with id: 0; distinct: 0; string typed: 0
+match seconds.offset: 0
+
+### ../experiments/records/EXP-2026-09-25-nmap-scan-01.json
+sha256 71661a5380acb22070cdef2728182cdfa12fec235f67590c60e4f0f9080b612e; alerts 1
+top-level keys: {'experiment_id': 1, 'timestamp': 1, 'data_provenance': 1, 'attacker': 1, 'victim': 1, 'scenario': 1, 'input': 1, 'expected_behavior': 1, 'actual_behavior': 1, 'mitre': 1, 'campaign': 1, 'operation_id': 1, 'severity': 1, 'threat_qualification': 1, 'campaign_selection': 1, 'evidence': 1, 'next_best_evidence': 1, 'multi_rag': 1, 'response_plan': 1, 'shuffle': 1, 'misp': 1, 'latency': 1, 'errors': 1}
+manager.name distinct values: 0 | alerts with manager.name: 0
+cluster.name present: 0 | cluster.node present: 0
+with id: 0; distinct: 0; string typed: 0
+match seconds.offset: 0
+
+### /home/omkar/capstone/research/experiments/b3_runs_v2/smoke/synthetic_alerts.jsonl
+sha256 7d38b3685ea9ad71a0dded040a9f1a5ca2708f0d6129e89d543d2b99665afbb0; alerts 8
+top-level keys: {'timestamp': 8, 'rule': 8, 'agent': 8, 'data': 8}
+manager.name distinct values: 0 | alerts with manager.name: 0
+cluster.name present: 0 | cluster.node present: 0
+with id: 0; distinct: 0; string typed: 0
+match seconds.offset: 0

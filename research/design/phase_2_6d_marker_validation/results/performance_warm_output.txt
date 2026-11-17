@@ -1,0 +1,6 @@
+markers present: 24535
+warm-up, marker plus mutation, discard these         n=500   median    6.931  p95   10.830  max   27.545 ms
+marker plus mutation, warm                           n=500   median    7.020  p95   15.029  max   24.786 ms
+mutation alone, warm                                 n=500   median    6.595  p95   14.915  max  144.844 ms
+lookup, marker exists, warm                          n=500   median    2.955  p95    4.324  max   11.072 ms
+lookup, marker absent, warm                          n=500   median    2.560  p95    3.886  max    9.017 ms

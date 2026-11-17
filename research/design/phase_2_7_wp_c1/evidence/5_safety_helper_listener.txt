@@ -1,0 +1,20 @@
+........................................................................ [ 12%]
+........................................................................ [ 24%]
+........................................................................ [ 37%]
+........................................................................ [ 49%]
+........................................................................ [ 61%]
+........................................................................ [ 74%]
+........................................................................ [ 86%]
+........................................................................ [ 98%]
+.......                                                                  [100%]
+================== network attempts blocked by the test guard ==================
+deliberate connect 127.0.0.1:1 <- tests/test_production_safety.py::test_neo4j_driver_to_the_closed_default_is_blocked
+deliberate connect 127.0.0.1:9 <- tests/test_production_safety.py::test_session_guard_blocks_a_loopback_connection
+deliberate connect 192.0.2.1:443 <- tests/test_production_safety.py::test_tls_socket_goes_through_the_guard
+deliberate connect 192.0.2.1:9 <- tests/test_production_safety.py::test_requests_is_blocked
+deliberate connect 192.0.2.1:9 <- tests/test_production_safety.py::test_session_guard_blocks_a_remote_connection
+deliberate connect_ex 192.0.2.1:9 <- tests/test_production_safety.py::test_session_guard_blocks_connect_ex
+deliberate resolve misp.invalid.example <- tests/test_production_safety.py::test_requests_is_blocked
+deliberate resolve misp.invalid.example <- tests/test_production_safety.py::test_session_guard_blocks_name_lookup
+deliberate sendto 192.0.2.1:9 <- tests/test_production_safety.py::test_session_guard_blocks_sendto
+583 passed in 64.12s (0:01:04)

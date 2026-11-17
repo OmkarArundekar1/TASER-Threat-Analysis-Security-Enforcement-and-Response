@@ -1,0 +1,60 @@
+input sha256 e958c1cc9211036b2e9feaf48990c36cf370d724c1c139183229cb59565b3098 alerts 9015
+listener source utils.py sha256 2657321029162810c5e964a8d93098c64b3d54c7f2ac2e2d6f39c05a271b6af7
+listener source wazuh_listener.py sha256 8d7f0d28dcce0ba266f54612e0d2d03b692faff7059bb41408af9f9cdd4876b9
+the legacy key groups 70 alerts under an earlier one; of those 7 name a different attacker or victim
+modeled routes, all 9,015: {'attributed duplicate': 1201, 'attributed new event': 110, 'unattributed duplicate': 7552, 'unattributed new event': 152}
+
+=== first pass and second pass, one process
+first pass: {'accepted': 9015, 'status:VALID': 9015}; 5.520 s
+reached process_alert 9015; distinct Wazuh ids 9015; polls 1; alerts per second 1633
+of the 70 previously refused: preserved 70, distinct ids 70
+of the 7 with a different attacker or victim: preserved 7
+modeled routes, what reached process_alert: {'attributed duplicate': 1201, 'attributed new event': 110, 'unattributed duplicate': 7552, 'unattributed new event': 152}
+second pass, same file, same process: {'duplicate': 9015, 'status:VALID': 9015}; 7.569 s
+reached process_alert in total 9015; alerts per second 1191
+offset saved equals file size: True
+
+=== restart, after a clean run: the saved offset is at the end
+restart, offset at the end: {}
+reached process_alert 0
+
+=== restart, as after a crash before the offset was saved: the offset says 0
+restart, offset 0: {'accepted': 9015, 'status:VALID': 9015}
+reached process_alert 9015; distinct Wazuh ids 9015. These are redelivered: the seen cache died with the process
+
+=== the same alerts under a second manager name: one file holding both
+two manager names: {'accepted': 18030, 'status:VALID': 18030}
+reached process_alert 18030
+
+=== every alert with id removed, read twice
+first pass: {'accepted': 9015, 'status:MISSING_ID': 9015}
+second pass: {'accepted': 9015, 'status:MISSING_ID': 9015}
+reached process_alert: first pass 9015, after second pass 18030
+
+=== every alert with id empty, read twice
+first pass: {'accepted': 9015, 'status:EMPTY_ID': 9015}
+second pass: {'accepted': 9015, 'status:EMPTY_ID': 9015}
+reached process_alert: first pass 9015, after second pass 18030
+
+=== every alert with id not a string, read twice
+first pass: {'accepted': 9015, 'status:MALFORMED_ID': 9015}
+second pass: {'accepted': 9015, 'status:MALFORMED_ID': 9015}
+reached process_alert: first pass 9015, after second pass 18030
+
+=== every alert with id malformed, read twice
+first pass: {'accepted': 9015, 'status:MALFORMED_ID': 9015}
+second pass: {'accepted': 9015, 'status:MALFORMED_ID': 9015}
+reached process_alert: first pass 9015, after second pass 18030
+
+=== every alert with manager removed, read twice
+first pass: {'accepted': 9015, 'status:MISSING_MANAGER': 9015}
+second pass: {'accepted': 9015, 'status:MISSING_MANAGER': 9015}
+reached process_alert: first pass 9015, after second pass 18030
+
+=== lines that can never be alerts, between real ones: one read
+truncated line ending in a newline: reached process_alert 2 of 2 real alerts; reader at the end of the file: True
+a JSON array: reached process_alert 2 of 2 real alerts; reader at the end of the file: True
+a JSON number: reached process_alert 2 of 2 real alerts; reader at the end of the file: True
+malformed, ending in a brace: reached process_alert 2 of 2 real alerts; reader at the end of the file: True
+
+no temporary directory left: True

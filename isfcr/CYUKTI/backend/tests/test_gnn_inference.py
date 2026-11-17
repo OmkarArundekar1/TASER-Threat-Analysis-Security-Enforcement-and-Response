@@ -273,19 +273,7 @@ class TestRealArtifact:
 # tests/test_campaign_graphs.py
 # ---------------------------------------------------------------------------
 
-def _neo4j_reachable():
-    try:
-        from neo4j_client import driver
-        driver.verify_connectivity()
-        return True
-    except Exception:
-        return False
-
-
-requires_live_neo4j = pytest.mark.skipif(
-    not _neo4j_reachable(),
-    reason="No live Neo4j instance reachable in this environment.",
-)
+requires_live_neo4j = pytest.mark.usefixtures("live_neo4j")
 
 
 @requires_live_neo4j

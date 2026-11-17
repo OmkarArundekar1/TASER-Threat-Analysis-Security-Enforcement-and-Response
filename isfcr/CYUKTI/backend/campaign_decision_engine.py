@@ -16,10 +16,8 @@ class CampaignDecisionEngine:
         features: CampaignFeatures
     ):
         breakdown = {
-            "prediction_similarity":
-                features.prediction_similarity,
-            "chain_similarity":
-                features.chain_similarity,
+            "transition_similarity":
+                features.transition_similarity,
             "temporal_similarity":
                 features.temporal_similarity,
             "attacker_similarity":
@@ -32,33 +30,33 @@ class CampaignDecisionEngine:
                 features.runtime_similarity
         }
 
-        
+
         weighted_sum = 0.0
         total_weight = 0.0
         available_features = 0
-        
+
         for key, value in breakdown.items():
-        
+
             if value is None:
                 continue
-        
+
             weight = CAMPAIGN_WEIGHTS[key]
-        
+
             weighted_sum += value * weight
             total_weight += weight
             available_features += 1
-        
+
         score = (
             weighted_sum / total_weight
             if total_weight > 0
             else 0.0
         )
-        
+
         confidence = round(
             (available_features / len(breakdown)) * 100,
             2
         )
-        
+
         return CampaignDecision(
             score=score,
             confidence=confidence,

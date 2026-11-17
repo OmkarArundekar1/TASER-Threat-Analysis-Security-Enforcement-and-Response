@@ -1,0 +1,22 @@
+Preflight, 2026-11-06T07:14:12Z. No database other than the disposable one was contacted.
+HEAD 3afe62c4216574a906feaffe87e35ddb084db941, status entries before: 189
+docker client talks to: Docker Desktop 4.59.0 (217644)
+daemon id: 7879fd3e-b372-45e5-942a-07cc7ca07c63
+containers on that daemon, before the disposable one was created (the disposable one is excluded here):
+shuffle-frontend | ghcr.io/shuffle/shuffle-frontend:latest | Up 2 hours
+shuffle-orborus | ghcr.io/shuffle/shuffle-orborus:latest | Up 2 hours
+shuffle-backend | ghcr.io/shuffle/shuffle-backend:latest | Up 2 hours
+shuffle-opensearch | opensearchproject/opensearch:3.2.0 | Exited (255) 4 months ago
+tenzir-node | tenzir/tenzir:main | Created
+misp-docker-misp-core-1 | ghcr.io/misp/misp-docker/misp-core:latest | Up 2 hours (healthy)
+misp-docker-mail-1 | ghcr.io/egos-tech/smtp:1.1.3 | Up 2 hours
+misp-docker-db-1 | mariadb:10.11 | Up 2 hours (healthy)
+misp-docker-redis-1 | valkey/valkey:7.2 | Up 2 hours (healthy)
+misp-docker-misp-modules-1 | ghcr.io/misp/misp-docker/misp-modules:latest | Up 2 hours (healthy)
+interesting_ellis | ghcr.io/misp/misp-docker/misp-core:latest | Exited (255) 6 months ago
+graylog | graylog/graylog:7.0.4 | Up 2 hours (healthy)
+mongodb | mongo:7.0 | Up 2 hours
+opensearch | opensearchproject/opensearch:2.11.1 | Up 2 hours
+Neo4j volumes on that daemon, other than this experiment's: 0
+Other: a Neo4j process and listeners on 7687 and 7474 exist in Ubuntu under a separate native dockerd. Its container metadata wasn't obtained:
+a probe of the native socket and of neo4j-soc was denied by the permission system, and wasn't retried.

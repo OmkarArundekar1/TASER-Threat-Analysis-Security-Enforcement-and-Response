@@ -1,0 +1,135 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USERNAME = os.environ.get("NEO4J_USERNAME", "")
+NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "")
+
+ALERT_FILE = os.environ.get("WAZUH_ALERT_FILE", "/var/ossec/logs/alerts/alerts.json")
+POLL_INTERVAL = 0.5
+
+CAMPAIGN_TIMEOUT = 120
+MAX_CAMPAIGN_CACHE = 1500
+
+OPERATION_TIMEOUT = 120
+
+# Event-time policy for alerts whose own timestamp is missing, malformed or
+# has no timezone (see event_time.py). "processing_time_fallback" keeps the
+# alert and marks it; "strict" rejects it. The replay harness always uses
+# "strict" regardless of this setting.
+EVENT_TIME_POLICY = os.environ.get("EVENT_TIME_POLICY", "processing_time_fallback").strip().lower()
+
+DEDUP_WINDOW = 90            # seconds
+DEDUP_CLEANUP_INTERVAL = 60
+
+MISP_URL = os.environ.get("MISP_URL", "https://localhost:8443")
+MISP_API_KEY = os.environ.get("MISP_API_KEY", "")
+
+VERIFY_MISP_SSL = False
+
+DUPLICATE_FLUSH_INTERVAL = 7      # seconds
+MAX_PENDING_DUPLICATES = 1000
+MAX_BATCH_SIZE = 200
+ENABLE_DUPLICATE_BUFFER = True
+
+# Active containment (backend/active_response/) -- default OFF. A containment
+# action can only execute automatically (no analyst approval step) when this
+# is explicitly true AND the policy engine independently decides CONTAIN AND
+# the requested action is on the hard-coded executable allowlist. See
+# active_response/policy.py.
+AUTO_CONTAIN = os.environ.get("AUTO_CONTAIN", "false").strip().lower() in ("1", "true", "yes")
+
+# IPs that must never be auto-contained regardless of policy decision (e.g.
+# the default gateway, DNS, the Wazuh manager itself) -- a real, independent
+# safety net, not just a policy-engine code path that could have a bug.
+CONTAINMENT_NEVER_BLOCK_IPS = frozenset(
+    ip.strip() for ip in os.environ.get("CONTAINMENT_NEVER_BLOCK_IPS", "").split(",") if ip.strip()
+)
+
+SHUFFLE_WEBHOOK = os.environ.get("SHUFFLE_WEBHOOK", "")
+# Optional -- only needed for soar/shuffle_client.py's execution-status
+# polling path (Shuffle's REST API, distinct from the webhook trigger
+# URL above). Empty by default: this environment has no Shuffle API
+# key configured, so polling is honestly reported as unavailable rather
+# than fabricated (see SOAR_PLAYBOOK_INTEGRATION.md).
+SHUFFLE_BASE_URL = os.environ.get("SHUFFLE_BASE_URL", "")
+SHUFFLE_API_KEY = os.environ.get("SHUFFLE_API_KEY", "")
+
+LOG_LEVEL = "INFO"
+
+# GNN topology-aware representation (see GNN_PRODUCTION_INTEGRATION.md).
+# Default False: the severity ablation (GNN_XGBOOST_ABLATION.md) found no
+# predictive benefit for the severity model, and the retrieval evaluation
+# (GNN_RETRIEVAL_EVALUATION.md) found promising-but-limited evidence for
+# retrieval/correlation -- not yet strong enough to enable by default. When
+# False, every GNN integration point in this codebase short-circuits to
+# "no GNN evidence available" without importing torch or touching the model
+# artifact, so CYUKTI's pre-GNN-integration behavior is exactly preserved.
+GNN_ENABLED = os.environ.get("GNN_ENABLED", "false").strip().lower() in ("1", "true", "yes")
+GNN_MODEL_PATH = os.environ.get(
+    "GNN_MODEL_PATH",
+    os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "ml", "models", "gnn_autoencoder.pt")),
+)
+
+TPS_MAP = {
+    "Reconnaissance": 10,
+    "Credential Access": 45,
+    "Initial Access": 70,
+    "Privilege Escalation": 90,
+    "Lateral Movement": 110,
+    "Exfiltration": 150
+}
+
+PLATFORM_WEIGHT = 0.25
+MITIGATION_WEIGHT = 0.50
+THREAT_ACTOR_WEIGHT = 0.15
+MALWARE_WEIGHT = 0.20
+TOOL_WEIGHT = 0.20
+RUNTIME_EVENT_WEIGHT = 0.50
+DETECTION_WEIGHT = 1.00
+THREAT_INTEL_WEIGHT = 1.00
+
+MAX_SEVERITY_SCORE = 40.0
+
+PREDICTION_WEIGHT = 2.0
+DUPLICATE_WEIGHT = 1.0
+CAMPAIGN_WEIGHT = 0.75
+
+THREAT_INTEL_RISK_WEIGHT = 1.0
+
+MAX_DYNAMIC_RISK = 100.0
+
+LOW_RISK_THRESHOLD = 25
+MEDIUM_RISK_THRESHOLD = 50
+HIGH_RISK_THRESHOLD = 75
+
+RISK_TREND_DELTA = 5
+
+MIN_PREDICTION_CONFIDENCE = 30
+MIN_TRANSITION_OBSERVATIONS = 3
+
+GRAPH_DENSITY_WEIGHT = 9
+CHAIN_DEPTH_WEIGHT = 1
+COMPLEXITY_WEIGHT = 0.10
+STRUCTURAL_RISK_WEIGHT = 0.10
+EVOLUTION_RATE_WEIGHT = 70
+
+CAMPAIGN_WEIGHTS = {
+    "prediction_similarity": 0.35,
+    "chain_similarity": 0.30,
+    "temporal_similarity": 0.20,
+    "attacker_similarity": 0.10,
+    "runtime_similarity": 0.03,
+    "graph_similarity": 0.01,
+    "duplicate_similarity": 0.01,
+}
+
+IMPLEMENTED_FEATURES = (
+    "attacker_similarity",
+    "victim_similarity",
+    "temporal_similarity",
+    "technique_similarity",
+    "chain_similarity",
+)

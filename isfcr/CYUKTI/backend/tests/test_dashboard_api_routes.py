@@ -13,11 +13,10 @@ tests of route internals):
 1. MOCKED Neo4j -- deterministic, portable, runs everywhere. Covers
    error handling, input validation, and response-shape correctness
    against controlled fixture data.
-2. LIVE verification against this environment's real, reachable Neo4j
-   instance -- skipped (not failed) via `_require_live_neo4j`/
-   `_require_live_model` if unavailable, matching the project's
-   established pattern (test_production_model_artifact.py). Identifiers
-   are discovered from the live database itself, never hardcoded.
+2. LIVE verification against an explicitly supplied disposable Neo4j
+   instance (the `live_neo4j` fixture in conftest.py), skipped otherwise,
+   and never against production. Identifiers are discovered from that
+   database itself, never hardcoded.
 
 Real defects found (via live testing, not just mocks) and fixed this
 session:
@@ -146,18 +145,7 @@ def mock_driver(monkeypatch):
     return _set
 
 
-def _neo4j_reachable():
-    try:
-        dashboard_api.driver.verify_connectivity()
-        return True
-    except Exception:
-        return False
-
-
-requires_live_neo4j = pytest.mark.skipif(
-    not _neo4j_reachable(),
-    reason="No live Neo4j instance reachable in this environment.",
-)
+requires_live_neo4j = pytest.mark.usefixtures("live_neo4j")
 
 
 # ============================================================== global error handling (fix)
@@ -563,7 +551,10 @@ def test_attribution_actors_live_does_not_error_for_a_real_campaign(client):
 
 # ============================================================== correlation/campaigns (Cypher similarity, distinct from CampaignCorrelationEngine)
 
-def test_correlation_campaigns_response_shape(client, mock_driver):
+def test_correlation_campaigns_response_shape(client, mock_driver, monkeypatch):
+    # The route's GNN enrichment uses neo4j_client's own driver, not the one
+    # mock_driver replaces. Its value isn't what this test is about.
+    monkeypatch.setattr(dashboard_api, "_gnn_topology_similarity_for_dashboard", lambda *a, **kw: None)
     mock_driver(_FakeResult([{
         "campaign_id": "CAMP_2", "raw_tps": 40.0, "similarity_score": 55,
         "shared_techniques": ["T1110"], "shared_tactics_raw": ["Credential Access"],

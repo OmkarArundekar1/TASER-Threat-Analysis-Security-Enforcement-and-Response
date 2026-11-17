@@ -73,14 +73,17 @@ class OperationManager:
             first_seen=normalize_datetime(
                 operation.get("created_at")
             ),
-            
+
             last_seen=normalize_datetime(
                 operation.get("last_seen")
             ),
         )
 
-    def expire_active_operations(self):
-        expired = expire_stale_operations_db(OPERATION_TIMEOUT)
+    def expire_active_operations(self, reference_time=None):
+        """reference_time: event time (alert being correlated, or the
+        event-time watermark for background maintenance). None keeps the
+        legacy wall-clock sweep for direct callers."""
+        expired = expire_stale_operations_db(OPERATION_TIMEOUT, reference_time=reference_time)
 
         for operation_id in expired:
             print(f"[OPERATION EXPIRED] {operation_id}")

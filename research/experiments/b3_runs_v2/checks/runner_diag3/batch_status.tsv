@@ -1,0 +1,6 @@
+2026-11-04T06:46:29Z	A_norestart	START	available_kb=2863084
+2026-11-04T06:46:37Z	A_norestart	FINISHED	rc=0
+2026-11-04T06:46:37Z	B_norestart	START	available_kb=2847948
+2026-11-04T06:46:45Z	B_norestart	FINISHED	rc=0
+2026-11-04T06:46:45Z	BATCH	DONE	rc=0
+2026-11-04T06:46:53Z	A_norestart	REFUSED	run_dir_exists

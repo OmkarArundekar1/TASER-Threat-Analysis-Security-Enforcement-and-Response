@@ -1,0 +1,96 @@
+=== T0 classifier unit tests
+ok   timeout wins, even with oom recorded             -> EXPERIMENT_TIMEOUT
+ok   wrapper precheck                                 -> PRECHECK_FAILED wrong platform
+ok   wrapper container start                          -> CONTAINER_START_FAILED no start
+ok   oom beats harness failure                        -> CONTAINER_OOM
+ok   oom beats success exit                           -> CONTAINER_OOM
+ok   watchdog marker                                  -> WATCHDOG_TIMEOUT
+ok   harness nonzero                                  -> HARNESS_FAILED
+ok   rc 0 but no artifacts                            -> HARNESS_FAILED missing:manifest.json; missing:view.json; missing:traces.jso
+ok   rc 0, alert failures                             -> HARNESS_FAILED alerts not ok: 2
+ok   rc 0, restart markers missing                    -> HARNESS_FAILED restart markers not exactly once: ['RESTART_BEGIN', 'RESTART
+ok   rc 0, no RUN_END                                 -> HARNESS_FAILED no RUN_END marker
+ok   rc 0, complete with restart                      -> COMPLETED
+ok   rc 0, complete without restart                   -> COMPLETED
+ok   dry mode skips artifact checks                   -> COMPLETED
+statuses exercised: ['COMPLETED', 'CONTAINER_OOM', 'CONTAINER_START_FAILED', 'EXPERIMENT_TIMEOUT', 'HARNESS_FAILED', 'PRECHECK_FAILED', 'WATCHDOG_TIMEOUT'] | missing: []
+PASS T0 classifier [0]
+=== T1 dry runs, guards on the runner itself
+PASS T1 CUR_norestart accepted, rc [0]
+PASS T1 status [COMPLETED]
+PASS T1 exit_status separate [0]
+PASS T1 failure stops batch, rc [1]
+PASS T1 classified [HARNESS_FAILED]
+PASS T1 actual code kept [7]
+PASS T1 second not started [no]
+PASS T1 existing dir refused [3]
+PASS T1 unknown refused [2]
+PASS T1 test mode refused on real runs/ [2]
+PASS T1 real runs/ has no CUR_norestart [no]
+=== T2 exact platform guard
+real platform: Docker Desktop 4.59.0 (217644)
+PASS T2 real Docker Desktop accepted [0]
+PASS T2 native engine refused [20]
+wrong docker platform: 'Docker Engine - Community'
+PASS T2 hung docker version refused [20]
+   returned in 2 s: docker version failed or timed out rc=124
+PASS T2 missing image refused [20]
+PASS T2 busy port refused [20]
+=== T3 blocked docker run, classified through the runner
+   returned in 2 s
+PASS T3 status [CONTAINER_START_FAILED]
+PASS T3 exit code [21]
+PASS T3 stage [CONTAINER_START]
+=== T4 overall timeout, no container
+PASS T4 status [EXPERIMENT_TIMEOUT]
+PASS T4 actual code [124]
+PASS T4 bounded [yes]
+=== T5 overall timeout, blocked command on a real disposable container
+PASS T5 status [EXPERIMENT_TIMEOUT]
+PASS T5 actual code [124]
+PASS T5 timeout stage recorded [HARNESS]
+PASS T5 log preserved [blocked-start]
+PASS T5 process group gone [0]
+   cleanup: container=cyukti-b3v2-A_norestart rm_rc=0 containers_remaining=0 run_volumes_remaining=0
+PASS T5: no temporary containers [0]
+PASS T5: volumes equal baseline [same]
+PASS T5: port 17690 closed [closed]
+=== T6 command ignoring TERM: KILL escalation, wrapper cleanup prevented, runner cleans up
+PASS T6 status [EXPERIMENT_TIMEOUT]
+PASS T6 actual code [137]
+   runner cleanup: runner_cleanup removed=cyukti-b3v2-A_norestart rc=0 containers_remaining=0
+PASS T6: no temporary containers [0]
+PASS T6: volumes equal baseline [same]
+PASS T6: port 17690 closed [closed]
+=== T7 connectivity from WSL on a real disposable container
+PASS T7 status [COMPLETED]
+PASS T7 exit code [0]
+   tcp True | bad password rejected True | auth True | version ['5.26.27'] | nodes start 0 | read [{'v': 1}] | nodes end 0
+   settings {'heap.initial_size': '384.00MiB', 'heap.max_size': '384.00MiB', 'pagecache.size': '128.00MiB'}
+   container=cyukti-b3v2-A_norestart platform=Docker Desktop 4.59.0 (217644)
+   image=neo4j:5.26.27 image_id=sha256:b8b4c30662aa794360bae816e76ecc6d4206bcbaefadd56d344526d3feaba962 container_id=ea74c24f3d5e9902a798439c60e0eeeb1c132f6b0e8b3774fc6d4a9511ae55f9 memory=1073741824 memory_swap=1073741824 ports={"76
+   cgroup_memory_max=1073741824 cgroup_swap_max=0
+   jvm -Xms393216k -Xmx393216k
+   conf server.memory.pagecache.size=128m
+   after_run memory_peak=947564544 memory_current=918896640
+   after_run memory_stat anon 687513600 file 219353088
+   after_run state=running oom_killed=false exit_code=0 restarts=0
+   after_run: state=running oom_killed=false exit_code=0 restarts=0
+   stop_rc=0
+   after_stop: state=exited oom_killed=false exit_code=0 restarts=0
+   cleanup: container=cyukti-b3v2-A_norestart rm_rc=0 containers_remaining=0 run_volumes_remaining=0
+PASS T7: no temporary containers [0]
+PASS T7: volumes equal baseline [same]
+PASS T7: port 17690 closed [closed]
+=== T8 watchdog classification, real pre-fix deadlock, real disposable container
+PASS T8 status [WATCHDOG_TIMEOUT]
+PASS T8 actual code [1]
+PASS T8 stack names the lock site [yes]
+PASS T8: no temporary containers [0]
+PASS T8: volumes equal baseline [same]
+PASS T8: port 17690 closed [closed]
+=== final
+PASS real runs/ untouched by tests [CUR_restart batch_20261104T065800Z.log batch_20261104T065800Z.pid batch_status.tsv]
+PASS failed attempt unchanged [0]
+PASS CUR variant unchanged [1e6caa7bf8703da4]
+FAILS=0

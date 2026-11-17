@@ -64,3 +64,13 @@ dist/
 
 # Vendored third-party clones (own git history, not part of this project)
 isfcr/CYUKTI/external/
+
+# Non-CYUKTI projects and temporary files
+aisd/
+home/
+tmp/
+wsl
+feedback .pdf
+feedback .pdf:Zone.Identifier
+runs/
+corrected_metrics.json

@@ -1,0 +1,7 @@
+{"target": "bolt://127.0.0.1:17710", "container": "cyukti-d6-marker-v1", "server": {"name": "Neo4j Kernel", "versions": ["5.26.27"], "edition": "community"}}
+ok   E10      the constraint is missing                                              {"first": {"outcome": "COMMITTED", "attempts": 1, "code": null, "type": null, "nodes_created": 1}, "second": {"outcome": "COMMITTED", "attempts": 1, "code": null, "type": null, "nodes_created": 1}, "markers": 2, "occurrences": 2, "lookup": "INCONSISTENT"}
+ok   E10      restoring the constraint over duplicates                               {"refused_with": "Neo.DatabaseError.Schema.ConstraintCreationFailed"}
+--- constraint: 0.5 s
+ok   CRASH    server killed under load, restarted on the same volume                 {"writers": 6, "attempts": 2339, "completed_before_kill": 2315, "lookup_while_down": "UNKNOWN", "server_back": true, "tally": {"COMMITTED marker=1 effect=1": 2309, "AMBIGUOUS marker=1 effect=1": 5, "AMBIGUOUS marker=0 effect=0": 1, "NOT_COMMITTED marker=0 effect=0": 24}, "marker_effect_disagree": 0,
+--- crash: 58.5 s
+rows with a failed check: 0

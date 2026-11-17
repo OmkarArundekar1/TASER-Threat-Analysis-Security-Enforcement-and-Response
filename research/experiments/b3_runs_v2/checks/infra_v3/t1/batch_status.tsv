@@ -1,0 +1,5 @@
+2026-11-04T08:08:03Z	CUR_norestart	START	available_kb=3017276 mode=dry timeout_s=1800
+2026-11-04T08:08:03Z	CUR_norestart	COMPLETED	rc=0 stage= elapsed_s=0
+2026-11-04T08:08:03Z	BATCH	DONE	rc=0
+2026-11-04T08:08:03Z	CUR_norestart	REFUSED	run_dir_exists
+2026-11-04T08:08:03Z	NOPE	REJECTED	unknown

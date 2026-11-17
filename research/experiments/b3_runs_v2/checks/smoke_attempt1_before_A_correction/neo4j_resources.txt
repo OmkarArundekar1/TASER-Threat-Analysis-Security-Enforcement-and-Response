@@ -1,0 +1,7 @@
+container=cyukti-b3v2-smoke engine=docker-desktop
+image=neo4j:5.26.27 image_id=sha256:b8b4c30662aa794360bae816e76ecc6d4206bcbaefadd56d344526d3feaba962 memory=1073741824 memory_swap=1073741824 ports={"7687/tcp":[{"HostIp":"127.0.0.1","HostPort":"17690"}]} mounts=volume:/data volume:/logs
+cgroup_memory_max=1073741824 cgroup_swap_max=0
+jvm -Xms393216k -Xmx393216k
+conf server.memory.pagecache.size=128m
+after_run memory_peak=993529856 memory_current=991313920
+after_run state=running oom_killed=false restarts=0

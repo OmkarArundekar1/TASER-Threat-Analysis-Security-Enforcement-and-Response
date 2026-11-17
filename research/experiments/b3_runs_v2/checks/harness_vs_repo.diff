@@ -1,0 +1,149 @@
+--- /home/omkar/capstone/isfcr/CYUKTI/backend/replay/harness.py	2026-11-03 18:33:11.231883200 +0000
++++ variants/CUR/replay/harness.py	2026-11-04 06:52:40.488638107 +0000
+@@ -31,6 +31,7 @@
+
+ import argparse
+ import hashlib
++import faulthandler
+ import json
+ import os
+ import subprocess
+@@ -125,7 +126,8 @@
+
+
+ def replay(ordered, process, manager, *, speed=None, maintenance=None,
+-           maintenance_interval=None, clock=None, sleep=time.sleep) -> ReplayResult:
++           maintenance_interval=None, clock=None, sleep=time.sleep,
++           restart_at=None, restart=None, heartbeat=None) -> ReplayResult:
+     """ordered: [(position, event_time, alert)] already sorted.
+     process(alert, trace=dict, event_time_policy=...) -> bool.
+     manager: CampaignManager whose decision_log is captured.
+@@ -159,6 +161,10 @@
+                 if gap > 0:
+                     sleep(gap / speed)
+             previous_time = event_time
++            if heartbeat is not None:
++                heartbeat(index)
++            if restart_at is not None and index == restart_at:
++                restart()
+             trace = {"index": index, "position": position}
+             ok = process(alert, trace=trace, event_time_policy=POLICY_STRICT)
+             trace["ok"] = bool(ok)
+@@ -295,7 +301,51 @@
+ # CLI
+ # --------------------------------------------------------------------------
+
++class Diagnostics:
++    """Study-only diagnostics, written unbuffered to <run>/diagnostics.log.
++    A faulthandler watchdog is re-armed before every alert: if one alert (or
++    the restart step, or the end-of-run work) takes longer than the limit, the
++    stacks of all threads are written to the file and the process exits with
++    status 1, so a stuck run cannot hang a batch."""
++
++    def __init__(self, path, watchdog_seconds):
++        self.watchdog_seconds = watchdog_seconds
++        self.file = open(path, "a", buffering=1)
++        self.started = time.monotonic()
++
++    def log(self, message):
++        line = f"{datetime.now(timezone.utc).isoformat()} +{time.monotonic() - self.started:9.3f}s {message}"
++        self.file.write(line + "\n")
++        self.file.flush()
++        print(line, file=sys.stderr, flush=True)
++
++    def arm(self):
++        faulthandler.dump_traceback_later(self.watchdog_seconds, exit=True, file=self.file)
++
++    def beat(self, index):
++        self.arm()
++        if index % 500 == 0:
++            self.log(f"PROGRESS index={index}")
++
++    def disarm(self):
++        faulthandler.cancel_dump_traceback_later()
++
++
++REQUIRED_NEO4J_URI = "bolt://127.0.0.1:17690"
++
++
+ def run_cli(args):
++    # Study guard, checked before anything can connect: only the disposable
++    # instance is accepted, whatever the rest of the environment says.
++    uri = os.environ.get("NEO4J_URI")
++    if uri != REQUIRED_NEO4J_URI:
++        raise SystemExit(f"Refusing to replay: NEO4J_URI is {uri!r}, expected {REQUIRED_NEO4J_URI!r}.")
++    if os.path.exists(os.path.join(args.out, "manifest.json")):
++        raise SystemExit(f"Refusing to replay: {args.out} already holds a completed run.")
++    os.makedirs(args.out, exist_ok=True)
++    diag = Diagnostics(os.path.join(args.out, "diagnostics.log"), args.watchdog_seconds)
++    diag.log(f"RUN_START variant={os.environ.get('B3_VARIANT')} restart_at={args.restart_at} "
++             f"watchdog_seconds={args.watchdog_seconds} pid={os.getpid()}")
+     # Belt-and-braces before the pipeline is imported: no GNN, no reachable
+     # MISP (publication is additionally replaced by _RecordingSync below).
+     os.environ.setdefault("GNN_ENABLED", "false")
+@@ -327,11 +377,38 @@
+         campaign_manager.expire_active_campaigns(reference_time=reference_time)
+         operation_manager.expire_active_operations(reference_time=reference_time)
+
++    from neo4j_client import batch_update_duplicates
++
++    def flush_buffer():
++        pending = duplicate_buffer.snapshot()
++        if pending:
++            batch_update_duplicates(pending)
++        return len(pending)
++
++    def restart():
++        """Simulated graceful listener restart: flush the duplicate buffer
++        (as the listener does on stop), then drop all in-memory state.
++        Neo4j is kept."""
++        diag.log(f"RESTART_BEGIN before_index={args.restart_at} pending_fingerprints={duplicate_buffer.size()}")
++        flushed = flush_buffer()
++        diag.log(f"RESTART_FLUSH_DONE records={flushed}")
++        log = campaign_manager.decision_log
++        campaign_manager.reset()
++        campaign_manager.decision_log = log
++        dedup_engine.reset()
++        event_clock.reset()
++        diag.log("RESTART_END state_reset=campaign_manager,dedup_engine,event_clock")
++
+     started_at = datetime.now(timezone.utc).isoformat()
++    diag.arm()
+     result = replay(
+         loaded.ordered, rsg.process_alert, campaign_manager,
+         speed=args.speed, maintenance=maintenance, maintenance_interval=args.maintenance_interval,
++        restart_at=args.restart_at, restart=restart, heartbeat=diag.beat,
+     )
++    diag.arm()
++    diag.log(f"REPLAY_LOOP_DONE alerts={len(result.traces)}")
++    diag.log(f"FINAL_FLUSH_DONE records={flush_buffer()}")
+     snapshot = snapshot_graph(driver)
+     view = comparable_view(result.traces, result.decisions, snapshot)
+
+@@ -343,6 +420,8 @@
+         "git_commit": _git_commit(), "input": os.path.abspath(args.alerts), "input_sha256": loaded.sha256,
+         "input_lines": loaded.total_lines, "accepted": len(loaded.ordered), "rejected": len(loaded.rejected),
+         "limit": args.limit, "speed": args.speed, "maintenance_interval": args.maintenance_interval,
++        "variant": os.environ.get("B3_VARIANT"), "restart_at": args.restart_at,
++        "watchdog_seconds": args.watchdog_seconds,
+         "event_time_policy": POLICY_STRICT, "campaign_timeout": config.CAMPAIGN_TIMEOUT,
+         "dedup_window": config.DEDUP_WINDOW, "operation_timeout": config.OPERATION_TIMEOUT,
+         "wall_seconds": result.wall_seconds, "neo4j_uri": os.environ.get("NEO4J_URI"),
+@@ -370,6 +449,8 @@
+         json.dump(snapshot, f, indent=1, default=str)
+     with open(paths["rejected.json"], "w") as f:
+         json.dump(loaded.rejected, f, indent=1)
++    diag.disarm()
++    diag.log(f"RUN_END view_sha256={manifest['view_sha256']}")
+     print(json.dumps(manifest, indent=1))
+
+
+@@ -408,6 +489,8 @@
+                         help="run background expiry every N wall-seconds (like the live listener)")
+     parser.add_argument("--limit", type=int, default=None)
+     parser.add_argument("--allow-nonempty", action="store_true")
++    parser.add_argument("--restart-at", type=int, default=None)
++    parser.add_argument("--watchdog-seconds", type=float, default=300.0)
+     parser.add_argument("--compare", nargs=2, metavar=("RUN_A", "RUN_B"))
+     args = parser.parse_args(argv)
+     if args.compare:

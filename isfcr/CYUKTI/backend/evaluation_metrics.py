@@ -174,6 +174,91 @@ def cluster_purity(true_clusters: dict, pred_clusters: dict) -> float:
     return correct / len(items)
 
 
+def inverse_purity(true_clusters: dict, pred_clusters: dict) -> float:
+    """
+    Inverse purity (completeness): fraction of items whose true cluster's
+    majority predicted-label matches their own predicted label.
+
+    This is the dual of cluster_purity, measuring over-fragmentation:
+    - Purity measures: "is each predicted campaign pure (one real attack)?"
+    - Inverse purity measures: "is each real attack kept together (one predicted campaign)?"
+
+    Critical for detecting campaign splitting. A system that heavily fragments
+    real attacks will have high purity but low inverse purity.
+
+    Args:
+        true_clusters: item_id -> true_campaign_id (ground truth)
+        pred_clusters: item_id -> predicted_campaign_id (system output)
+
+    Returns:
+        Float in [0, 1], higher is better
+    """
+    items = sorted(set(true_clusters) & set(pred_clusters))
+    if not items:
+        return 0.0
+
+    # Group by true cluster (real attacks)
+    by_true_cluster = defaultdict(list)
+    for item in items:
+        by_true_cluster[true_clusters[item]].append(item)
+
+    correct = 0
+    for members in by_true_cluster.values():
+        # Count predicted labels for this real attack
+        pred_label_counts = defaultdict(int)
+        for m in members:
+            pred_label_counts[pred_clusters[m]] += 1
+        # How many alerts stayed in the majority predicted campaign?
+        majority_count = max(pred_label_counts.values())
+        correct += majority_count
+
+    return correct / len(items)
+
+
+def campaigns_per_attack(true_clusters: dict, pred_clusters: dict) -> dict:
+    """
+    Count how many predicted campaigns each real attack was split into.
+
+    Critical metric for detecting campaign fragmentation. Ideal value is 1.0
+    (each real attack maps to exactly one predicted campaign). Higher values
+    indicate splitting.
+
+    Args:
+        true_clusters: item_id -> true_campaign_id
+        pred_clusters: item_id -> predicted_campaign_id
+
+    Returns:
+        Dict with:
+        - mean: Average number of predicted campaigns per real attack
+        - median: Median number
+        - max: Maximum number (worst case)
+        - per_attack: Dict mapping true_campaign_id -> count
+    """
+    items = sorted(set(true_clusters) & set(pred_clusters))
+    if not items:
+        return {
+            "mean": 0.0,
+            "median": 0.0,
+            "max": 0,
+            "per_attack": {}
+        }
+
+    # For each real attack, count unique predicted campaigns
+    true_to_pred = defaultdict(set)
+    for item in items:
+        true_to_pred[true_clusters[item]].add(pred_clusters[item])
+
+    counts_per_attack = {k: len(v) for k, v in true_to_pred.items()}
+    counts = list(counts_per_attack.values())
+
+    return {
+        "mean": sum(counts) / len(counts),
+        "median": sorted(counts)[len(counts) // 2],
+        "max": max(counts),
+        "per_attack": counts_per_attack
+    }
+
+
 def campaign_fragmentation(true_clusters: dict, pred_clusters: dict) -> dict:
     """How many predicted clusters a single true campaign got split
     across (over-fragmentation), and vice versa (over-merging).

@@ -1,0 +1,3 @@
+2026-11-04T08:08:11Z	A_norestart	START	available_kb=3008552 mode=test timeout_s=60
+2026-11-04T08:09:16Z	A_norestart	EXPERIMENT_TIMEOUT	rc=124 stage=HARNESS elapsed_s=64
+2026-11-04T08:09:16Z	BATCH	STOPPED	at=A_norestart status=EXPERIMENT_TIMEOUT

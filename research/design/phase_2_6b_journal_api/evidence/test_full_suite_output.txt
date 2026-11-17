@@ -1,0 +1,63 @@
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+...............................ss....................................... [ 11%]
+..........................................................s..s...s...ss. [ 14%]
+..sss.s..s..s..s...s...s...s........s...s...s........................... [ 17%]
+..................s..................................................... [ 20%]
+........................................................................ [ 23%]
+........................................................................ [ 26%]
+s..................sss.................................................. [ 29%]
+........................................................................ [ 32%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+........................................................................ [ 50%]
+........................................................................ [ 53%]
+........................................................................ [ 56%]
+........................................................................ [ 59%]
+........................................................................ [ 62%]
+........................................................................ [ 65%]
+........................................................................ [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 80%]
+........................................................................ [ 83%]
+........................................................................ [ 86%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 95%]
+.......................................................................s [ 98%]
+s....................................ss                                  [100%]
+================== network attempts blocked by the test guard ==================
+UNEXPECTED connect 127.0.0.1:1 <- tests/active_response/test_end_to_end_integration.py::test_06_shuffle_unavailable_fails_safely
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_correlate_breaks_exact_score_ties_by_first_candidate_in_list
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_correlating_the_same_campaign_twice_is_idempotent
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_matching_attacker_victim_and_overlapping_techniques_attaches
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_realistic_two_campaign_same_attacker_operation_from_real_dataset_techniques
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_temporal_boundary_flips_the_attach_decision
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_campaign_correlation.py::test_vanished_operation_candidate_is_skipped_not_fatal
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_dashboard_api.py::test_investigate_requires_json_body_tolerant
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_default_wiring.py::test_full_closed_loop_incident_context_to_next_decision
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_final_trace.py::test_full_alert_to_misp_decision_object_chain_is_actually_connected
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_misp_integration.py::test_attribution_enrichment_reaches_generated_event
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_misp_integration.py::test_full_pipeline_investigation_evidence_confidence_to_misp_publish
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_production_model_artifact.py::test_full_closed_loop_with_production_model_artifact
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_soar_matcher.py::test_find_matches_includes_historical_success_rate_in_reason
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_soar_matcher.py::test_find_matches_respects_top_k
+UNEXPECTED connect 127.0.0.1:1 <- tests/test_soar_matcher.py::test_find_matches_scores_technique_overlap_without_neo4j_session
+deliberate connect 127.0.0.1:1 <- tests/test_production_safety.py::test_neo4j_driver_to_the_closed_default_is_blocked
+deliberate connect 127.0.0.1:9 <- tests/test_network_attribution.py::test_blocked_attempts_are_still_blocked_after_being_recorded
+deliberate connect 127.0.0.1:9 <- tests/test_production_safety.py::test_session_guard_blocks_a_loopback_connection
+deliberate connect 192.0.2.1:443 <- tests/test_production_safety.py::test_tls_socket_goes_through_the_guard
+deliberate connect 192.0.2.1:9 <- tests/test_production_safety.py::test_requests_is_blocked
+deliberate connect 192.0.2.1:9 <- tests/test_production_safety.py::test_session_guard_blocks_a_remote_connection
+deliberate connect_ex 127.0.0.1:9 <- tests/test_network_attribution.py::test_connect_ex_is_recorded_as_its_own_operation
+deliberate connect_ex 192.0.2.1:9 <- tests/test_production_safety.py::test_session_guard_blocks_connect_ex
+deliberate resolve misp.invalid.example <- tests/test_production_safety.py::test_requests_is_blocked
+deliberate resolve misp.invalid.example <- tests/test_production_safety.py::test_session_guard_blocks_name_lookup
+deliberate sendto 192.0.2.1:9 <- tests/test_production_safety.py::test_session_guard_blocks_sendto
+2386 passed, 29 skipped in 344.32s (0:05:44)

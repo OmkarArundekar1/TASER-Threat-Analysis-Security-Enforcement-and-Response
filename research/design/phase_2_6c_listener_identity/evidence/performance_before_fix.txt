@@ -1,0 +1,19 @@
+python 3.12.3, Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39; 9015 alerts
+listener 206e147543ce7979 utils 5d25a3e4e404eacc
+
+--- identity generation, 5 runs over the sample
+median 22.8 ms for 9015 alerts: 395,187 alerts a second, 2.53 us each
+
+--- duplicate decision: accept_alert refusing a repeat, by cache size
+cache    100: median      4.7 us, p99      8.8 us
+cache   1000: median     44.9 us, p99     74.4 us
+cache  10000: median    527.6 us, p99    905.1 us
+
+--- memory of a full seen cache, by key form (10,000 entries)
+source key form: 1640 KiB; earlier 64-character hash form: 1903 KiB
+
+--- reader and worker, whole sample, no service time
+with the listener's own per-alert logging: first pass 4.612 s, 1,955 alerts a second; second pass 4.941 s, 1,824 alerts a second
+logging off: first pass 2.571 s, 3,506 alerts a second; second pass 4.584 s, 1,967 alerts a second
+
+temporary directories left: 0

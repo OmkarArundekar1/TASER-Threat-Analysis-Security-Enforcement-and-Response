@@ -93,11 +93,18 @@ def mock_history(monkeypatch):
     controllable in-memory list -- the same external boundary
     test_default_wiring.py's closed-loop test mocks."""
     import attribution_context as attribution_context_module
+    import threat_attribution_engine as threat_attribution_engine_module
 
     state = {"campaigns": []}
     monkeypatch.setattr(
         attribution_context_module.context, "load_historical_campaigns",
         lambda: list(state["campaigns"]),
+    )
+    # The other Neo4j path in attribute(). None is what it returns when GNN is
+    # unavailable, and no test in this module is about its value.
+    monkeypatch.setattr(
+        threat_attribution_engine_module, "_gnn_topology_similarity_for_attribution",
+        lambda a, b: None,
     )
     return state
 
@@ -221,6 +228,14 @@ def test_tied_candidates_preserve_deterministic_input_order(engine, mock_history
 
 def test_attribute_actually_calls_the_real_historical_campaign_loader(engine, monkeypatch):
     import attribution_context as attribution_context_module
+    import threat_attribution_engine as threat_attribution_engine_module
+
+    # attribute() also scores GNN topology per candidate, through the Neo4j driver.
+    # This test is about the loader. None is what that step returns when GNN is unavailable.
+    monkeypatch.setattr(
+        threat_attribution_engine_module, "_gnn_topology_similarity_for_attribution",
+        lambda a, b: None,
+    )
 
     calls = []
 
@@ -349,7 +364,7 @@ def test_attribution_result_propagates_into_investigation_trace_via_evidence(eng
 
 # ---------------------------------------------------------------- evidence provenance (Section 7)
 
-def test_attribution_evidence_derives_from_campaign_history_evidence_with_real_candidates():
+def test_attribution_evidence_derives_from_campaign_history_evidence_with_real_candidates(mock_history):
     """Uses the REAL engine's multi-candidate output (not the
     hand-built single-item fixtures test_investigation_evidence_aware.py
     used) to prove investigation/loop.py's existing derived_from
@@ -363,6 +378,7 @@ def test_attribution_evidence_derives_from_campaign_history_evidence_with_real_c
         _historical("CAMP_OLD_1", ["T1110", "T1078"]),
         _historical("CAMP_OLD_2", ["T1110", "T1059"]),
     ]
+    mock_history["campaigns"] = historical
     campaign = _campaign(["T1110", "T1078", "T1059"])
 
     history_evidence = collect_campaign_history_evidence(campaign.techniques, historical)

@@ -1,0 +1,3 @@
+symbol citations checked: 25; named tests checked: 28
+recorded figures matched: 22
+all checks passed

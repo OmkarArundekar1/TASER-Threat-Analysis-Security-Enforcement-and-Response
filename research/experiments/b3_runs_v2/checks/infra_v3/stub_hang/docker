@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+case "$1" in
+  version) sleep 100 ;;
+  image) exit 0 ;;
+  run) exit 0 ;;
+  *) exit 0 ;;
+esac

@@ -1,0 +1,3 @@
+157 passed in 25.97s
+157 passed in 25.69s
+157 passed in 24.97s

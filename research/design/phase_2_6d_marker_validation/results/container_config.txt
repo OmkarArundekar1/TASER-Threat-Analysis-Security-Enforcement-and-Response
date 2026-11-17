@@ -1,0 +1,15 @@
+started_utc=2026-11-06T06:54:04Z
+platform=Docker Desktop 4.59.0 (217644)
+daemon_id=7879fd3e-b372-45e5-942a-07cc7ca07c63
+image=neo4j:5.26.27
+image_id=sha256:b8b4c30662aa794360bae816e76ecc6d4206bcbaefadd56d344526d3feaba962
+container=cyukti-d6-marker-v1
+container_id=d9563e0d609d4f9513e53059530702e88c0708f21b86d5871674ce2c4b7e1236
+network=cyukti-d6-marker-v1-net
+volume=cyukti-d6-marker-v1-data
+mounts=volume:cyukti-d6-marker-v1-data:/data volume:1e6d27eb16fa8ad834e56474ec3b409694174848da892adaf697b1552da6991b:/logs
+published=127.0.0.1:17710->7687
+proxy=127.0.0.1:17711->127.0.0.1:17710
+limits=memory:2147483648 nanocpus:2000000000
+heap=512m pagecache=256m
+credentials=random, in a mode-700 directory outside the repository, not recorded here

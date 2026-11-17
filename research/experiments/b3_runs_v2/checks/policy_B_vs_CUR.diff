@@ -1,0 +1,27 @@
+diff -ru variants/CUR/neo4j_client.py variants/B/neo4j_client.py
+--- variants/CUR/neo4j_client.py	2026-11-03 18:24:23.879463271 +0000
++++ variants/B/neo4j_client.py	2026-11-04 06:52:41.757160669 +0000
+@@ -309,7 +309,6 @@
+         })
+
+         SET
+-            c.last_seen = CASE WHEN c.last_seen IS NULL OR t > c.last_seen THEN t ELSE c.last_seen END,
+             c.occurrences = coalesce(c.occurrences,0)+1
+         WITH a, h, c, t
+         CREATE (e:AttackEvent {
+@@ -397,7 +396,6 @@
+             MATCH (c:Campaign {campaign_id:e.campaign_id})
+
+             SET
+-                c.last_seen = CASE WHEN c.last_seen IS NULL OR dt > c.last_seen THEN dt ELSE c.last_seen END,
+                 c.occurrences = coalesce(c.occurrences,0) + 1,
+                 c.total_tps = coalesce(c.total_tps,0) + $tps,
+                 c.risk_score = coalesce(c.risk_score,0) + $tps
+@@ -437,7 +435,6 @@
+             MATCH (c:Campaign {campaign_id:e.campaign_id})
+
+             SET
+-                c.last_seen = CASE WHEN c.last_seen IS NULL OR datetime(r.last_seen) > c.last_seen THEN datetime(r.last_seen) ELSE c.last_seen END,
+                 c.occurrences = coalesce(c.occurrences,0) + r.occurrences,
+                 c.total_tps = coalesce(c.total_tps,0) + r.total_tps,
+                 c.risk_score = coalesce(c.risk_score,0) + r.total_tps

@@ -1,0 +1,5 @@
+../../../soc_env/lib/python3.12/site-packages/neo4j/_sync/io/_bolt_socket.py:380: ServiceUnavailable
+=========================== short test summary info ============================
+FAILED tests/test_operation_attribution_integration.py::test_realistic_two_alert_scenario_from_correlation_through_investigation_state
+FAILED tests/test_threat_attribution.py::test_attribution_evidence_derives_from_campaign_history_evidence_with_real_candidates
+2 failed, 929 passed, 29 skipped in 65.47s (0:01:05)

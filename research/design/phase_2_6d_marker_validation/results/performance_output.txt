@@ -1,0 +1,14 @@
+mutation alone, in the helper (baseline)                       n=500   median    6.052  p95    9.548  max   30.947 ms
+marker plus mutation, in the helper                            n=500   median    6.499  p95   16.267  max   29.552 ms
+lookup, marker exists                                          n=500   median    2.493  p95    3.453  max   11.624 ms
+lookup, marker absent                                          n=500   median    2.428  p95    3.179  max    4.599 ms
+duplicate refused by the constraint                            n=500   median    2.482  p95    3.626  max    7.996 ms
+duplicate detected: refused, then the lookup                   n=500   median    5.442  p95    6.930  max   15.208 ms
+contention: 2 clients on one key, per client                   n=40    median    8.411  p95   16.470  max   18.172 ms
+contention: 8 clients on one key, per client                   n=160   median   15.097  p95   22.566  max   25.656 ms
+contention: 16 clients on one key, per client                  n=320   median   25.651  p95   46.246  max   64.095 ms
+
+--- does cost change as markers accumulate?
+{"markers_added": 20000, "bytes_before": 3809280, "bytes_after": 11411456, "bytes_per_marker": 380.1, "note": "database directory after a clean restart, including transaction logs, with store allocation in blocks: a rough figure"}
+marker plus mutation, with 24107 markers present               n=250   median   11.871  p95   23.096  max 1080.364 ms
+lookup, marker exists, with 24107 markers present              n=250   median    5.141  p95    6.715  max   79.505 ms

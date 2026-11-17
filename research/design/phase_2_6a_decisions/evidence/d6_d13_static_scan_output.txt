@@ -1,0 +1,29 @@
+=== string constants that start from, or test, a node with no label and no relationship next to it
+  dashboard_api.py:1025 uses labels(n)
+  dashboard_api.py:749 ...MATCH (start) WHERE elementId(start) = $node_id MATCH path = (s
+  dashboard_api.py:1047 uses labels(n)
+  dashboard_api.py:1072 uses labels(n)
+  dashboard_api.py:730 ...MATCH (start) WHERE elementId(start) = $node_id RETURN labels(s
+hits: 5
+
+=== who reads dedup metadata and fingerprints: the identity W07 depends on
+  realtime_socgraph.py:16: update_duplicate_event,
+  realtime_socgraph.py:98: or agent.get("id")
+  realtime_socgraph.py:180: "rule_id": rule.get("id"),
+  realtime_socgraph.py:194: duplicate, fingerprint = dedup_engine.is_duplicate(
+  realtime_socgraph.py:204: metadata = dedup_engine.get_metadata(fingerprint)
+  realtime_socgraph.py:206: update_duplicate_event(
+  realtime_socgraph.py:327: rule_id = rule.get("id")
+  realtime_socgraph.py:400: "rule_id": rule.get("id"),
+  realtime_socgraph.py:424: duplicate, fingerprint = dedup_engine.is_duplicate(
+  realtime_socgraph.py:435: metadata = dedup_engine.get_metadata(fingerprint)
+  realtime_socgraph.py:461: update_duplicate_event(
+  realtime_socgraph.py:470: update_duplicate_event(
+  dedup_engine.py:358: def is_duplicate(
+  dedup_engine.py:385: db_event = find_recent_duplicate(
+  dedup_engine.py:427: def get_metadata(self, fingerprint):
+  neo4j_client.py:712: def update_duplicate_event(event_id, tps, investigation_payload="{}", event_time=None):
+  neo4j_client.py:727: MATCH (e)-[:MATCHES]->(t:Technique)
+  neo4j_client.py:767: MATCH (e)-[:MATCHES]->(t:Technique)
+  neo4j_client.py:1380: def find_recent_duplicate(fingerprint, reference_time=None):
+  neo4j_client.py:1789: OPTIONAL MATCH (e)-[:MATCHES]->(t:Technique)

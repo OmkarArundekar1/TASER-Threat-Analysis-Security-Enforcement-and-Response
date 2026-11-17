@@ -97,12 +97,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const resetDashboard = useCallback(() => {
-    setState(s => ({ 
-      ...s, 
-      selectedCampaign: null, 
-      selectedAttacker: null, 
-      selectedTechnique: null, 
-      graphLayer: 'campaign', 
+    setState(s => ({
+      ...s,
+      selectedCampaign: null,
+      selectedAttacker: null,
+      selectedTechnique: null,
+      graphLayer: 'campaign',
       isPathExplorerOpen: false,
       eventsPage: 1,
       resetKey: s.resetKey + 1,

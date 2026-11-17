@@ -1,0 +1,28 @@
+=== preservation
+HEAD before 3afe62c4216574a906feaffe87e35ddb084db941
+HEAD after  3afe62c4216574a906feaffe87e35ddb084db941 branch main
+status entries: before 189, after 189; status lines that differ: 0
+with all files: before 21426, after 21454
+new or changed status lines outside this phase's folder: 0
+production files unchanged: 183
+backend tests unchanged: 131
+protected hashes unchanged
+protected sizes and times unchanged
+freeze manifest unchanged
+evidence txn_experiment_v1 unchanged
+evidence helper_validation_v1 unchanged
+evidence helper_revalidation_v1 unchanged
+evidence journal_phase23_v1 unchanged
+evidence ledger_phase24_v1 unchanged
+phase_2_5_coordination unchanged
+phase_2_5_coordination manifest verifies
+phase_2_6a_decisions unchanged
+phase_2_6a_decisions manifest verifies
+phase_2_6b_journal_api unchanged
+phase_2_6b_journal_api manifest verifies
+phase_2_6c_listener_identity unchanged
+phase_2_6c_listener_identity manifest verifies
+stray files under the backend since the start: 0
+new files elsewhere in research: 0
+listener processes: 0
+temporary directories left: 0

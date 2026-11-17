@@ -1,0 +1,3 @@
+after_run: state=running oom_killed=false exit_code=0 restarts=0
+stop_rc=0
+after_stop: state=exited oom_killed=false exit_code=0 restarts=0

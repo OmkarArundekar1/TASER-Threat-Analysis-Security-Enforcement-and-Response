@@ -1,0 +1,46 @@
+=== preservation
+HEAD before 3afe62c4216574a906feaffe87e35ddb084db941
+HEAD after  3afe62c4216574a906feaffe87e35ddb084db941 branch main
+status entries: before 182, after 187
+status lines that differ:
+> ?? isfcr/CYUKTI/backend/tests/_neo4j_journal_lifecycle_child.py
+> ?? isfcr/CYUKTI/backend/tests/_neo4j_journal_v1_frozen.py
+> ?? isfcr/CYUKTI/backend/tests/test_neo4j_write_journal_correlation.py
+> ?? isfcr/CYUKTI/backend/tests/test_neo4j_write_journal_lifecycle.py
+> ?? isfcr/CYUKTI/backend/tests/test_neo4j_write_journal_migration.py
+with all files: before 21362, after 21393
+new paths outside this phase's folder:
+> ?? isfcr/CYUKTI/backend/tests/_neo4j_journal_lifecycle_child.py
+> ?? isfcr/CYUKTI/backend/tests/_neo4j_journal_v1_frozen.py
+> ?? isfcr/CYUKTI/backend/tests/test_neo4j_write_journal_correlation.py
+> ?? isfcr/CYUKTI/backend/tests/test_neo4j_write_journal_lifecycle.py
+> ?? isfcr/CYUKTI/backend/tests/test_neo4j_write_journal_migration.py
+production files that changed:
+ ./neo4j_write_journal.py
+production files total: 183
+test files added or changed:
+< ./test_neo4j_write_journal.py
+> ./_neo4j_journal_lifecycle_child.py
+> ./_neo4j_journal_v1_frozen.py
+> ./test_neo4j_write_journal.py
+> ./test_neo4j_write_journal_correlation.py
+> ./test_neo4j_write_journal_lifecycle.py
+> ./test_neo4j_write_journal_migration.py
+ledger: 8f524667d4a4e34e before, 8f524667d4a4e34e after
+protected hashes unchanged
+protected sizes and times unchanged
+freeze manifest unchanged
+evidence txn_experiment_v1 unchanged
+evidence helper_validation_v1 unchanged
+evidence helper_revalidation_v1 unchanged
+evidence journal_phase23_v1 unchanged
+evidence ledger_phase24_v1 unchanged
+phase_2_5_coordination unchanged
+phase_2_5_coordination manifest verifies
+phase_2_6a_decisions unchanged
+phase_2_6a_decisions manifest verifies
+bytecode or stray files added under the backend since the start, outside the expected: 0
+new files elsewhere in research: 0
+listener processes: 0
+temporary mutation or perf directories left: 0
+unexpected network attempts in the full run: 16; from new tests: 0

@@ -68,9 +68,12 @@ def test_generation2_import_path_no_longer_pulls_in_generation1_only_modules():
     real statement ml/ssl_pipeline.py and ml/ssft.py execute) must not,
     as a side effect, load explainer.py or temporal_engine.py into
     sys.modules. Run in a fresh subprocess so no other test's imports
-    can mask the result."""
+    can mask the result. The parent's guards don't carry into a child, so it
+    installs its own first."""
     code = (
         "import sys\n"
+        "from tests._production_safety import install_child_guards\n"
+        "install_child_guards()\n"
         "from soc_engine.model import Autoencoder\n"
         "assert 'soc_engine.explainer' not in sys.modules, "
         "'explainer.py must not be eagerly imported via soc_engine.model'\n"

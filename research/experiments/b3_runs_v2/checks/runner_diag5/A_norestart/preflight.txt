@@ -1,0 +1,6 @@
+2026-11-04T06:46:30Z
+               total        used        free      shared  buff/cache   available
+Mem:         8135248     5278868       75080       16256     2993984     2856380
+Swap:       16777216     5716824    11060392
+Node 0, zone    DMA32   1991    636    789    221     81      7     10      0      3      0      0
+Node 0, zone   Normal    945    996    224    149     64     22      7      1      1      0      0

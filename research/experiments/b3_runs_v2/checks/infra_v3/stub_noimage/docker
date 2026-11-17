@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+case "$1" in
+  version) echo "Docker Desktop 9" ;;
+  image) exit 1 ;;
+  run) exit 0 ;;
+  *) exit 0 ;;
+esac

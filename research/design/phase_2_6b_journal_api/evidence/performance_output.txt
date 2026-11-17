@@ -1,0 +1,55 @@
+Journal closed with 1 of its records IN_FLIGHT
+python 3.12.3, sqlite 3.45.1, Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39
+temporary directory filesystem device 2096; payload statement bytes 807
+
+--- one intent
+create_intent, previous implementation (v1)                n=1000   median    3.101 ms  p99   11.642 ms  max   23.972 ms
+create_intent, uncorrelated                                n=1000   median    2.966 ms  p99   10.008 ms  max   27.381 ms
+create_intent, correlated, epoch 1                         n=1000   median    2.869 ms  p99   10.472 ms  max   25.998 ms
+
+--- a whole normal life: create, IN_FLIGHT, COMMITTED
+previous implementation (v1)                               n=1000   median    9.174 ms  p99   35.607 ms  max   53.523 ms
+uncorrelated                                               n=1000   median    9.368 ms  p99   39.081 ms  max   58.089 ms
+correlated                                                 n=1000   median    9.228 ms  p99   36.223 ms  max   47.676 ms
+
+--- does cost grow with the journal? correlated create and lookup at two sizes
+create_intent, correlated, 1000 records present            n=300    median    2.996 ms  p99   24.066 ms  max   26.797 ms
+preflight_intent, new key, 1000 records present            n=1000   median    0.039 ms  p99    0.112 ms  max    0.281 ms
+preflight_intent, duplicate, 1000 records present          n=1000   median    0.063 ms  p99    0.193 ms  max    0.409 ms
+preflight_intent, uncorrelated, 1000 records present       n=1000   median    0.023 ms  p99    0.072 ms  max    0.274 ms
+find_by_correlation_key, one epoch, 1000 records present   n=1000   median    0.029 ms  p99    0.086 ms  max    0.195 ms
+find_by_correlation_key, unknown, 1000 records present     n=1000   median    0.010 ms  p99    0.027 ms  max    0.041 ms
+create_intent, correlated, 10000 records present           n=300    median    3.039 ms  p99   23.933 ms  max   33.358 ms
+preflight_intent, new key, 10000 records present           n=1000   median    0.040 ms  p99    0.120 ms  max    0.289 ms
+preflight_intent, duplicate, 10000 records present         n=1000   median    0.071 ms  p99    0.259 ms  max    3.179 ms
+preflight_intent, uncorrelated, 10000 records present      n=1000   median    0.022 ms  p99    0.065 ms  max    0.195 ms
+find_by_correlation_key, one epoch, 10000 records present  n=1000   median    0.029 ms  p99    0.117 ms  max    0.302 ms
+find_by_correlation_key, unknown, 10000 records present    n=1000   median    0.010 ms  p99    0.030 ms  max    0.049 ms
+
+--- cost by number of epochs, one request
+find_by_correlation_key, 1 epochs                          n=300    median    0.026 ms  p99    0.086 ms  max    0.166 ms
+preflight_intent, next epoch, 1 epochs before it           n=300    median    0.062 ms  p99    0.163 ms  max    0.267 ms
+find_by_correlation_key, 2 epochs                          n=300    median    0.043 ms  p99    0.198 ms  max    0.217 ms
+preflight_intent, next epoch, 2 epochs before it           n=300    median    0.080 ms  p99    0.240 ms  max    0.362 ms
+find_by_correlation_key, 5 epochs                          n=300    median    0.088 ms  p99    0.248 ms  max    0.303 ms
+preflight_intent, next epoch, 5 epochs before it           n=300    median    0.118 ms  p99    0.272 ms  max    0.302 ms
+find_by_correlation_key, 20 epochs                         n=300    median    0.335 ms  p99    0.658 ms  max    0.801 ms
+preflight_intent, next epoch, 20 epochs before it          n=300    median    0.348 ms  p99    0.740 ms  max    0.990 ms
+find_by_correlation_key, 100 epochs                        n=300    median    1.694 ms  p99    2.536 ms  max    2.668 ms
+preflight_intent, next epoch, 100 epochs before it         n=300    median    1.491 ms  p99    2.279 ms  max    2.943 ms
+create_intent, epoch 101, once: 6.109 ms
+mark_in_flight with 101 epochs to compare, once: 4.362 ms
+
+--- integrity check over 3 transitions a record
+check_integrity, uncorrelated, 3000 records: 178.1 ms
+file size after closing, uncorrelated: 9457664 bytes, 3153 bytes a record with 3 history entries
+check_integrity, correlated, 3000 records: 208.1 ms
+file size after closing, correlated: 10342400 bytes, 3447 bytes a record with 3 history entries
+
+--- growth of the empty-column cost: the same records, version 1 and migrated
+migration of 3000 records and 9000 history entries: 52.7 ms, including this open's checks
+file size: 9281536 bytes before, 9285632 bytes after
+check_integrity after migrating: 250.8 ms
+
+did the code under test come from the working tree? /home/omkar/capstone/isfcr/CYUKTI/backend/neo4j_write_journal.py; schema 2
+temporary directory removed: True

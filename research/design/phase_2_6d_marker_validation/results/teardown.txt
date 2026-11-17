@@ -1,0 +1,9 @@
+removed container cyukti-d6-marker-v1 and its anonymous volumes
+removed volume cyukti-d6-marker-v1-data
+removed network cyukti-d6-marker-v1-net
+state file removed
+after teardown:
+  container present: 0
+  volume present: 0
+  network present: 0
+  containers remaining on Docker Desktop: 14

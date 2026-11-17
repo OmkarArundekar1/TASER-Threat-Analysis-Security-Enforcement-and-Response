@@ -1,0 +1,56 @@
+Ledger key:86be9a55762d: conflicting registration 1
+{"target": "bolt://127.0.0.1:17710", "container": "cyukti-d6-marker-v1", "server": {"name": "Neo4j Kernel", "versions": ["5.26.27"], "edition": "community"}}
+ok   E1       commit, unattributed event                                             {"reps": 20, "outcomes": {"COMMITTED": 20}, "both_visible": 20}
+ok   E1       the unattributed path stops before the Campaign                        {"event_occurrences": 1, "campaign_occurrences": 0}
+ok   E1       an attributed event updates all three, in one transaction              {"event": 1, "technique": 1, "campaign": 1}
+ok   E1       missing target: committed, with no effect and no marker                {"outcome": "COMMITTED", "attempts": 1, "code": null, "type": null, "nodes_created": 0}
+ok   E1       negative control: a marker as its own statement, missing target        {"outcome": "COMMITTED", "attempts": 1, "code": null, "type": null, "nodes_created": 1}
+--- e1: 0.5 s
+ok   E2       explicit rollback                                                      {"reps": 20, "neither_remains": 20}
+ok   E2       a failing statement after the marker                                   {"reps": 20, "neither_remains": 20}
+ok   E2       an exception in the client before commit                               {"reps": 20, "neither_remains": 20}
+ok   E2       through the helper, second statement fails                             {"reps": 20, "neither_remains": 20}
+--- e2: 1.3 s
+ok   E3       the server committed and the reply was withheld, then an independent r {"reps": 20, "observed": [{"client_outcome": "AMBIGUOUS", "client_exception": "IncompleteCommit", "server_said_success_undelivered": true, "lookup": "APPLIED", "occurrences": 1, "retry_outcome": "NOT_COMMITTED", "retry_code": "Neo.ClientError.Schema.ConstraintValidationFailed", "lookup_after_retry":
+ok   E3       control: COMMIT never reached the server                               {"reps": 20, "observed": [{"client_outcome": "AMBIGUOUS", "client_exception": "IncompleteCommit", "stayed_absent": true, "times": 20}]}
+--- e3: 60.7 s
+ok   E4       connection closed instead of RUN                                       {"reps": 10, "client_errors": {"ServiceUnavailable": 10}, "stayed_absent": 10}
+ok   E4       connection closed before PULL                                          {"reps": 10, "client_errors": {"ServiceUnavailable": 10}, "stayed_absent": 10}
+ok   E4       connection closed instead of COMMIT                                    {"reps": 10, "client_errors": {"IncompleteCommit": 10}, "stayed_absent": 10}
+ok   E4       client process killed by SIGKILL with the transaction open             {"reps": 5, "stayed_absent": 5}
+ok   E4       the server terminates the open transaction, then the held COMMIT arriv {"held": true, "show_transactions_works": true, "open_transactions_seen": 2, "terminated": ["Transaction terminated."], "helper": {"outcome": "NOT_COMMITTED", "attempts": 1, "code": "Neo.ClientError.Transaction.Terminated", "type": "ClientError", "nodes_created": null}, "stayed_absent": true}
+--- e4: 71.8 s
+ok   E5       second run through a separate driver and session                       {"reps": 20, "marker_unchanged": 20, "observed": [{"first_nodes_created": 1, "second_outcome": "NOT_COMMITTED", "second_attempts": 1, "second_code": "Neo.ClientError.Schema.ConstraintValidationFailed", "lookup": "APPLIED", "markers": 1, "occurrences": 1, "times": 20}]}
+ok   E5       second run from a separate process                                     {"second": {"outcome": "NOT_COMMITTED", "attempts": 1, "code": "Neo.ClientError.Schema.ConstraintValidationFailed", "type": "ConstraintError", "nodes_created": null}, "markers": 1, "occurrences": 1}
+ok   E5       the same error code from a different constraint                        {"outcome": "NOT_COMMITTED", "attempts": 1, "code": "Neo.ClientError.Schema.ConstraintValidationFailed", "type": "ConstraintError", "nodes_created": null, "lookup": "ABSENT", "markers": 0, "occurrences": 0}
+--- e5: 2.1 s
+ok   E6       threads on one key                                                     {"contenders": 16, "rounds": 30, "commits": 30, "markers": 30, "business_mutations": 30, "rounds_wrong": 0, "outcomes": {"COMMITTED None attempts=1": 30, "NOT_COMMITTED Neo.ClientError.Schema.ConstraintValidationFailed attempts=1": 450}}
+ok   E6       separate processes on one key                                          {"contenders": 4, "rounds": 5, "commits": 5, "rounds_wrong": 0, "outcomes": {"NOT_COMMITTED Neo.ClientError.Schema.ConstraintValidationFailed": 15, "COMMITTED None": 5}}
+ok   E6       control: the same race with no constraint                              {"contenders": 16, "rounds": 10, "rounds_with_duplicate_markers": 10, "rounds_with_duplicate_effects": 10}
+ok   E6       different keys on one event, concurrently                              {"contenders": 16, "rounds": 10, "attempted": 160, "committed": 160, "rounds_where_count_differs_from_commits": 0}
+--- e6: 24.7 s
+ok   E7       two keys, identical payload                                            {"reps": 10, "both_applied": 10}
+--- e7: 0.2 s
+ok   E8       marker exists                                                          {"status": "APPLIED"}
+ok   E8       marker doesn't exist                                                   {"status": "ABSENT"}
+ok   E8       connection interrupted during lookup                                   {"status": "UNKNOWN", "error": "ServiceUnavailable", "marker_really_exists": 1}
+ok   E8       reply lost during lookup                                               {"status": "UNKNOWN", "error": "ServiceUnavailable", "marker_really_exists": 1}
+ok   E8       the query stalls past the client's deadline                            {"status": "UNKNOWN", "error": "ClientDeadline", "marker_really_exists": 1}
+ok   E8       the server times the query out                                         {"status": "UNKNOWN", "error": "ClientError", "code": "Neo.ClientError.Transaction.TransactionTimedOutClientConfiguration", "marker_really_exists": 1}
+ok   E8       the query returns an error                                             {"status": "UNKNOWN", "error": "CypherSyntaxError", "code": "Neo.ClientError.Statement.SyntaxError", "marker_really_exists": 1}
+ok   E8       authentication fails                                                   {"status": "UNKNOWN", "error": "AuthError", "code": "Neo.ClientError.Security.Unauthorized", "marker_really_exists": 1}
+ok   E8       nothing is listening at the target                                     {"status": "UNKNOWN", "error": "ServiceUnavailable", "marker_really_exists": 1}
+--- e8: 13.7 s
+ok   ABSENCE  lookup during an open transaction whose COMMIT is in flight            {"reps": 5, "observed": [{"during": "ABSENT", "client_outcome": "COMMITTED", "after": "APPLIED", "occurrences": 1, "times": 5}]}
+ok   ABSENCE  the client is dead, its COMMIT still in flight in the network          {"reps": 3, "observed": [{"after_client_death": "ABSENT", "later": "APPLIED", "occurrences": 1, "times": 3}]}
+ok   ABSENCE  COMMIT arrives after the transaction's timeout                         {"reps": 5, "transaction_timeout_s": 1.0, "held_s": 3.0, "observed": [{"client_outcome": "AMBIGUOUS", "code": "Neo.ClientError.Transaction.TransactionTimedOutClientConfiguration", "stayed_absent": true, "times": 5}]}
+--- absence: 29.4 s
+ok   E9       the proposed marker: same key, different payload                       {"second": {"outcome": "NOT_COMMITTED", "attempts": 1, "code": "Neo.ClientError.Schema.ConstraintValidationFailed", "type": "ConstraintError", "nodes_created": null}, "lookup": "APPLIED", "stored_payload": "{\"version\":\"A\"}", "occurrences": 1, "marker_can_tell_the_payloads_apart": false}
+ok   E9       the proposed marker: same key, different operation                     {"third": {"outcome": "NOT_COMMITTED", "attempts": 1, "code": "Neo.ClientError.Schema.ConstraintValidationFailed", "type": "ConstraintError", "nodes_created": null}}
+ok   E9       a fuller marker: fingerprint and operation stored immutably            {"first": {"outcome": "COMMITTED", "attempts": 1, "code": null, "type": null, "nodes_created": 1}, "second": {"outcome": "NOT_COMMITTED", "attempts": 1, "code": "Neo.ClientError.Schema.ConstraintValidationFailed", "type": "ConstraintError", "nodes_created": null}, "verdict": "CONFLICT", "occurrences
+ok   E9       a fuller marker: a true retry                                          {"third": {"outcome": "NOT_COMMITTED", "attempts": 1, "code": "Neo.ClientError.Schema.ConstraintValidationFailed", "type": "ConstraintError", "nodes_created": null}}
+ok   E9       the real ledger on a temporary file, before Neo4j is reached           {}
+--- e9: 0.2 s
+ok   E10      marker deleted, then a retry of the applied request                    {"lookup_after_delete": "ABSENT", "retry": {"outcome": "COMMITTED", "attempts": 1, "code": null, "type": null, "nodes_created": 1}, "occurrences": 2}
+--- e10: 0.0 s
+rows with a failed check: 0

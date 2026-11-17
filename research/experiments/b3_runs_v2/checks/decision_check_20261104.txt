@@ -1,0 +1,24 @@
+===== CUR_norestart | view keys ['assignments', 'campaigns', 'lifecycle_decisions', 'operations', 'transitions']
+campaign keys ['attacker_ip', 'campaign', 'closed_at', 'events', 'first_seen', 'last_seen', 'reopened_count', 'sequence', 'status', 'victim_ip']
+sample transition {'count': 2, 'dst': 'T1190', 'src': 'T1055'}
+  CLOSE_BELOW_THRESHOLD: n=21 min=0.317 max=0.332 above1=0
+  CONTINUE: n=71 min=0.488 max=9.382 above1=28
+  REOPEN: n=3 min=0.862 max=9.522 above1=1
+  campaigns {'self': 81, 'self_with_technique': 46, 'network': 35, 'network_with_technique': 7}
+  adjacent distinct technique pairs in sequences, by identity {'self': 39, 'network': 9}
+===== A_norestart | view keys ['assignments', 'campaigns', 'lifecycle_decisions', 'operations', 'transitions']
+campaign keys ['attacker_ip', 'campaign', 'closed_at', 'events', 'first_seen', 'last_seen', 'reopened_count', 'sequence', 'status', 'victim_ip']
+sample transition {'count': 2, 'dst': 'T1190', 'src': 'T1055'}
+  CLOSE_BELOW_THRESHOLD: n=35 min=0.317 max=0.332 above1=0
+  CONTINUE: n=62 min=0.488 max=9.682 above1=30
+  REOPEN: n=2 min=0.871 max=9.822 above1=1
+  campaigns {'self': 64, 'self_with_technique': 33, 'network': 33, 'network_with_technique': 6}
+  adjacent distinct technique pairs in sequences, by identity {'self': 51, 'network': 10}
+===== B_norestart | view keys ['assignments', 'campaigns', 'lifecycle_decisions', 'operations', 'transitions']
+campaign keys ['attacker_ip', 'campaign', 'closed_at', 'events', 'first_seen', 'last_seen', 'reopened_count', 'sequence', 'status', 'victim_ip']
+sample transition {'count': 2, 'dst': 'T1190', 'src': 'T1055'}
+  CLOSE_BELOW_THRESHOLD: n=21 min=0.317 max=0.332 above1=0
+  CONTINUE: n=71 min=0.488 max=9.382 above1=28
+  REOPEN: n=3 min=0.857 max=9.522 above1=1
+  campaigns {'self': 81, 'self_with_technique': 46, 'network': 35, 'network_with_technique': 7}
+  adjacent distinct technique pairs in sequences, by identity {'self': 39, 'network': 9}

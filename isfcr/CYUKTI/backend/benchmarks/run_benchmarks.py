@@ -83,7 +83,7 @@ def benchmark_ioc_extraction():
 
 def benchmark_deduplication():
     import dedup_engine as dedup_module
-    dedup_module.find_recent_duplicate = lambda fingerprint: None  # isolate from live Neo4j for this specific measurement
+    dedup_module.find_recent_duplicate = lambda fingerprint, reference_time=None: None  # isolate from live Neo4j for this specific measurement
     engine = dedup_module.DeduplicationEngine()
     return _time_it(lambda: engine.is_duplicate("1.2.3.4", "10.0.0.5", "T1110", "5716", "001"), ITERATIONS)
 

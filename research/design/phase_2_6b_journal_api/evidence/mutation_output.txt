@@ -1,0 +1,85 @@
+CONTROL passes: 275 passed in 94.02s (0:01:34)
+caught    row hash ignores correlation  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_the_row_checksum_covers_each_correlation_field[corr
+caught    event hash ignores correlation  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_the_history_chain_itself_covers_each_correlation_fi
+caught    legacy rows hashed under the tag  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_the_row_checksum_of_a_record_without_correlation_is
+caught    legacy events hashed under the tag  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_the_row_checksum_of_a_record_without_correlation_is
+caught    bool accepted as a counter  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_partial_or_malformed_correlation_is_refused_and_cre
+caught    zero accepted as a counter  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    no upper bound on a counter  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_starting_a_correlated_record_needs_a_valid_attempt[
+caught    partial correlation accepted  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_partial_or_malformed_correlation_is_refused_and_cre
+caught    key normalized  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_key_is_stored_and_returned_exactly[NFD]
+caught    key lowered  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_key_is_stored_and_returned_exactly[separators]
+caught    key limit off by one  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_partial_or_malformed_correlation_is_refused_and_cre
+caught    whitespace key accepted  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_partial_or_malformed_correlation_is_refused_and_cre
+caught    control characters accepted  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_partial_or_malformed_correlation_is_refused_and_cre
+caught    str subclass accepted as key  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_subclasses_are_refused_like_everywhere_else_in_the_
+caught    unique index not unique  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_the_database_itself_refuses_a_second_record_for_a_k
+caught    correlation trigger removed  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_triggers_keep_correlation_fixed_and_attempts_rising
+caught    attempt trigger removed  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_triggers_keep_correlation_fixed_and_attempts_rising
+caught    key shown in repr  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_keys_stay_out_of_reprs_errors_and_logs_but_correlat
+caught    key shown in an event's repr  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_keys_stay_out_of_reprs_errors_and_logs_but_correlat
+caught    key quoted in errors  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_one_record_per_key_and_epoch_even_with_the_same_int
+caught    event doesn't carry the key  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_correlation_survives_reopening_and_reaches_every_re
+caught    event doesn't carry the attempt  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_correlation_survives_reopening_and_reaches_every_re
+caught    attempt not stored on start  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_correlation_survives_reopening_and_reaches_every_re
+caught    create skips the epoch rules  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_one_record_per_key_and_epoch_even_with_the_same_int
+caught    duplicate not named  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_one_record_per_key_and_epoch_even_with_the_same_int
+caught    skipped epoch allowed  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    previous needn't be resolved  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    any resolution allows a retry  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    abandoned allows a retry  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    intent may change  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_catches_a_changed_payload_across_epochs
+caught    operation may change  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_catches_a_changed_payload_across_epochs
+caught    no authorization needed  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    authorization allowed on the first epoch  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_partial_or_malformed_correlation_is_refused_and_cre
+caught    authorizer not recorded  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_lookup_returns_every_epoch_oldest_first
+caught    attempt needn't rise  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    equal attempt allowed  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    attempts not compared across epochs  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_an_attempt_must_rise_across_epochs_too
+caught    start doesn't check the attempt  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_retry_of_a_correlated_record_needs_a_higher_attem
+caught    start needn't give an attempt  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_starting_a_correlated_record_needs_a_valid_attempt[
+caught    outcome needn't give an attempt  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_wrong_attempt_changes_nothing[None-TypeError-comm
+caught    stale outcome accepted  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_wrong_attempt_changes_nothing[1-StaleAttemptError
+caught    outcome from PENDING reaches the state table  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_no_outcome_can_be_reported_before_an_attempt_starte
+caught    uncorrelated accepts attempts  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_an_uncorrelated_record_refuses_attempt_arguments[in
+caught    recovery isn't fenced to what it read  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_recovered_record_refuses_its_own_late_outcome
+caught    recovery metadata lacks the attempt  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_recovered_record_refuses_its_own_late_outcome
+caught    mark_in_flight drops its attempt check of type  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_starting_a_correlated_record_needs_a_valid_attempt[
+caught    outcome attempt type not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_wrong_attempt_changes_nothing[True-TypeError-comm
+caught    preflight skips the epoch rules  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    preflight skips the attempt  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    preflight takes the write lock  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_takes_no_write_lock
+caught    preflight leaves its transaction open  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    preflight consumes an iterator  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_refuses_a_one_shot_iterator_because_readi
+caught    preflight ignores read-only  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_on_a_read_only_instance_says_so
+caught    preflight skips the payload  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    preflight names no existing record  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_duplicate_names_the_existing_record_and_hash_so_a
+caught    preflight raises on damage  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_reports_a_damaged_chain_rather_than_accep
+caught    preflight ignores authorization  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_answers_as_specified_changes_nothing_and_
+caught    lookup verifies no checksums  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_preflight_reports_a_damaged_chain_rather_than_accep
+caught    lookup not by exact key  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_keys_differing_only_in_form_or_case_are_different_r
+caught    migration skipped  <- FAILED tests/test_neo4j_write_journal_migration.py::test_an_old_file_opens_with_every_record_readable_and_noth
+caught    read-only migrates  <- FAILED tests/test_neo4j_write_journal_migration.py::test_read_only_never_migrates
+caught    version not recorded  <- FAILED tests/test_neo4j_write_journal_migration.py::test_an_old_file_opens_with_every_record_readable_and_noth
+caught    no recheck under the lock  <- FAILED tests/test_neo4j_write_journal_migration.py::test_processes_migrating_at_once_do_it_once_and_lose_nothi
+caught    migration has no transaction  <- FAILED tests/test_neo4j_write_journal_migration.py::test_an_old_file_opens_with_every_record_readable_and_noth
+caught    shape not checked before migrating  <- FAILED tests/test_neo4j_write_journal_migration.py::test_a_version_1_file_that_is_not_what_it_should_be_is_ref
+caught    objects not checked before migrating  <- FAILED tests/test_neo4j_write_journal_migration.py::test_a_version_1_file_that_is_not_what_it_should_be_is_ref
+caught    quick check skipped before migrating  <- FAILED tests/test_neo4j_write_journal_migration.py::test_a_file_sqlite_reports_as_damaged_is_not_migrated
+caught    new files get only version 1 objects  <- ERROR tests/test_neo4j_write_journal_correlation.py::test_partial_or_malformed_correlation_is_refused_and_crea
+caught    v2 objects not required at open  <- FAILED tests/test_neo4j_write_journal_migration.py::test_a_missing_v2_object_after_migration_is_refused
+caught    v2 columns not required at open  <- FAILED tests/test_neo4j_write_journal_migration.py::test_a_missing_v2_column_after_migration_is_refused[journa
+caught    record contents not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_forged_record_with_valid_checksums_is_detected_by
+caught    uncorrelated contents not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_forged_record_with_valid_checksums_is_detected_by
+caught    history key not compared  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_forged_record_with_valid_checksums_is_detected_by
+caught    first-event authorization not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_forged_record_with_valid_checksums_is_detected_by
+caught    carried attempt not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_forged_record_with_valid_checksums_is_detected_by
+caught    row attempt not compared to history  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_forged_record_with_valid_checksums_is_detected_by
+caught    attempt rise in one record not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_forged_attempt_that_does_not_rise_within_one_reco
+caught    chain not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_missing_epoch_is_detected
+caught    gaps in a chain not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_missing_epoch_is_detected
+caught    chain resolution not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_forged_chain_past_an_unretryable_resolution_is_de
+caught    chain intent not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_forged_later_epoch_with_a_different_intent_is_det
+caught    chain attempts not checked  <- FAILED tests/test_neo4j_write_journal_correlation.py::test_a_forged_attempt_that_does_not_rise_across_epochs_i
+
+mutants 82, caught 82, survived 0

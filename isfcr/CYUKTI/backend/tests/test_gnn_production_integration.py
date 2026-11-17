@@ -342,19 +342,7 @@ def test_gnn_topology_endpoint_disabled_returns_empty_neighbors_not_error(client
     assert data["topology_neighbors"] == []
 
 
-def _neo4j_reachable():
-    try:
-        import dashboard_api
-        dashboard_api.driver.verify_connectivity()
-        return True
-    except Exception:
-        return False
-
-
-requires_live_neo4j = pytest.mark.skipif(
-    not _neo4j_reachable(),
-    reason="No live Neo4j instance reachable in this environment.",
-)
+requires_live_neo4j = pytest.mark.usefixtures("live_neo4j")
 
 
 @requires_live_neo4j

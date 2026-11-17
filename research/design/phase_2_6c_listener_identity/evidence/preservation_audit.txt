@@ -1,0 +1,41 @@
+=== preservation
+HEAD before 3afe62c4216574a906feaffe87e35ddb084db941
+HEAD after  3afe62c4216574a906feaffe87e35ddb084db941 branch main
+status entries: before 187, after 189
+status lines that differ:
+>  M isfcr/CYUKTI/backend/listener/utils.py
+> ?? isfcr/CYUKTI/backend/tests/test_listener_source_identity.py
+with all files: before 21394, after 21426
+new or changed status lines outside this phase's folder:
+>  M isfcr/CYUKTI/backend/listener/utils.py
+> ?? isfcr/CYUKTI/backend/tests/test_listener_source_identity.py
+production files that changed:
+ ./listener/utils.py
+ ./listener/wazuh_listener.py
+production files total: 183
+test files added or changed:
+< ./test_listener_alert_acceptance.py
+> ./test_listener_alert_acceptance.py
+> ./test_listener_source_identity.py
+neo4j_write_journal.py: e6f6ed1bdaf04948 before, e6f6ed1bdaf04948 after
+neo4j_idempotency_ledger.py: 8f524667d4a4e34e before, 8f524667d4a4e34e after
+realtime_socgraph.py: 7026cbd2b2227490 before, 7026cbd2b2227490 after
+protected hashes unchanged
+protected sizes and times unchanged
+freeze manifest unchanged
+evidence txn_experiment_v1 unchanged
+evidence helper_validation_v1 unchanged
+evidence helper_revalidation_v1 unchanged
+evidence journal_phase23_v1 unchanged
+evidence ledger_phase24_v1 unchanged
+phase_2_5_coordination unchanged
+phase_2_5_coordination manifest verifies
+phase_2_6a_decisions unchanged
+phase_2_6a_decisions manifest verifies
+phase_2_6b_journal_api unchanged
+phase_2_6b_journal_api manifest verifies
+stray files under the backend since the start, outside the expected: 0
+new files elsewhere in research: 0
+listener processes: 0
+temporary directories left: 0
+unexpected network lines in the full run: 16; from new tests: 0

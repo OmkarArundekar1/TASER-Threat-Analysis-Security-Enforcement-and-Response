@@ -15,6 +15,12 @@ MAX_CAMPAIGN_CACHE = 1500
 
 OPERATION_TIMEOUT = 120
 
+# Event-time policy for alerts whose own timestamp is missing, malformed or
+# has no timezone (see event_time.py). "processing_time_fallback" keeps the
+# alert and marks it; "strict" rejects it. The replay harness always uses
+# "strict" regardless of this setting.
+EVENT_TIME_POLICY = os.environ.get("EVENT_TIME_POLICY", "processing_time_fallback").strip().lower()
+
 DEDUP_WINDOW = 90            # seconds
 DEDUP_CLEANUP_INTERVAL = 60
 
@@ -111,13 +117,15 @@ STRUCTURAL_RISK_WEIGHT = 0.10
 EVOLUTION_RATE_WEIGHT = 70
 
 CAMPAIGN_WEIGHTS = {
-    "prediction_similarity": 0.35,
-    "chain_similarity": 0.30,
-    "temporal_similarity": 0.20,
-    "attacker_similarity": 0.10,
-    "runtime_similarity": 0.03,
-    "graph_similarity": 0.01,
-    "duplicate_similarity": 0.01,
+    # Merged transition features - prediction and chain are different views
+    # of the same clue (what comes next), so combine them with reduced weight
+    # to prevent one missing pattern from dominating the decision
+    "transition_similarity": 0.40,  # Combines prediction + chain
+    "temporal_similarity": 0.30,
+    "attacker_similarity": 0.20,
+    "runtime_similarity": 0.05,
+    "graph_similarity": 0.03,
+    "duplicate_similarity": 0.02,
 }
 
 IMPLEMENTED_FEATURES = (
