@@ -22,6 +22,8 @@ class CampaignDecisionEngine:
                 features.temporal_similarity,
             "attacker_similarity":
                 features.attacker_similarity,
+            "lateral_movement_similarity":
+                features.lateral_movement_similarity,
             "duplicate_similarity":
                 features.duplicate_similarity,
             "graph_similarity":
