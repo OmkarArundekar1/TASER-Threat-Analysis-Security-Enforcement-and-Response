@@ -20,6 +20,7 @@ from collections import defaultdict
 import json
 
 from neo4j_client import driver
+from neo4j.time import Duration
 
 
 def get_all_campaigns():
@@ -84,12 +85,15 @@ def calculate_temporal_gaps(campaigns):
         c1 = sorted_campaigns[i]
         c2 = sorted_campaigns[i + 1]
         
-        gap = (c2['first_seen'] - c1['last_seen']).total_seconds()
+        # Calculate gap between campaigns
+        # Neo4j DateTime subtraction returns Duration
+        gap_duration = c2['first_seen'] - c1['last_seen']
+        gap_seconds = gap_duration.days * 86400 + gap_duration.seconds + gap_duration.nanoseconds / 1e9
         gaps.append({
             'from_campaign': c1['campaign_id'],
             'to_campaign': c2['campaign_id'],
-            'gap_seconds': gap,
-            'gap_minutes': gap / 60.0,
+            'gap_seconds': gap_seconds,
+            'gap_minutes': gap_seconds / 60.0,
             'c1_last_seen': c1['last_seen'],
             'c2_first_seen': c2['first_seen']
         })
@@ -133,7 +137,18 @@ def analyze_fragmentation():
             print(f"Campaign {i}: {campaign['campaign_id']}")
             print(f"  First seen: {campaign['first_seen']}")
             print(f"  Last seen:  {campaign['last_seen']}")
-            print(f"  Duration:   {(campaign['last_seen'] - campaign['first_seen']).total_seconds():.1f}s")
+            
+            # Calculate duration
+            # Neo4j returns neo4j.time.DateTime objects for timestamps
+            # Subtracting them gives a neo4j.time.Duration
+            try:
+                duration = campaign['last_seen'] - campaign['first_seen']
+                # Neo4j Duration has .seconds, .days, .months, .nanoseconds
+                # For campaign durations (typically seconds/minutes), days/months are 0
+                duration_seconds = duration.days * 86400 + duration.seconds + duration.nanoseconds / 1e9
+                print(f"  Duration:   {duration_seconds:.1f}s")
+            except Exception as e:
+                print(f"  Duration:   Error calculating: {e}")
             print(f"  Events:     {campaign['event_count']}")
             print(f"  Status:     {campaign['status']}")
             
